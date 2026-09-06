@@ -10,8 +10,14 @@ How code moves from the private hub (`coindrafts-core`) out to the public, per-b
 | --- | --- | --- | --- |
 | `coindrafts-core` | Private | none — shared/chain-agnostic core | ✅ Created, populated with `coindrafts`' full history (`C:\Users\PC\Documents\Projects\Work\coindrafts-core`) |
 | `coindrafts` | Public | 0G | This is the current working copy — already 0G-themed throughout (docs, README, achievements on 0G Chain, etc.) |
-| `coindraft` | Public | SoSoValue today; Midnight later | Exists, last touched Aug 25, sitting on `ui-updates` |
-| a Midnight repo | Public | Midnight | **Open — waiting on you.** You said you'd hand me the repo. Two things that changes the plan depending on which it is: (a) you repurpose the existing `coindraft` once SoSoValue wraps, or (b) it's a genuinely new repo (e.g. `coindraft-midnight`) and `coindraft` stays as-is or gets archived. Either works with the plan below — just tell me which when you hand it over. |
+| `coindraft` | Public | SoSoValue | Exists, last touched Aug 25, sitting on `ui-updates`. Not being repurposed — `coindrafts-mn` is the real Midnight repo instead, so `coindraft` stays the SoSoValue submission as-is. |
+| `coindraft-mn` — [github.com/adetyaz/coindrafts-mn](https://github.com/adetyaz/coindrafts-mn) | Public | Midnight | ✅ Resolved — this is the Midnight repo, confirmed. `main` is the default branch. Has: Apache 2.0 `LICENSE`, the `midnightntwrk` topic, a plain project description. Not yet populated with app code — waiting on the real Compact commit-reveal contract to exist first (per `midnight-submission-checklist.md` §1, the eligibility gate), then populated from the hub the same way `coindrafts-core` was. |
+
+**The four repos this hub interacts with, for reference:**
+- `coindrafts-core` — https://github.com/adetyaz/coindrafts-core (this repo, private)
+- `coindrafts` — https://github.com/adetyaz/coindrafts (0G, public)
+- `coindraft` — https://github.com/adetyaz/coindraft (SoSoValue, public)
+- `coindrafts-mn` — https://github.com/adetyaz/coindrafts-mn (Midnight, public)
 
 ## 2. Two things this plan has to solve separately
 
@@ -33,6 +39,12 @@ This means: when you push a shared feature (say, a new dashboard widget) from th
 
 **Trade-off worth naming:** this means doc changes never auto-propagate — if you improve the *shared, chain-agnostic* parts of a README (say, the gameplay explanation both repos share), you'd copy that paragraph by hand into both. Given how different the two chains' stories actually are, that's probably the right trade — full doc automation would need each repo's README to be templated/generated, which is more machinery than this needs right now. Flagging it so it's a deliberate choice, not a gap you find later.
 
+### 3a. `docs-project/` specifically — a one-off manual copy, not part of any sync yet
+
+Separate issue from the README/ARCHITECTURE exclusion above, worth its own note: `docs-project/` was gitignored on every repo (`coindrafts`, `coindraft`, presumably `coindrafts-mn` once populated) — deliberate, keeps internal planning notes out of what judges see on the public repos. That meant it had never been committed anywhere, including here.
+
+It's here now (2026-09-06) as a **one-time manual copy** from `coindrafts` at that moment, with this hub's own `.gitignore` edited to stop excluding it — that edit is local to `coindrafts-core` only, the public repos' `.gitignore`s are untouched on purpose. **This does not auto-update.** Anything edited in `coindrafts`' `docs-project/` after that copy won't appear here until copied again by hand, same limitation as everything else in this section until the real GitHub Actions sync exists.
+
 ## 4. Proposed structure for (A) — GitHub Actions, triggered from wherever you push
 
 Matches what you described: you push code somewhere, and a workflow fans it out to whichever target repo(s)/branch(es) you choose that time — not always all of them.
@@ -53,16 +65,16 @@ Your example — "push to main on the Midnight repo and `ui-updates` on `coindra
 
 ## 5. Sequencing — what happens when
 
-1. ✅ Done — `coindrafts-core` created, private, populated.
-2. **Waiting on you** — hand over the Midnight repo (repurposed `coindraft`, or new).
-3. Once I have it: populate it from the hub the same way `coindrafts-core` was populated from `coindrafts` (full history or fresh copy — same choice as before, your call), then swap in Midnight-specific `README.md`/`ARCHITECTURE.md` so it stops saying "0G" the moment it exists.
-4. Confirm the two open decisions above: workflow lives in the hub vs. in `coindrafts`, and dispatch-input vs. branch-name-convention for target selection.
-5. Build the actual GitHub Actions workflow + PAT wiring.
-6. Test it once with a trivial, reversible change before trusting it with anything real.
+1. ✅ Done — `coindrafts-core` created, private, populated (app code + `docs-project/`).
+2. ✅ Done — Midnight repo confirmed: `coindrafts-mn`. LICENSE + topic + description set (see `midnight-submission-checklist.md`).
+3. **In progress, on you** — the real Compact commit-reveal contract (`midnight-submission-checklist.md` §1) has to exist before `coindrafts-mn` gets populated with app code at all — populating it early with a bare copy risks the "mere copy, not eligible" disqualification.
+4. Once that feature is real: populate `coindrafts-mn` from the hub (full history or fresh copy — still your call, unanswered below), then write its Midnight-specific `README.md`/`ARCHITECTURE.md`.
+5. Confirm the two open decisions below (workflow location, target-selection method).
+6. Build the actual GitHub Actions workflow + PAT wiring.
+7. Test it once with a trivial, reversible change before trusting it with anything real.
 
-## 6. Open questions, all yours
+## 6. Open questions, still yours
 
-- Repurpose `coindraft`, or is the Midnight repo new?
-- Full git history into it, or fresh start (same question as `coindrafts-core`, unanswered so far)?
+- Full git history into `coindrafts-mn`, or fresh start (same question as `coindrafts-core`, unanswered so far)?
 - Workflow lives in `coindrafts-core` (my recommendation) or in `coindrafts`?
 - Dispatch-input selection or branch-name convention?
