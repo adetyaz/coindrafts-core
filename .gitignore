@@ -27,7 +27,6 @@ vite.config.ts.timestamp-*
 /_tmp-*
 
 
-/docs-project
 .vscode
 wave2_wave3_build_plan.md
 AGENTS.md
