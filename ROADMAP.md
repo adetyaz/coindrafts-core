@@ -40,6 +40,12 @@ Success = active users + revenue. Launch ASAP.
   multiplayer binary-options variant with 5 set coins (one per sector), chosen by
   an AI agent from cached crypto news; players can regenerate the set up to 3
   times.
+- **Matchmaking**: blind queue — players set mode, sector, duration, wager.
+  Mode, wager-or-not and stake tier must match exactly; sector and duration can
+  differ ("Any" allowed, which defers to the opponent). Remaining differences are
+  settled by one best-of-3 rock-paper-scissors round (10s per throw, random throw
+  on timeout) that decides all differing terms at once. A visible
+  online-players/challenge list comes later, once there's a crowd.
 - **Learning pillar replaced by Trivia**: 8 timed questions/day (~1 minute), pass
   at 4/8 to earn XP, XP scales above that, only a pass extends the streak.
   Head-to-head timed trivia is a later mode.
@@ -50,6 +56,18 @@ Success = active users + revenue. Launch ASAP.
   flow. Real-money wagers and paid tournament entry come later (planned $25 cap),
   once escrow is chosen — see Wager Mode for the researched options.
 - **Revenue**: boost/perk sales now; wager rake and tournament cut later.
+- **Payments for boosts/perks**: direct USDC transfer from the player's wallet to
+  ours, verified on-chain server-side, then the item is credited. No processor, no
+  held balances.
+- **v1 scope (provisional — to be confirmed after an end-to-end test)**: Versus +
+  Scrimmage, solo Binary Options, daily trivia, XP → boosts/perks (4 launch
+  items), USDC purchases, new matchmaking with RPS, Tournaments, and the known-issue
+  fixes. Right after launch: multiplayer binary options, head-to-head trivia,
+  online-players list, real-money wagers + in-house KYC, the rest of the perk
+  catalogue.
+- **Pitch**: deliberately left open until launch. Working candidate: "Fantasy
+  sports for crypto: draft 5 coins or call 5 moves, go head-to-head, and let
+  rock-paper-scissors settle the rest."
 
 Status legend: ✅ built & verified · 🟡 built, gaps or unverified in a real browser ·
 ⬜ not built · ⛔ deferred/blocked
