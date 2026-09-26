@@ -65,6 +65,12 @@ Success = active users + revenue. Launch ASAP.
   fixes. Right after launch: multiplayer binary options, head-to-head trivia,
   online-players list, real-money wagers + in-house KYC, the rest of the perk
   catalogue.
+- **PWA + push notifications (v1)**: installable app, no store download. Launch
+  notifications: match found, result in, trivia live / streak about to break,
+  tournament closing or starting — each toggleable per type in the profile. iOS
+  only delivers web push after "Add to Home Screen" (16.4+), so the install
+  prompt is part of the feature. Vercel Hobby crons run once a day, so
+  notifications fire from events; only the trivia reminder rides the daily cron.
 - **Pitch**: deliberately left open until launch. Working candidate: "Fantasy
   sports for crypto: draft 5 coins or call 5 moves, go head-to-head, and let
   rock-paper-scissors settle the rest."
