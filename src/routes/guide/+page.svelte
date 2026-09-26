@@ -63,14 +63,9 @@
 						{
 							label: 'Zero risk',
 							title: 'Scrimmage',
-							body: "Same UI, same scoring, a bot opponent — draft against bots and earn XP, without touching your real rank. Built for learning the scoring system first."
+							body: 'Same UI, same scoring, a bot opponent — draft against bots and earn XP, without touching your real rank. Built for learning the scoring system first.'
 						}
 					]
-				},
-				{
-					num: 6,
-					title: "Ask the Mentor if you're unsure",
-					body: 'Open Mentor and ask something like "Should I pick ETH or SOL right now?" — you’ll get a streamed answer grounded in the same live data the Dashboard shows. Any token it mentions is a tap-through straight into your draft, highlighted and ready to add.'
 				}
 			]
 		},
@@ -79,25 +74,20 @@
 			groupSub: "Contest resolves on its own — you don't have to do anything to close it out.",
 			items: [
 				{
-					num: 7,
+					num: 6,
 					title: 'Let the clock run',
 					body: 'Contests resolve automatically once their window ends — daily at 24 hours, weekly at 7 days, lobbies once full or timed out. No need to check back at an exact moment.'
 				},
 				{
-					num: 8,
+					num: 7,
 					title: 'Read the result',
 					body: 'The Result page shows your score against the field, a per-pick breakdown, and a short AI-generated explanation of what actually moved the outcome. Real contests unlock Share Result — a shareable card for X/Twitter.',
 					callout: { type: 'positive', text: 'New badge? You’ll see the unlock toast right here' }
 				},
 				{
-					num: 9,
+					num: 8,
 					title: 'Check your standing',
 					body: "The Leaderboard ranks everyone globally by XP. If you're in a League — create one and share the invite code with friends — standings there update the same way."
-				},
-				{
-					num: 10,
-					title: "Read for a boost, on the days you'd rather not draft",
-					body: 'The Knowledge Base is sector-tagged news pulled live. Read one article a day for XP and a 24-hour boost — same mechanic as the Gauntlet, different input.'
 				}
 			]
 		}
@@ -121,18 +111,21 @@
 			a: 'Six: First Blood (first win), On Fire and Unstoppable (3- and 5-win streaks), Veteran and Champion (10 and 25 total wins), and League Founder.'
 		}
 	];
-
 </script>
 
 <div class="mx-auto flex max-w-2xl flex-col gap-3">
 	<section class="rounded-[20px] border border-border bg-surface px-5 py-6">
-		<span class="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest text-primary uppercase">
+		<span
+			class="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest text-primary uppercase"
+		>
 			<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>Guide
 		</span>
-		<h1 class="mt-3 text-[32px] leading-tight font-black tracking-tight text-text">How to play CoinDraft</h1>
+		<h1 class="mt-3 text-[32px] leading-tight font-black tracking-tight text-text">
+			How to play CoinDraft
+		</h1>
 		<p class="mt-2 max-w-md text-[15px] text-text-secondary">
-			Draft a 5-token lineup, compete against real price movement, and climb the leaderboard. This walks
-			through every screen in the order you'll actually hit them.
+			Draft a 5-token lineup, compete against real price movement, and climb the leaderboard. This
+			walks through every screen in the order you'll actually hit them.
 		</p>
 		<div class="mt-5 flex flex-wrap gap-2">
 			<a
@@ -140,18 +133,15 @@
 				class="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-bold text-text no-underline transition hover:bg-primary-hover"
 				>Open the app →</a
 			>
-			<a
-				href="/docs"
-				class="inline-flex h-10 items-center rounded-full border border-border px-5 text-sm font-medium text-text-secondary no-underline transition hover:bg-hover"
-				>Full documentation</a
-			>
 		</div>
 	</section>
 
 	{#each STEPS as group (group.group)}
 		<section class="rounded-[20px] border border-border bg-surface px-5 py-5">
 			<div class="mb-1">
-				<span class="text-[11px] font-bold tracking-widest text-primary uppercase">{group.group}</span>
+				<span class="text-[11px] font-bold tracking-widest text-primary uppercase"
+					>{group.group}</span
+				>
 				<p class="mt-1 text-xs text-text-muted">{group.groupSub}</p>
 			</div>
 			<div class="mt-3 flex flex-col divide-y divide-border">
@@ -165,8 +155,8 @@
 							<p class="mt-1.5 text-sm text-text-secondary">{item.body}</p>
 							{#if item.callout}
 								<span
-									class="mt-2.5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold {item.callout.type ===
-									'positive'
+									class="mt-2.5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold {item
+										.callout.type === 'positive'
 										? 'bg-positive/15 text-positive'
 										: 'bg-primary-muted text-primary'}"
 								>
@@ -211,8 +201,9 @@
 		</div>
 	</section>
 
-	<footer class="flex flex-wrap items-center justify-between gap-2 px-1 py-4 text-xs text-text-muted">
+	<footer
+		class="flex flex-wrap items-center justify-between gap-2 px-1 py-4 text-xs text-text-muted"
+	>
 		<span>CoinDraft · How to Use Guide</span>
-		<a href="/docs" class="text-text-muted no-underline hover:text-primary">Full documentation →</a>
 	</footer>
 </div>

@@ -6,7 +6,7 @@
 // Also fixes a real bug found in bots-service's own script: it assigns its
 // 5 random picks to sector slots positionally (`sectors[i]`), with no check
 // the token is actually that sector. This uses the same classifier
-// ($lib/sectors.ts) Research Hub already relies on for sector-correct
+// ($lib/sectors.ts) the rest of the app already relies on for sector-correct
 // assignment instead.
 import { classifySector } from '$lib/sectors';
 import { getTokensWithPrices, type TokenWithPrice } from '$lib/server/sosovalue';
@@ -52,7 +52,8 @@ export async function draftBotLineup(): Promise<BotPick[]> {
 	const picks: BotPick[] = [];
 	for (const sector of SECTORS) {
 		const inSector = (bySector.get(sector) ?? []).filter((t) => t.symbol && !used.has(t.symbol));
-		const pool = inSector.length > 0 ? inSector : tokens.filter((t) => t.symbol && !used.has(t.symbol));
+		const pool =
+			inSector.length > 0 ? inSector : tokens.filter((t) => t.symbol && !used.has(t.symbol));
 		if (pool.length === 0) continue;
 
 		const chosen = pool[Math.floor(Math.random() * pool.length)];

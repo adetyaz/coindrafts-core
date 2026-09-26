@@ -1,6 +1,8 @@
-// Word of the Day — a standalone daily vocabulary ritual, its own feature on
-// the Knowledge Base page, distinct from the Gauntlet. Both draw from the
-// SAME AI-generated, 0G-Storage-backed vocab pool (see ensureVocabPool in
+// Word of the Day — a standalone daily vocabulary ritual, distinct from the
+// Gauntlet. Its planned UI home, the Knowledge Base page, has been removed
+// (see ROADMAP.md) — this backend still runs (bumpResearchStreak is still
+// called from /api/term/answer) but currently has no page to surface on.
+// Both draw from the SAME AI-generated, 0G-Storage-backed vocab pool (see ensureVocabPool in
 // gauntlet.ts) — this is deliberately not a second, separate generator. They
 // must never show the same term on the same day though: if the Gauntlet's
 // 'vocab' category has already been seeded for today, its term is excluded
@@ -75,7 +77,13 @@ function pickSeedTerm(dateStr: string): TermRecord {
 		{ label: t.definition, value: t.definition },
 		...t.distractors.map((d) => ({ label: d, value: d }))
 	]);
-	return { term: t.term, definition: t.definition, quizOptions, correctOption: t.definition, xpReward: 20 };
+	return {
+		term: t.term,
+		definition: t.definition,
+		quizOptions,
+		correctOption: t.definition,
+		xpReward: 20
+	};
 }
 
 /** Ensures today's Word of the Day exists. Safe to call repeatedly (idempotent per day). */
@@ -97,12 +105,17 @@ export async function ensureTodayTermSeeded(today = new Date().toISOString().spl
 			.select({ term: gauntletQuestions.term })
 			.from(gauntletQuestions)
 			.where(
-				and(eq(gauntletQuestions.activeDate, sql`${today}::date`), eq(gauntletQuestions.category, 'vocab'))
+				and(
+					eq(gauntletQuestions.activeDate, sql`${today}::date`),
+					eq(gauntletQuestions.category, 'vocab')
+				)
 			)
 			.limit(1)
 			.then((rows) => rows[0]?.term ?? null);
 
-		const candidates = todaysGauntletTerm ? pool.filter((p) => p.term !== todaysGauntletTerm) : pool;
+		const candidates = todaysGauntletTerm
+			? pool.filter((p) => p.term !== todaysGauntletTerm)
+			: pool;
 		// Last resort if the pool is too small to exclude anything from — accept
 		// the rare collision rather than fail to seed a term at all.
 		const usable = candidates.length > 0 ? candidates : pool;
@@ -134,10 +147,9 @@ export async function ensureTodayTermSeeded(today = new Date().toISOString().spl
 }
 
 /**
- * Shared by Word of the Day and Research Hub reads — a single "research
- * streak" tracked across both engagement paths, separate from the win-only
- * `users.streak`. Counts once per calendar day regardless of which of the
- * two the user did first that day.
+ * Tracks a "research streak" separate from the win-only `users.streak`.
+ * Originally shared with Research Hub reads (now removed, see ROADMAP.md) —
+ * only Word of the Day answers call this now. Counts once per calendar day.
  */
 export async function bumpResearchStreak(userId: string) {
 	const today = new Date().toISOString().split('T')[0];

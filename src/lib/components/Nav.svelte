@@ -49,18 +49,8 @@
 			items: [{ href: '/leaderboard', label: 'leaderboard' }]
 		},
 		{
-			label: 'learn',
-			items: [
-				{ href: '/mentor', label: 'mentor' },
-				{ href: '/research', label: 'knowledge base' }
-			]
-		},
-		{
 			label: 'help',
-			items: [
-				{ href: '/guide', label: 'how to use' },
-				{ href: '/docs', label: 'documentation' }
-			]
+			items: [{ href: '/guide', label: 'how to use' }]
 		}
 	];
 
@@ -93,8 +83,14 @@
 					const mine = contests.find((c) => c.status !== 'resolved');
 					if (mine) {
 						activeMatch = mine.myLineupLocked
-							? { href: `/game/${mine.id}`, label: mine.status === 'live' ? 'Watch race' : 'Active match' }
-							: { href: `/draft?contestId=${mine.id}&type=${mine.type ?? 'daily'}${mine.isPaper ? '&mode=paper' : ''}`, label: 'Continue draft' };
+							? {
+									href: `/game/${mine.id}`,
+									label: mine.status === 'live' ? 'Watch race' : 'Active match'
+								}
+							: {
+									href: `/draft?contestId=${mine.id}&type=${mine.type ?? 'daily'}${mine.isPaper ? '&mode=paper' : ''}`,
+									label: 'Continue draft'
+								};
 						return;
 					}
 				}
@@ -108,7 +104,10 @@
 					const mine = lobbies[0];
 					if (mine) {
 						activeMatch = mine.myLineupLocked
-							? { href: `/lobby/${mine.id}/result`, label: mine.status === 'live' ? 'Watch' : 'Active match' }
+							? {
+									href: `/lobby/${mine.id}/result`,
+									label: mine.status === 'live' ? 'Watch' : 'Active match'
+								}
 							: { href: `/draft?lobbyId=${mine.id}`, label: 'Continue draft' };
 						return;
 					}
@@ -459,7 +458,8 @@
 			</a>
 		{/if}
 		{#if user}
-			<span class="font-mono text-xs whitespace-nowrap text-text-muted">{liveXp ?? user.xpTotal ?? 0} XP</span
+			<span class="font-mono text-xs whitespace-nowrap text-text-muted"
+				>{liveXp ?? user.xpTotal ?? 0} XP</span
 			>
 			<a
 				href="/profile"

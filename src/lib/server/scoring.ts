@@ -35,8 +35,8 @@ export function durationScale(durationMinutes?: number | null): number {
 
 /**
  * The multiplier a sector boost applies. Advertised as ×1.25 on the draft
- * screen and the Research Hub — this is the single place the number lives, so
- * the promise and the engine can't drift apart again.
+ * screen — this is the single place the number lives, so the promise and the
+ * engine can't drift apart again.
  */
 export const BOOST_MULTIPLIER = 1.25;
 

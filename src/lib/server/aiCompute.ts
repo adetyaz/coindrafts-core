@@ -1,7 +1,8 @@
-// Shared AI-inference client for /api/mentor, /api/breakdown and the AI draft
-// agent — Groq by default, 0G Compute Router when USE_0G_COMPUTE=true and
-// fully configured. See docs-project/0g-compute-integration-findings.md for
+// Shared AI-inference client for /api/breakdown and the AI draft agent —
+// Groq by default, 0G Compute Router when USE_0G_COMPUTE=true and fully
+// configured. See docs-project/0g-compute-integration-findings.md for
 // the research behind this (testnet/mainnet URLs, contract addresses, setup).
+// (AI Mentor, the third original caller, was removed — see ROADMAP.md.)
 //
 // ⚠️ Why call sites must use `createChatCompletion()` and not
 // `client.chat.completions.create()` directly:
@@ -77,7 +78,9 @@ export function getAiClient(): { client: Groq; model: string; via: '0g' | 'groq'
 	}
 
 	if (!GROQ_API_KEY) {
-		throw new AiConfigError('USE_0G_COMPUTE is not true and GROQ_API_KEY is not set — no AI backend is configured.');
+		throw new AiConfigError(
+			'USE_0G_COMPUTE is not true and GROQ_API_KEY is not set — no AI backend is configured.'
+		);
 	}
 
 	return { client: new Groq({ apiKey: GROQ_API_KEY }), model: GROQ_MODEL, via: 'groq' };

@@ -135,8 +135,7 @@
 			links: [
 				{ label: 'Draft', href: '/draft' },
 				{ label: 'Dashboard', href: '/dashboard' },
-				{ label: 'Leagues', href: '/leagues' },
-				{ label: 'Knowledge Base', href: '/research' }
+				{ label: 'Leagues', href: '/leagues' }
 			]
 		},
 		{
@@ -144,18 +143,14 @@
 			links: [
 				{ label: 'Leaderboard', href: '/leaderboard' },
 				{ label: 'Tournaments', href: '/tournament' },
-				{ label: 'Find a match', href: '/matchmaking' },
-				{ label: 'AI Mentor', href: '/mentor' }
+				{ label: 'Find a match', href: '/matchmaking' }
 			]
 		},
 		{
 			title: 'Learn',
-			links: [
-				{ label: 'How to play', href: '/guide' },
-				{ label: 'Documentation', href: '/docs' }
-			]
+			links: [{ label: 'How to play', href: '/guide' }]
 		}
-	];
+	] as const;
 </script>
 
 <div>
