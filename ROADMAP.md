@@ -9,12 +9,14 @@ else is carried over from design docs and has not been independently re-checked.
 
 **Direction**: no longer building for buildathons. Focus is solidifying the existing
 build, defining the product's actual pitch, and getting to a real launch. Midnight
-and Linera chain integrations are dead. Linera never had code here. **Midnight
-does:** `origin/main` (Sept 14–16, not yet pulled into local `main` as of
-2026-09-26) adds a Compact KYC attestation contract, an on-chain age gate for
-wagers (`wager.ts`, stake commit), a Midnight wallet integration, a `/profile/kyc`
-page and schema changes. Decision: **remove it** — pending a pull, since the code
-isn't in the local copy yet. A
+and Linera chain integrations are dead. Linera never had code here. Midnight did
+(a Compact KYC attestation contract, an on-chain age gate for wagers, a Midnight
+wallet integration, a `/profile/kyc` page, schema changes — Sept 14–16) and was
+**removed 2026-09-26 by force-pushing over it**. Recoverable from the tag
+`backup/pre-force-push-2026-09-26`. That tag also holds two non-Midnight fixes
+that were dropped with it (a Vercel build fix and an esbuild/vite 8 pin fix) —
+the current base builds locally without them, but check them if a Vercel build
+fails. KYC will be rebuilt in-house (not via Midnight). A
 chain-agnostic architecture rework (wallet, wagering settlement, AI compute backend)
 is planned as its own future pass — until then, 0G remains what's actually wired up.
 
@@ -35,8 +37,9 @@ Success = active users + revenue. Launch ASAP.
   · Versus (1v1 real opponent) · Tournaments (public/private, user-created; coin
   draft _or_ binary-options draft). Multiplayer lobbies as a standalone mode are
   **cut** (tournaments still use the lobby tables internally). Later: a
-  multiplayer binary-options variant with 5 set coins (one per sector) — who picks
-  them is still open.
+  multiplayer binary-options variant with 5 set coins (one per sector), chosen by
+  an AI agent from cached crypto news; players can regenerate the set up to 3
+  times.
 - **Learning pillar replaced by Trivia**: 8 timed questions/day (~1 minute), pass
   at 4/8 to earn XP, XP scales above that, only a pass extends the streak.
   Head-to-head timed trivia is a later mode.
