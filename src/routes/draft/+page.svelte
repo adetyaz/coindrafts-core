@@ -22,11 +22,14 @@
 	type SectorInfo = { id: string; name: string; change: number | null };
 
 	type Pick = {
+		slot: string;
 		currencyId: string;
 		symbol: string;
 		name: string;
 		sector: string;
 	};
+
+	type Slot = { id: string; sector: string; name: string };
 
 	// ── State ──────────────────────────────────────────────────────────
 	let contestId = $state('');
@@ -84,7 +87,7 @@
 	let loading = $state(true);
 	let loadError = $state('');
 	let submitting = $state(false);
-	let activeSector = $state(SECTORS[0].id);
+	let activeSlot = $state<string>(SECTORS[0].id);
 	let search = $state('');
 	let timeLeft = $state(45 * 60);
 	let timer: ReturnType<typeof setInterval> | null = null;
@@ -121,10 +124,13 @@
 				if (lRes.ok) {
 					const lobbyInfo = await lRes.json();
 					sectorRestriction = lobbyInfo.sectorRestriction ?? null;
+					if (sectorRestriction) activeSlot = `${sectorRestriction}-1`;
 				}
 			}
 
-			const tokensUrl = sectorRestriction ? `/api/tokens?sector=${sectorRestriction}` : '/api/tokens';
+			const tokensUrl = sectorRestriction
+				? `/api/tokens?sector=${sectorRestriction}`
+				: '/api/tokens';
 			const [tRes, sRes, meRes] = await Promise.all([
 				fetch(tokensUrl),
 				fetch('/api/sectors'),
@@ -136,12 +142,14 @@
 				const match = tokens.find((t) => t.currency_id === highlightId);
 				if (match?.symbol) {
 					search = match.symbol;
-					// The pool is now sector-filtered by activeSector — without this,
+					// The pool is now sector-filtered by the active slot — without this,
 					// a highlighted token outside the default L1 tab would search for
 					// nothing found.
-					activeSector = tokenSector(match);
+					if (!sectorRestriction) activeSlot = tokenSector(match);
 					queueMicrotask(() =>
-						document.getElementById('token-pool')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+						document
+							.getElementById('token-pool')
+							?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 					);
 				}
 			}
@@ -170,11 +178,30 @@
 		return classifySector([t.symbol ?? '']);
 	}
 
+	// A sector-restricted tournament can't use one-slot-per-sector — only that
+	// sector's tokens are in the pool, so the other four slots could never be
+	// filled. It gets five open slots from the restricted pool instead.
+	const slots = $derived.by<Slot[]>(() => {
+		const r = sectorRestriction;
+		if (!r) return SECTORS.map((s) => ({ id: s.id, sector: s.id, name: s.name }));
+		const label = SECTORS.find((s) => s.id === r)?.name ?? r.toUpperCase();
+		return [1, 2, 3, 4, 5].map((n) => ({ id: `${r}-${n}`, sector: r, name: `${label} #${n}` }));
+	});
+	const activeSlotInfo = $derived(slots.find((s) => s.id === activeSlot) ?? slots[0]);
+	const activeSector = $derived(activeSlotInfo.sector);
+	const activeSlotLabel = $derived(
+		sectorRestriction ? activeSlotInfo.name : sectorTheme(activeSector).label
+	);
+
 	// Only Wildcard accepts any chain — every other slot only shows/accepts
-	// tokens actually classified into that sector.
+	// tokens actually classified into that sector. A restricted pool is already
+	// filtered server-side.
 	const filteredTokens = $derived.by(() => {
 		const q = search.trim().toLowerCase();
-		const inSector = activeSector === 'wildcard' ? tokens : tokens.filter((t) => tokenSector(t) === activeSector);
+		const inSector =
+			sectorRestriction || activeSector === 'wildcard'
+				? tokens
+				: tokens.filter((t) => tokenSector(t) === activeSector);
 		if (!q) return inSector.slice(0, 50);
 		return inSector
 			.filter((t) => t.symbol?.toLowerCase().includes(q) || t.name?.toLowerCase().includes(q))
@@ -206,16 +233,16 @@
 	);
 
 	// ── Helpers ────────────────────────────────────────────────────────
-	function pickForSector(id: string): Pick | undefined {
-		return lineup.find((p) => p.sector === id);
+	function pickForSlot(id: string): Pick | undefined {
+		return lineup.find((p) => p.slot === id);
 	}
 
 	function isInLineup(currencyId: string): boolean {
 		return lineup.some((p) => p.currencyId === currencyId);
 	}
 
-	function selectSector(id: string) {
-		activeSector = id;
+	function selectSlot(id: string) {
+		activeSlot = id;
 		document.getElementById('token-pool')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
@@ -227,37 +254,44 @@
 		}
 		// Belt-and-suspenders: filteredTokens already excludes mismatches, but
 		// this guards any other path that could call addToken directly.
-		if (activeSector !== 'wildcard' && tokenSector(token) !== activeSector) {
-			toast(`${sym} doesn't belong in the ${SECTORS.find((s) => s.id === activeSector)?.name} slot`, 'error');
+		const required = sectorRestriction ?? (activeSector === 'wildcard' ? null : activeSector);
+		if (required && tokenSector(token) !== required) {
+			toast(`${sym} doesn't belong in the ${activeSlotInfo.name} slot`, 'error');
 			return;
 		}
 		lineup = [
-			...lineup.filter((p) => p.sector !== activeSector),
+			...lineup.filter((p) => p.slot !== activeSlot),
 			{
+				slot: activeSlot,
 				currencyId: token.currency_id,
 				symbol: token.symbol ?? token.currency_id,
 				name: token.name ?? '',
 				sector: activeSector
 			}
 		];
-		toast(`${sym} added to ${SECTORS.find((s) => s.id === activeSector)?.name} slot`, 'success');
-		const next = SECTORS.find((s) => !lineup.some((p) => p.sector === s.id));
-		if (next) activeSector = next.id;
+		toast(`${sym} added to ${activeSlotInfo.name} slot`, 'success');
+		const next = slots.find((s) => !lineup.some((p) => p.slot === s.id));
+		if (next) activeSlot = next.id;
 	}
 
-	function removePick(sectorId: string) {
-		lineup = lineup.filter((p) => p.sector !== sectorId);
-		activeSector = sectorId;
+	function removePick(slotId: string) {
+		lineup = lineup.filter((p) => p.slot !== slotId);
+		activeSlot = slotId;
 	}
 
-	const emptySectors = $derived(SECTORS.filter((s) => !lineup.some((p) => p.sector === s.id)).map((s) => s.id));
+	const emptySectors = $derived(
+		slots.filter((s) => !lineup.some((p) => p.slot === s.id)).map((s) => s.sector)
+	);
 
 	// Applies AI Draft Agent picks the same way a manual click would — normal
 	// draft flow (addToken/removePick above) is completely unchanged, this is
-	// purely additive.
-	function applyAgentPicks(picks: { sector: string; symbol: string; name: string; currencyId: string }[]) {
+	// purely additive. The agent fills by sector, so it's only offered in the
+	// normal one-slot-per-sector draft, where slot id == sector id.
+	function applyAgentPicks(
+		picks: { sector: string; symbol: string; name: string; currencyId: string }[]
+	) {
 		for (const p of picks) {
-			lineup = [...lineup.filter((x) => x.sector !== p.sector), p];
+			lineup = [...lineup.filter((x) => x.slot !== p.sector), { ...p, slot: p.sector }];
 		}
 	}
 
@@ -284,7 +318,10 @@
 	// ── Submit ─────────────────────────────────────────────────────────
 	async function submitLineup() {
 		if (lineup.length !== 5) {
-			toast('Select all 5 slots first — one per sector', 'error');
+			toast(
+				sectorRestriction ? 'Fill all 5 slots first' : 'Select all 5 slots first — one per sector',
+				'error'
+			);
 			return;
 		}
 		submitting = true;
@@ -364,7 +401,9 @@
 				{/if}
 			</p>
 		</div>
-		<div class="flex items-center gap-2.5 rounded-full border border-border bg-surface px-[18px] py-2.5">
+		<div
+			class="flex items-center gap-2.5 rounded-full border border-border bg-surface px-[18px] py-2.5"
+		>
 			<span class="anim-blink h-[7px] w-[7px] rounded-full bg-primary"></span>
 			<span class="font-mono text-sm font-bold">{timerStr} to lock</span>
 		</div>
@@ -389,16 +428,16 @@
 	{:else}
 		<!-- ── Sector slots ────────────────────────────────────────── -->
 		<div class="mb-9 grid grid-cols-5 gap-3.5 pt-1.5 max-lg:grid-cols-2 max-sm:grid-cols-1">
-			{#each SECTORS as sector, i (sector.id)}
-				{@const pick = pickForSector(sector.id)}
-				{@const theme = sectorTheme(sector.id)}
-				{@const isActive = activeSector === sector.id && !pick}
-				{@const sectorChg = sectorChanges.get(sector.id) ?? null}
-				{@const hasBoost = pick ? activeBoosts.get(sector.id) : false}
+			{#each slots as slot, i (slot.id)}
+				{@const pick = pickForSlot(slot.id)}
+				{@const theme = sectorTheme(slot.sector)}
+				{@const isActive = activeSlot === slot.id && !pick}
+				{@const sectorChg = sectorChanges.get(slot.sector) ?? null}
+				{@const hasBoost = pick ? activeBoosts.get(slot.sector) : false}
 
 				<button
 					type="button"
-					onclick={() => selectSector(sector.id)}
+					onclick={() => selectSlot(slot.id)}
 					class="group relative overflow-hidden rounded-[20px] text-left transition-transform duration-200"
 					style="transform:rotate({TILTS[i]});background:var(--color-surface);border:2px {pick
 						? 'solid ' + theme.color
@@ -410,11 +449,11 @@
 					<div class="flex flex-col items-center gap-3 px-4 pt-4.5 pb-5 text-center">
 						<span
 							class="rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-[0.1em] uppercase"
-							style="background:{pick
-								? theme.color + '24'
-								: 'var(--color-surface-alt)'};color:{pick ? theme.ink : 'var(--color-text-muted)'}"
+							style="background:{pick ? theme.color + '24' : 'var(--color-surface-alt)'};color:{pick
+								? theme.ink
+								: 'var(--color-text-muted)'}"
 						>
-							{sector.name} sector
+							{sectorRestriction ? slot.name : `${slot.name} sector`}
 						</span>
 
 						{#if pick}
@@ -425,12 +464,15 @@
 							>
 								<TokenIcon symbol={pick.symbol} size={38} bg="transparent" fg="var(--color-ink)" />
 							</div>
-							<div class="text-[17px] font-black tracking-[-0.02em]">{pick.symbol.toUpperCase()}</div>
+							<div class="text-[17px] font-black tracking-[-0.02em]">
+								{pick.symbol.toUpperCase()}
+							</div>
 							<div class="font-mono text-[11px] text-text-muted">
 								{tkn?.change24h != null ? fmtChg(tkn.change24h) : (pick.name ?? '')}
 							</div>
 							{#if hasBoost}
-								<span class="rounded-full bg-primary px-2 py-0.5 text-[9px] font-extrabold text-text uppercase"
+								<span
+									class="rounded-full bg-primary px-2 py-0.5 text-[9px] font-extrabold text-text uppercase"
 									>⚡ boost</span
 								>
 							{/if}
@@ -439,12 +481,12 @@
 								tabindex="0"
 								onclick={(e) => {
 									e.stopPropagation();
-									removePick(sector.id);
+									removePick(slot.id);
 								}}
 								onkeydown={(e) => {
 									if (e.key === 'Enter') {
 										e.stopPropagation();
-										removePick(sector.id);
+										removePick(slot.id);
 									}
 								}}
 								class="absolute top-2.5 right-2.5 grid h-5 w-5 cursor-pointer place-items-center rounded-full text-base leading-none text-text-muted hover:bg-hover"
@@ -460,8 +502,15 @@
 								+
 							</div>
 							<div class="text-[15px] font-extrabold tracking-[-0.02em] text-text-muted">Empty</div>
-							<div class="font-mono text-[11px]" style={sectorChg != null ? `color:${sectorChg >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'}` : 'color:var(--color-text-muted)'}>
-								{sectorChg != null ? fmtChg(sectorChg) : `${sector.id === 'wildcard' ? 'any token' : 'draft a token'}`}
+							<div
+								class="font-mono text-[11px]"
+								style={sectorChg != null
+									? `color:${sectorChg >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'}`
+									: 'color:var(--color-text-muted)'}
+							>
+								{sectorChg != null
+									? fmtChg(sectorChg)
+									: `${slot.sector === 'wildcard' && !sectorRestriction ? 'any token' : 'draft a token'}`}
 							</div>
 						{/if}
 					</div>
@@ -486,16 +535,16 @@
 							type="text"
 							placeholder="Search tokens…"
 							bind:value={search}
-							class="h-[42px] w-full rounded-full border border-border bg-surface px-[18px] text-[13px] text-text outline-none transition focus:border-primary"
+							class="h-[42px] w-full rounded-full border border-border bg-surface px-[18px] text-[13px] text-text transition outline-none focus:border-primary"
 						/>
 					</div>
-					{#each SECTORS as sector (sector.id)}
+					{#each sectorRestriction ? [] : SECTORS as sector (sector.id)}
 						{@const theme = sectorTheme(sector.id)}
-						{@const isActive = activeSector === sector.id}
-						{@const filled = !!pickForSector(sector.id)}
+						{@const isActive = activeSlot === sector.id}
+						{@const filled = !!pickForSlot(sector.id)}
 						<button
 							type="button"
-							onclick={() => (activeSector = sector.id)}
+							onclick={() => (activeSlot = sector.id)}
 							class="relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition-all"
 							style={isActive
 								? `background:${theme.color};color:var(--color-ink)`
@@ -533,17 +582,25 @@
 								? 'var(--color-primary-muted)'
 								: 'var(--color-surface)'};border:2px solid {inLineup
 								? 'var(--color-primary)'
-								: 'var(--color-border)'};{isHighlighted ? 'outline:2px solid var(--color-primary)' : ''}"
+								: 'var(--color-border)'};{isHighlighted
+								? 'outline:2px solid var(--color-primary)'
+								: ''}"
 						>
 							<div class="mb-4 flex items-start justify-between gap-2.5">
 								<div
 									class="grid h-[46px] w-[46px] place-items-center rounded-full"
 									style="background:{activeTheme.color};box-shadow:0 0 24px {activeTheme.color}55"
 								>
-									<TokenIcon symbol={token.symbol} size={32} bg="transparent" fg="var(--color-ink)" />
+									<TokenIcon
+										symbol={token.symbol}
+										size={32}
+										bg="transparent"
+										fg="var(--color-ink)"
+									/>
 								</div>
 								{#if token.rank}
-									<span class="rounded-full bg-surface-alt px-2 py-1 text-[10px] font-bold text-text-muted"
+									<span
+										class="rounded-full bg-surface-alt px-2 py-1 text-[10px] font-bold text-text-muted"
 										>#{token.rank}</span
 									>
 								{/if}
@@ -572,9 +629,11 @@
 								class="w-full rounded-full py-3 text-[13px] font-extrabold {inLineup
 									? 'cursor-default bg-primary text-text'
 									: 'cursor-pointer bg-transparent'}"
-								style={inLineup ? '' : `border:1.5px solid ${activeTheme.color};color:${activeTheme.ink}`}
+								style={inLineup
+									? ''
+									: `border:1.5px solid ${activeTheme.color};color:${activeTheme.ink}`}
 							>
-								{inLineup ? 'In your lineup' : `Drop into ${sectorTheme(activeSector).label}`}
+								{inLineup ? 'In your lineup' : `Drop into ${activeSlotLabel}`}
 							</button>
 							<div class="mt-2 flex justify-between font-mono text-[10px] text-text-muted">
 								<span>vol {fmtVol(token.volume24h)}</span>
@@ -586,7 +645,9 @@
 
 			<div class="flex min-w-0 flex-[1_1_280px] flex-col gap-3.5">
 				<div class="frost-panel rounded-[20px] p-[22px]">
-					<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
+					<div
+						class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase"
+					>
 						Projected score
 					</div>
 					<div
@@ -596,29 +657,41 @@
 						{projectedScore >= 0 ? '+' : ''}{projectedScore}
 					</div>
 					<div class="mt-2 mb-4 text-xs text-text-muted">
-						Live estimate from your {slotsFilledCount} filled sector{slotsFilledCount === 1 ? '' : 's'}
+						Live estimate from your {slotsFilledCount} filled sector{slotsFilledCount === 1
+							? ''
+							: 's'}
 					</div>
 					<div class="h-2 overflow-hidden rounded-full bg-surface-alt">
 						<div
 							class="h-full rounded-full bg-primary transition-[width] duration-500"
-							style="width:{Math.min(100, (slotsFilledCount / 5) * 100)}%;box-shadow:0 0 18px rgba(247,142,121,0.8)"
+							style="width:{Math.min(
+								100,
+								(slotsFilledCount / 5) * 100
+							)}%;box-shadow:0 0 18px rgba(247,142,121,0.8)"
 						></div>
 					</div>
 				</div>
 
 				{#if [...activeBoosts.keys()].length > 0}
-					<div class="rounded-[20px] border border-warning bg-surface p-[22px] shadow-[0_0_40px_rgba(247,201,120,0.14)]">
-						<div class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] text-warning-ink uppercase">
+					<div
+						class="rounded-[20px] border border-warning bg-surface p-[22px] shadow-[0_0_40px_rgba(247,201,120,0.14)]"
+					>
+						<div
+							class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] text-warning-ink uppercase"
+						>
 							Boost active
 						</div>
 						<div class="flex flex-col gap-2.5">
 							{#each [...activeBoosts.keys()] as sid (sid)}
 								{@const t = sectorTheme(sid)}
 								<div class="flex items-center gap-3">
-									<div class="h-9.5 w-9.5 shrink-0 rounded-[10px]" style="background:{t.color}29;border:1px solid {t.color}"></div>
+									<div
+										class="h-9.5 w-9.5 shrink-0 rounded-[10px]"
+										style="background:{t.color}29;border:1px solid {t.color}"
+									></div>
 									<div>
 										<div class="text-sm font-extrabold">{t.label} &times;1.25</div>
-										<div class="text-xs text-text-muted">From Knowledge Base</div>
+										<div class="text-xs text-text-muted">From the Gauntlet</div>
 									</div>
 								</div>
 							{/each}
@@ -637,7 +710,9 @@
 				>
 					{submitting ? 'Submitting…' : 'Lock lineup'}
 				</button>
-				<div class="text-center text-xs text-text-muted">{slotsFilledCount} of 5 sectors filled</div>
+				<div class="text-center text-xs text-text-muted">
+					{slotsFilledCount} of 5 sectors filled
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -654,4 +729,6 @@
 {/if}
 
 <Toast />
-<DraftAgent {emptySectors} {isPaper} onPicks={applyAgentPicks} />
+{#if !sectorRestriction}
+	<DraftAgent {emptySectors} {isPaper} onPicks={applyAgentPicks} />
+{/if}

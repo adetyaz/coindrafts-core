@@ -1,9 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { lobbies, lobbyParticipants, lineups, lineupPicks } from '$lib/server/schema';
+import { lobbies, lobbyParticipants, lineups, lineupPicks, tournaments } from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice } from '$lib/server/sosovalue';
+import { classifySector } from '$lib/sectors';
 
 export async function POST({ params, request, cookies }) {
 	const token = cookies.get('session');
@@ -37,6 +38,37 @@ export async function POST({ params, request, cookies }) {
 		return json({ error: 'Forbidden' }, { status: 403 });
 	}
 
+	const ids = picks.map((p: { currencyId: unknown }) => String(p.currencyId));
+	if (new Set(ids).size !== ids.length) {
+		return json({ error: 'Each token can only be picked once' }, { status: 400 });
+	}
+
+	// The restriction used to be applied only by the draft page's token filter,
+	// and each pick's sector was taken from the request body — so any direct
+	// POST could ignore it. Classify server-side instead of trusting the client.
+	let sectorRestriction: string | null = null;
+	if (lobby.tournamentId) {
+		const [t] = await db
+			.select({ sectorRestriction: tournaments.sectorRestriction })
+			.from(tournaments)
+			.where(eq(tournaments.id, lobby.tournamentId))
+			.limit(1);
+		sectorRestriction = t?.sectorRestriction ?? null;
+	}
+	if (sectorRestriction) {
+		const offSector = picks.find(
+			(p: { symbol?: unknown }) => classifySector([String(p.symbol ?? '')]) !== sectorRestriction
+		);
+		if (offSector) {
+			return json(
+				{
+					error: `${String(offSector.symbol ?? '').toUpperCase()} isn't a ${sectorRestriction.toUpperCase()} token — this tournament is ${sectorRestriction.toUpperCase()}-only`
+				},
+				{ status: 400 }
+			);
+		}
+	}
+
 	const existingLineup = await db
 		.select()
 		.from(lineups)
@@ -67,7 +99,7 @@ export async function POST({ params, request, cookies }) {
 			lineupId,
 			tokenSymbol: String(pick.symbol ?? '').toUpperCase(),
 			tokenName: String(pick.name ?? pick.symbol ?? ''),
-			sector: String(pick.sector ?? 'wildcard'),
+			sector: sectorRestriction ?? String(pick.sector ?? 'wildcard'),
 			currencyId: String(pick.currencyId),
 			entryPrice: String(entryPrice),
 			exitPrice: String(entryPrice),
