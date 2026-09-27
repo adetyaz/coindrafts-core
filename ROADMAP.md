@@ -66,10 +66,14 @@ Last updated: 2026-09-27.
 
 **2. Reshape the modes**
 
-- [ ] Remove the standalone Multiplayer mode (UI/routes only — tournaments still
-      use the lobby tables)
-- [ ] Rename "Single Match" → "Versus" across the UI
-- [ ] Scrimmage supports both draft types (coin draft + binary options)
+- [x] Removed the standalone Multiplayer mode (2026-09-27) — `/lobby` page,
+      lobby browse/create/join/start, the lobby queue and `lobby-matchmaking.ts`.
+      Kept what tournaments run on: lobby info, lineup, result, "mine", and the
+      `/lobby/[id]/result` page (its "queue another lobby" button now goes to
+      tournaments). `lobby_queue` table left in place.
+- [x] Renamed "Single Match" → "Versus" in nav, matchmaking page, guide and the
+      user-flow diagram (2026-09-27)
+- [ ] Scrimmage supports both draft types — waits on Binary Options (step 3)
 
 **3. Binary Options (solo, vs the market)**
 

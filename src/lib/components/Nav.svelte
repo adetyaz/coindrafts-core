@@ -40,7 +40,7 @@
 			label: 'play',
 			items: [
 				{ href: '/scrimmage', label: 'scrimmage' },
-				{ href: '/matchmaking', label: 'single match' },
+				{ href: '/matchmaking', label: 'versus' },
 				{ href: '/tournament', label: 'tournament' }
 			]
 		},

@@ -93,7 +93,7 @@
 			return;
 		}
 
-		// Poll for a real opponent every 3s — no bot fallback, ever (Single Match is real-opponents-only)
+		// Poll for a real opponent every 3s — no bot fallback, ever (Versus is real-opponents-only)
 		pollTimer = setInterval(async () => {
 			const pollRes = await fetch('/api/matchmaking/status');
 			if (pollRes.status === 401) {
@@ -159,7 +159,7 @@
 	{#if status === 'idle'}
 		<div class="rounded-[24px] border border-border bg-surface p-11 max-sm:p-6">
 			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-				Single Match
+				Versus
 			</div>
 			<h1 class="mt-3 text-[38px] leading-none font-black tracking-[-0.04em] max-sm:text-[28px]">
 				How long should it run?

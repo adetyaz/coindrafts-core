@@ -47,7 +47,7 @@
 					paths: [
 						{
 							label: 'Head-to-head',
-							title: 'Find Match',
+							title: 'Versus',
 							body: 'Queues you against another live player — real opponents only, no bots. No one around? A "Try Scrimmage instead" option appears while the search keeps running in the background.'
 						},
 						{
