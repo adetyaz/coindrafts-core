@@ -104,10 +104,12 @@
 	{:else if waiting}
 		<div class="rounded-[24px] border border-border bg-surface p-11 text-center max-sm:p-6">
 			<div class="anim-blink mx-auto h-2.5 w-2.5 rounded-full bg-primary"></div>
-			<div class="mt-4 text-[28px] font-black tracking-[-0.03em]">Waiting on the rest of the lobby</div>
+			<div class="mt-4 text-[28px] font-black tracking-[-0.03em]">
+				Waiting on the rest of the lobby
+			</div>
 			<p class="mt-3 text-[15px] text-text-muted">
-				Not everyone has locked a lineup yet, or the window hasn't closed. This checks again automatically —
-				no need to keep refreshing.
+				Not everyone has locked a lineup yet, or the window hasn't closed. This checks again
+				automatically — no need to keep refreshing.
 			</p>
 			<a
 				href="/dashboard"
@@ -123,16 +125,20 @@
 			style="background:var(--color-primary);color:var(--color-ink);box-shadow:0 0 90px rgba(247,142,121,0.3)"
 		>
 			<div class="mb-7 flex flex-wrap items-start justify-between gap-4">
-				<span class="rounded-full bg-black/10 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] uppercase"
+				<span
+					class="rounded-full bg-black/10 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] uppercase"
 					>Ranked lobby &middot; settled</span
 				>
 				<span class="font-mono text-[13px] font-bold">{leaderboard.length} players</span>
 			</div>
 			<div class="flex flex-wrap items-end gap-8">
 				<div>
-					<div class="mb-2.5 text-[11px] font-extrabold tracking-[0.12em] opacity-75 uppercase">You placed</div>
+					<div class="mb-2.5 text-[11px] font-extrabold tracking-[0.12em] uppercase opacity-75">
+						You placed
+					</div>
 					<div class="flex items-baseline gap-1.5">
-						<span class="text-[100px] leading-[0.8] font-black tracking-[-0.06em] max-sm:text-[64px]"
+						<span
+							class="text-[100px] leading-[0.8] font-black tracking-[-0.06em] max-sm:text-[64px]"
 							>{myRank ?? '—'}</span
 						>
 						<span class="text-[22px] font-extrabold opacity-65">of {leaderboard.length}</span>
@@ -141,12 +147,16 @@
 				<div class="flex flex-wrap gap-6 pb-2">
 					<div>
 						<div class="font-mono text-[28px] font-bold tracking-[-0.03em]">+{myXp}</div>
-						<div class="mt-1.5 text-[11px] font-extrabold tracking-[0.1em] opacity-70 uppercase">XP earned</div>
+						<div class="mt-1.5 text-[11px] font-extrabold tracking-[0.1em] uppercase opacity-70">
+							XP earned
+						</div>
 					</div>
 					{#if gapToAbove != null && gapToAbove > 0}
 						<div>
-							<div class="font-mono text-[28px] font-bold tracking-[-0.03em]">{gapToAbove.toLocaleString()}pt</div>
-							<div class="mt-1.5 text-[11px] font-extrabold tracking-[0.1em] opacity-70 uppercase">
+							<div class="font-mono text-[28px] font-bold tracking-[-0.03em]">
+								{gapToAbove.toLocaleString()}pt
+							</div>
+							<div class="mt-1.5 text-[11px] font-extrabold tracking-[0.1em] uppercase opacity-70">
 								Off {ordinal((myRank ?? 1) - 1)} place
 							</div>
 						</div>
@@ -173,7 +183,10 @@
 							class="grid min-w-[600px] grid-cols-[64px_minmax(140px,1fr)_90px] items-center gap-2.5 border-t border-border px-4.5 py-3.5"
 							style={row.isMe ? 'background:var(--color-primary-muted)' : ''}
 						>
-							<span class="font-mono text-[15px] font-bold" style={row.rank === 1 ? 'color:var(--color-primary-ink)' : ''}>
+							<span
+								class="font-mono text-[15px] font-bold"
+								style={row.rank === 1 ? 'color:var(--color-primary-ink)' : ''}
+							>
 								{#if row.rank === 1}🥇{:else if row.rank === 2}🥈{:else if row.rank === 3}🥉{:else}{row.rank}{/if}
 							</span>
 							<span class="truncate text-sm font-bold">
@@ -197,7 +210,10 @@
 						{#each breakdown as row, i (`${row.sector}-${row.pick}-${i}`)}
 							<div class="flex items-center justify-between gap-2.5">
 								<div class="flex min-w-0 items-center gap-2.5">
-									<span class="shrink-0 text-[11px] font-extrabold tracking-[0.08em] text-text-muted uppercase">{row.sector}</span>
+									<span
+										class="shrink-0 text-[11px] font-extrabold tracking-[0.08em] text-text-muted uppercase"
+										>{row.sector}</span
+									>
 									<span class="truncate text-sm font-bold">{row.pick}</span>
 								</div>
 								<div class="flex shrink-0 items-center gap-2.5">
@@ -213,9 +229,9 @@
 					</div>
 				</div>
 				<a
-					href="/lobby"
+					href="/tournament"
 					class="w-full rounded-full bg-primary py-4 text-center text-[15px] font-extrabold text-text no-underline"
-					>Queue another lobby</a
+					>Browse tournaments</a
 				>
 				<a
 					href="/dashboard"

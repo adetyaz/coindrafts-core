@@ -510,7 +510,7 @@
 	{#if myLobbies.length > 0}
 		<div class="mt-4.5 rounded-[20px] border border-border bg-surface p-[22px]">
 			<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				My multiplayer &amp; tournaments
+				My tournaments
 			</div>
 			<div class="flex flex-col divide-y divide-border">
 				{#each myLobbies as l, i (String(l.id ?? i))}
