@@ -41,5 +41,30 @@ export async function GET({ params, cookies }) {
 	if (league.type === 'private' && !isMember) {
 		return json({ error: 'League not found' }, { status: 404 });
 	}
-	return json({ league: isMember ? league : { ...league, inviteCode: null }, members });
+	return json({
+		league: isMember ? league : { ...league, inviteCode: null },
+		members,
+		viewer: { isMember, isCreator: league.createdBy === parsed.userId }
+	});
+}
+
+// DELETE /api/leagues/[id] — creator only; removes the league and all memberships.
+export async function DELETE({ params, cookies }) {
+	const token = cookies.get('session');
+	const parsed = token ? parseSessionToken(token) : null;
+	if (!parsed) return json({ error: 'Unauthorized' }, { status: 401 });
+
+	const [league] = await db.select().from(leagues).where(eq(leagues.id, params.id)).limit(1);
+	if (!league) return json({ error: 'League not found' }, { status: 404 });
+	if (league.createdBy !== parsed.userId) {
+		return json({ error: 'Only the league creator can delete it' }, { status: 403 });
+	}
+
+	// One transaction so a failure can't leave the memberships gone but the
+	// league still listed.
+	await db.transaction(async (tx) => {
+		await tx.delete(leagueMembers).where(eq(leagueMembers.leagueId, league.id));
+		await tx.delete(leagues).where(eq(leagues.id, league.id));
+	});
+	return json({ ok: true });
 }

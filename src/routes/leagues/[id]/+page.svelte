@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Toast from '$lib/components/Toast.svelte';
 	import { toast } from '$lib/toast';
 
@@ -26,7 +27,31 @@
 
 	let league = $state<League | null>(null);
 	let members = $state<Member[]>([]);
+	let viewer = $state<{ isMember: boolean; isCreator: boolean }>({
+		isMember: false,
+		isCreator: false
+	});
 	let loading = $state(true);
+	let confirmingDelete = $state(false);
+	let busy = $state(false);
+
+	async function leaveOrDelete() {
+		if (!league) return;
+		busy = true;
+		try {
+			const res = viewer.isCreator
+				? await fetch(`/api/leagues/${league.id}`, { method: 'DELETE' })
+				: await fetch(`/api/leagues/${league.id}/leave`, { method: 'POST' });
+			if (!res.ok) {
+				toast((await res.json().catch(() => ({})))?.error ?? 'Something went wrong', 'error');
+				return;
+			}
+			toast(viewer.isCreator ? 'League deleted' : 'You left the league', 'success');
+			goto(resolve('/leagues'));
+		} finally {
+			busy = false;
+		}
+	}
 
 	onMount(async () => {
 		const id = page.params.id;
@@ -36,9 +61,10 @@
 				const data = await res.json();
 				league = data.league;
 				members = data.members;
+				viewer = data.viewer ?? viewer;
 			} else {
 				toast('League not found', 'error');
-				goto('/leagues');
+				goto(resolve('/leagues'));
 			}
 		} catch {
 			toast('Failed to load league', 'error');
@@ -72,9 +98,13 @@
 
 		<div class="flex flex-wrap gap-4.5">
 			<div class="min-w-0 flex-[1_1_520px]">
-				<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">Standings</div>
+				<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
+					Standings
+				</div>
 				{#if members.length === 0}
-					<div class="rounded-[20px] border border-dashed border-border-strong bg-surface py-14 text-center">
+					<div
+						class="rounded-[20px] border border-dashed border-border-strong bg-surface py-14 text-center"
+					>
 						<p class="text-sm font-bold text-text-muted">No members yet</p>
 					</div>
 				{:else}
@@ -93,10 +123,19 @@
 								class="grid min-w-[520px] grid-cols-[56px_minmax(140px,1fr)_70px_70px_80px] items-center gap-2.5 border-t border-border px-5 py-3.5"
 								style={i === 0 ? 'background:var(--color-primary-muted)' : ''}
 							>
-								<span class="font-mono text-sm font-bold" style={i === 0 ? 'color:var(--color-primary-ink)' : 'color:var(--color-text-muted)'}>{i + 1}</span>
+								<span
+									class="font-mono text-sm font-bold"
+									style={i === 0
+										? 'color:var(--color-primary-ink)'
+										: 'color:var(--color-text-muted)'}>{i + 1}</span
+								>
 								<span class="truncate text-sm font-bold">{member.username}</span>
-								<span class="text-right font-mono text-sm font-bold text-positive-ink">{member.wins}</span>
-								<span class="text-right font-mono text-sm font-bold text-negative-ink">{member.losses}</span>
+								<span class="text-right font-mono text-sm font-bold text-positive-ink"
+									>{member.wins}</span
+								>
+								<span class="text-right font-mono text-sm font-bold text-negative-ink"
+									>{member.losses}</span
+								>
 								<span class="text-right font-mono text-sm font-bold">{member.points}</span>
 							</div>
 						{/each}
@@ -107,8 +146,12 @@
 			<div class="flex min-w-0 flex-[1_1_280px] flex-col gap-3.5">
 				{#if league.inviteCode}
 					<div class="hero-coral dot-grid rounded-[20px] p-6">
-						<div class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] opacity-75 uppercase">Invite code</div>
-						<div class="mb-4.5 font-mono text-[26px] font-bold tracking-[0.06em]">{league.inviteCode}</div>
+						<div class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] uppercase opacity-75">
+							Invite code
+						</div>
+						<div class="mb-4.5 font-mono text-[26px] font-bold tracking-[0.06em]">
+							{league.inviteCode}
+						</div>
 						<button
 							onclick={copyInviteCode}
 							class="w-full cursor-pointer rounded-full bg-text py-3 text-sm font-extrabold text-primary"
@@ -117,10 +160,47 @@
 					</div>
 				{/if}
 				<a
-					href="/leagues"
+					href={resolve('/leagues')}
 					class="w-full rounded-full border border-border bg-transparent py-3.5 text-center text-sm font-bold text-text no-underline"
 					>&larr; All leagues</a
 				>
+				{#if viewer.isCreator}
+					{#if confirmingDelete}
+						<div class="rounded-[20px] border border-negative bg-surface p-4 text-sm">
+							<p class="mb-3 font-bold">Delete {league.name}? Standings are lost for everyone.</p>
+							<div class="flex gap-2">
+								<button
+									type="button"
+									onclick={leaveOrDelete}
+									disabled={busy}
+									class="flex-1 cursor-pointer rounded-full bg-negative py-2.5 font-extrabold text-text disabled:opacity-60"
+									>Delete</button
+								>
+								<button
+									type="button"
+									onclick={() => (confirmingDelete = false)}
+									class="flex-1 cursor-pointer rounded-full border border-border py-2.5 font-bold"
+									>Cancel</button
+								>
+							</div>
+						</div>
+					{:else}
+						<button
+							type="button"
+							onclick={() => (confirmingDelete = true)}
+							class="w-full cursor-pointer rounded-full py-3 text-sm font-bold text-negative-ink hover:bg-hover"
+							>Delete league</button
+						>
+					{/if}
+				{:else if viewer.isMember}
+					<button
+						type="button"
+						onclick={leaveOrDelete}
+						disabled={busy}
+						class="w-full cursor-pointer rounded-full py-3 text-sm font-bold text-negative-ink hover:bg-hover disabled:opacity-60"
+						>Leave league</button
+					>
+				{/if}
 			</div>
 		</div>
 	{/if}
