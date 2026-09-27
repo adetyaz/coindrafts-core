@@ -1,32 +1,147 @@
 # CoinDraft — Roadmap
 
-Single source of truth for what's built, what's broken, and what's next. Supersedes
-the scattered status docs previously kept in `docs-project/` (now deleted — see
-`docs-project/INDEX.md` for what's still there and why).
+Single source of truth for what's done, what's left, and why. Start with the
+**Launch tracker** — it's the checklist. Everything below it is reference detail.
 
-Last consolidated: 2026-09-21. Verified against actual code where noted; everything
-else is carried over from design docs and has not been independently re-checked.
+Last updated: 2026-09-27.
 
-**Direction**: no longer building for buildathons. Focus is solidifying the existing
-build, defining the product's actual pitch, and getting to a real launch. Midnight
-and Linera chain integrations are dead. Linera never had code here. Midnight did
-(a Compact KYC attestation contract, an on-chain age gate for wagers, a Midnight
-wallet integration, a `/profile/kyc` page, schema changes — Sept 14–16) and was
-**removed 2026-09-26 by force-pushing over it**. Recoverable from the tag
-`backup/pre-force-push-2026-09-26`. That tag also holds two non-Midnight fixes
-that were dropped with it (a Vercel build fix and an esbuild/vite 8 pin fix) —
-the current base builds locally without them, but check them if a Vercel build
-fails. KYC will be rebuilt in-house (not via Midnight). A
-chain-agnostic architecture rework (wallet, wagering settlement, AI compute backend)
-is planned as its own future pass — until then, 0G remains what's actually wired up.
+---
 
-**Removed (2026-09-26)**: AI Mentor chat, Research Hub / Knowledge Base, and the
-static Documentation page were cut from the app — routes, API endpoints, and all
-nav/landing/guide-page links deleted. `/api/breakdown` and the AI Draft Agent share
-`aiCompute.ts` with the old Mentor route but are unaffected and still work. Term of
-the Day's backend (`bumpResearchStreak`, `/api/term/*`) still runs, but its only
-planned UI home was the now-deleted Knowledge Base page — it currently has no
-surface to appear on and needs a new placement decision.
+## Launch tracker
+
+`[x]` done · `[ ]` left · _(needs you)_ = blocked on your input or testing
+
+### ✅ Done
+
+**Cleanup & direction (2026-09-21 → 09-27)**
+
+- [x] Audited every `docs-project/` doc against the actual code; consolidated into
+      this file; deleted the redundant status docs and Midnight docs
+- [x] Removed AI Mentor, Research Hub / Knowledge Base, and the Docs page (routes,
+      APIs, nav, landing and guide links)
+- [x] Removed Midnight (KYC contract, wallet, age gate) by force push — backup tag
+      `backup/pre-force-push-2026-09-26`
+- [x] Fixed tournament sector restriction: enforced server-side, restricted drafts
+      now completable (type-checked; browser test still pending — see below)
+- [x] Product direction, modes, matchmaking, economy, payments, PWA and v1 scope
+      decided (see "Product direction" below)
+
+**Already built before this pass** (verified in code)
+
+- [x] Versus — 1v1 vs a real opponent, no bot fallback (currently called "Single
+      Match" in the UI)
+- [x] Scrimmage — practice vs a bot that drafts a real lineup (coin draft only)
+- [x] Tournaments — public/private, invites, brackets, auto-start/cancel at close
+- [x] Wager Mode on XP — tier matching, blind raise settles at the lower figure
+- [x] AI Draft Agent, Live Race View, Token Hover Overlay (all 🟡 not browser-verified)
+- [x] Pricing rebuild (Binance + CoinGecko), refuse-to-settle on missing prices
+- [x] Real HMAC session signing (the forgeable-session bug is fixed)
+- [x] Gauntlet — 1 daily question + 24h sector boost (to be replaced by Trivia)
+- [x] Boost scoring — ×1.25 on movement, judged at scheduled end
+- [x] Term of the Day backend (no UI; to be folded into Trivia)
+
+### ⬜ Left for v1 — in suggested build order
+
+**1. Fix what's broken**
+
+- [ ] League invite-code leak — `/api/leagues/[id]` returns the invite code to any
+      signed-in user (🔴 highest priority)
+- [ ] League invite-code collisions (`Math.random()`, no uniqueness → raw 500)
+- [ ] Leave / delete a league
+- [ ] Result card shows a bot-contest win as a loss (`winnerId` is null)
+- [ ] Pre-rebrand purple still hardcoded in `Toast.svelte` and the share card
+- [ ] `/api/breakdown`: rate limit + cache (regenerates on every view)
+- [ ] `nodemailer` imported by the tournament-invite route but not installed
+- [ ] Browser-test the tournament sector fix _(needs you — wallet sign-in)_
+
+**2. Reshape the modes**
+
+- [ ] Remove the standalone Multiplayer mode (UI/routes only — tournaments still
+      use the lobby tables)
+- [ ] Rename "Single Match" → "Versus" across the UI
+- [ ] Scrimmage supports both draft types (coin draft + binary options)
+
+**3. Binary Options (solo, vs the market)**
+
+- [ ] Pick any 5 coins, call up/down per coin, resolve at window end
+- [ ] Win = 3 of 5 correct; fixed window lengths (e.g. 1h / 24h)
+- [ ] Results, XP rewards, and history alongside other modes
+
+**4. Daily Trivia (replaces Gauntlet + Term of the Day)**
+
+- [ ] 8 questions/day, ~1 minute total timer
+- [ ] Pass at 4/8 → XP, scaling per correct answer above that
+- [ ] Streak extends only on a pass
+- [ ] Question supply for 8/day (live-data templates + vocab pool + static bank)
+- [ ] Retire the Gauntlet's single question and its free sector boost
+
+**5. XP economy — boosts & perks**
+
+- [ ] Inventory: what each player owns
+- [ ] XP shop with the 4 launch items: Sector Boost, XP Boost, Free Hit, Captain
+- [ ] Captain needs a per-pick weighting change in scoring
+- [ ] Limits: 1 per game/tournament, max 3 per week
+- [ ] Boosts/perks only apply in XP games (never in real-money games)
+
+**6. USDC purchases**
+
+- [ ] Player sends USDC from their wallet; server verifies the transfer on-chain
+      and credits the item (no processor, no held balances)
+- [ ] Decide chains: USDC on Base (EVM) + USDC on Solana _(needs you)_
+- [ ] Purchase history / receipts
+
+**7. New matchmaking + RPS**
+
+- [ ] Queue with preferences: mode, sector, duration, wager-or-not, stake tier
+- [ ] Hard match on mode, wager-or-not, stake tier; sector/duration may differ
+- [ ] "Any" option (defers to the opponent)
+- [ ] Rock-paper-scissors: best of 3, 10s per throw, random throw on timeout —
+      one round settles all differing terms
+- [ ] RPS interface _(needs you — you're sharing the design)_
+- [ ] Check the weekly/duration path (was hardcoded to `daily`)
+
+**8. PWA + push notifications**
+
+- [ ] Manifest, icons, service worker, install prompt (iOS needs "Add to Home
+      Screen" for push)
+- [ ] Store push subscriptions; per-type on/off in profile
+- [ ] Notifications: match found · result in · trivia live / streak at risk ·
+      tournament closing / starting
+
+**9. Before launch**
+
+- [ ] End-to-end test of the full v1 flow — confirms or adjusts v1 scope _(needs you)_
+- [ ] Domain + name decision _(needs you)_
+- [ ] Pitch / landing-page copy _(open until then)_
+- [ ] Rewrite `AGENTS.md` (badly stale — describes the pre-rework app)
+- [ ] Update `README.md` (still framed as a buildathon PRD)
+
+### ⏭️ After launch
+
+- [ ] Real-money wagers + escrow + in-house KYC (planned $25 cap)
+- [ ] Paid tournament entry
+- [ ] Binary-options tournaments
+- [ ] Multiplayer binary options — AI agent picks 5 coins from cached news, 3 rerolls
+- [ ] Head-to-head timed trivia
+- [ ] Visible online-players / challenge list
+- [ ] Rest of the perk catalogue (Shield, Second Look, Flip, Double Down…)
+- [ ] Seasons (FPL-style perk allowances, league seasons that actually resolve)
+- [ ] Chain-agnostic rework (wallet, settlement, AI backend — 0G becomes one option)
+- [ ] Backlog ideas in section 3 below
+
+---
+
+## Background
+
+**Midnight** was removed 2026-09-26 by force push (it had a Compact KYC contract,
+an on-chain wager age gate, wallet integration, `/profile/kyc`, schema changes).
+Recoverable from `backup/pre-force-push-2026-09-26`, which also holds two dropped
+non-Midnight fixes (a Vercel build fix and an esbuild/vite 8 pin fix) — the
+current base builds without them, but look there first if a Vercel build fails.
+Linera never had code here.
+
+**Removed features (2026-09-26)**: AI Mentor, Research Hub / Knowledge Base, Docs
+page. `/api/breakdown` and the AI Draft Agent still use `aiCompute.ts`.
 
 **Product direction (decided 2026-09-26)** — indie business, revenue-driven, no
 investors. Players: crypto-native traders and the fantasy-sports crowd first.
