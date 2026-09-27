@@ -44,9 +44,10 @@ Last updated: 2026-09-27.
 
 **1. Fix what's broken**
 
-- [ ] League invite-code leak — `/api/leagues/[id]` returns the invite code to any
-      signed-in user (🔴 highest priority)
-- [ ] League invite-code collisions (`Math.random()`, no uniqueness → raw 500)
+- [x] League invite-code leak — private leagues now 404 for non-members; invite
+      code only returned to members (2026-09-27)
+- [x] League invite-code collisions — crypto-random codes, retry on a clash
+      instead of a raw 500 (2026-09-27)
 - [ ] Leave / delete a league
 - [ ] Result card shows a bot-contest win as a loss (`winnerId` is null)
 - [ ] Pre-rebrand purple still hardcoded in `Toast.svelte` and the share card
@@ -95,9 +96,20 @@ Last updated: 2026-09-27.
 - [ ] Queue with preferences: mode, sector, duration, wager-or-not, stake tier
 - [ ] Hard match on mode, wager-or-not, stake tier; sector/duration may differ
 - [ ] "Any" option (defers to the opponent)
-- [ ] Rock-paper-scissors: best of 3, 10s per throw, random throw on timeout —
-      one round settles all differing terms
-- [ ] RPS interface _(needs you — you're sharing the design)_
+- [x] RPS rules + server (2026-09-27) — `$lib/rps.ts`, `$lib/server/rps.ts`,
+      `/api/rps/[id]` (GET, polled) and `/api/rps/[id]/throw`. Best of 3, 10s per
+      throw, random throw on timeout, ties replay, opponent's throw hidden until
+      both are in. Classic and Lizard-Spock variants (Lizard-Spock is the default —
+      fewer ties).
+- [x] RPS interface from your design (2026-09-27) — `RpsGame.svelte` (practice vs
+      house + live match mode), rules modal, responsive. Preview at `/design/rps`.
+- [ ] Create the `rps_matches` table in the database (`npm run db:push`) _(needs
+      you — touches the shared database)_
+- [ ] Replace the placeholder hand icons with the design's SVG assets _(needs you
+      — send the files)_
+- [ ] Browser-check `/design/rps` on desktop and phone _(needs you)_
+- [ ] Wire RPS into the new matchmaking (create a match when terms differ, apply
+      the winner's terms)
 - [ ] Check the weekly/duration path (was hardcoded to `daily`)
 
 **8. PWA + push notifications**

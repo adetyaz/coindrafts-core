@@ -455,6 +455,33 @@ export const userBadges = pgTable('user_badges', {
 // ─── Research Reads ───────────────────────────────────────────────────────────
 // One boost-earning read per user per day (articleId is SoSoValue's news id)
 
+// ─── RPS Tiebreaker ───────────────────────────────────────────────────────────
+// Settles differing match terms between two queued players (see ROADMAP,
+// matchmaking). The current round's throws stay server-side until both are in
+// or the deadline passes, so neither player can see the other's pick early.
+
+export const rpsMatches = pgTable('rps_matches', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	playerA: uuid('player_a')
+		.references(() => users.id)
+		.notNull(),
+	playerB: uuid('player_b')
+		.references(() => users.id)
+		.notNull(),
+	variant: text('variant').notNull().default('spock'), // 'classic' | 'spock'
+	round: integer('round').notNull().default(1),
+	scoreA: integer('score_a').notNull().default(0),
+	scoreB: integer('score_b').notNull().default(0),
+	throwA: text('throw_a'),
+	throwB: text('throw_b'),
+	roundDeadline: timestamp('round_deadline').notNull(),
+	// [{ round, a, b, winner: 'a' | 'b' | null, timedOutA, timedOutB }]
+	history: jsonb('history').notNull().default('[]'),
+	winnerId: uuid('winner_id').references(() => users.id),
+	createdAt: timestamp('created_at').defaultNow()
+});
+
+// Research Hub was removed 2026-09-26; the table stays so past reads aren't lost.
 export const researchReads = pgTable('research_reads', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	userId: uuid('user_id').references(() => users.id),

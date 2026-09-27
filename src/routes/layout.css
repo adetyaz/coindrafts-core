@@ -29,6 +29,26 @@
 	--color-blue-ink: #2a6e96;
 
 	--color-hover: rgba(26, 36, 33, 0.04);
+
+	/* Rock-paper-scissors tiebreaker — its own dark, full-screen moment, so it
+	   carries a separate palette rather than reusing the light app surfaces. */
+	--color-rps-bg-top: #1f3756;
+	--color-rps-bg-bottom: #141539;
+	--color-rps-outline: #606e85;
+	--color-rps-ink: #3b4363;
+	--color-rps-score: #2a46c0;
+	--color-rps-disc: #e1e4ed;
+	--color-rps-disc-shade: #babfd4;
+	--color-rps-scissors: #eca922;
+	--color-rps-scissors-shade: #c76c1b;
+	--color-rps-paper: #5671f5;
+	--color-rps-paper-shade: #2a45c2;
+	--color-rps-rock: #dd405d;
+	--color-rps-rock-shade: #9d1634;
+	--color-rps-lizard: #8c5de5;
+	--color-rps-lizard-shade: #5f37a8;
+	--color-rps-spock: #52bed1;
+	--color-rps-spock-shade: #2d8da0;
 }
 
 @theme {
@@ -77,6 +97,7 @@
 	/* Fonts */
 	--font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+	--font-rps: 'Barlow Semi Condensed', var(--font-sans);
 
 	/* Type scale — semantic sizes layered on top of Tailwind's default scale */
 	--font-size-display: 2.5rem; /* 40px — hero numbers, big win/loss states */
