@@ -92,8 +92,8 @@
 			canRematch = Boolean(data.canRematch);
 			stakeInfo = data.stake ?? null;
 			hasResult = true;
-			// Fetch AI breakdown after picks are loaded
-			fetchAiBreakdown(data.breakdown ?? breakdown, data.status ?? result.status);
+			// Fetch AI breakdown after the result is loaded (server reads the picks itself)
+			fetchAiBreakdown();
 
 			if (Array.isArray(data.newBadges)) {
 				for (const code of data.newBadges) {
@@ -125,13 +125,13 @@
 		loadResult();
 	});
 
-	async function fetchAiBreakdown(picks: typeof breakdown, status: string) {
+	async function fetchAiBreakdown() {
 		aiLoading = true;
 		try {
 			const res = await fetch('/api/breakdown', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ picks, status })
+				body: JSON.stringify({ contestId })
 			});
 			if (res.ok) {
 				const data = await res.json();
