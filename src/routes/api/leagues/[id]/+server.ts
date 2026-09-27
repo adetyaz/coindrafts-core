@@ -35,5 +35,11 @@ export async function GET({ params, cookies }) {
 		.where(eq(leagueMembers.leagueId, leagueId))
 		.orderBy(desc(leagueMembers.points));
 
-	return json({ league, members });
+	// Returned the full row to any signed-in user, invite code included, so
+	// knowing a league id was enough to join a private league.
+	const isMember = members.some((m) => m.userId === parsed.userId);
+	if (league.type === 'private' && !isMember) {
+		return json({ error: 'League not found' }, { status: 404 });
+	}
+	return json({ league: isMember ? league : { ...league, inviteCode: null }, members });
 }

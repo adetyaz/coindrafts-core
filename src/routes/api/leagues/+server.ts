@@ -2,14 +2,21 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { leagues, leagueMembers } from '$lib/server/schema';
 import { eq, sql } from 'drizzle-orm';
+import { randomInt } from 'node:crypto';
 import { parseSessionToken } from '$lib/server/auth';
 import { awardLeagueFounderBadge } from '$lib/server/badges';
 
 function generateInviteCode(): string {
 	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	let code = '';
-	for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+	for (let i = 0; i < 6; i++) code += chars[randomInt(chars.length)];
 	return code;
+}
+
+// invite_code is a unique column, so a collision used to surface as a raw 500.
+function isUniqueViolation(e: unknown): boolean {
+	const err = e as { code?: string; cause?: { code?: string } };
+	return err?.code === '23505' || err?.cause?.code === '23505';
 }
 
 // GET /api/leagues — list public leagues + user's leagues
@@ -92,19 +99,24 @@ export async function POST({ request, cookies }) {
 		return json({ error: 'Type must be public or private' }, { status: 400 });
 	}
 
-	const inviteCode = type === 'private' ? generateInviteCode() : null;
-
-	const [league] = await db
-		.insert(leagues)
-		.values({
-			name,
-			type,
-			inviteCode,
-			createdBy: parsed.userId,
-			seasonStart: new Date(),
-			seasonEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-		})
-		.returning();
+	let league: typeof leagues.$inferSelect | undefined;
+	for (let attempt = 0; !league; attempt++) {
+		try {
+			[league] = await db
+				.insert(leagues)
+				.values({
+					name,
+					type,
+					inviteCode: type === 'private' ? generateInviteCode() : null,
+					createdBy: parsed.userId,
+					seasonStart: new Date(),
+					seasonEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+				})
+				.returning();
+		} catch (e) {
+			if (!isUniqueViolation(e) || attempt >= 4) throw e;
+		}
+	}
 
 	// Auto-join creator
 	await db.insert(leagueMembers).values({
