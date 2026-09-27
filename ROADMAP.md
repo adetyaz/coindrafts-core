@@ -48,11 +48,20 @@ Last updated: 2026-09-27.
       code only returned to members (2026-09-27)
 - [x] League invite-code collisions — crypto-random codes, retry on a clash
       instead of a raw 500 (2026-09-27)
-- [ ] Leave / delete a league
-- [ ] Result card shows a bot-contest win as a loss (`winnerId` is null)
-- [ ] Pre-rebrand purple still hardcoded in `Toast.svelte` and the share card
-- [ ] `/api/breakdown`: rate limit + cache (regenerates on every view)
-- [ ] `nodemailer` imported by the tournament-invite route but not installed
+- [x] Leave / delete a league — members leave, the creator deletes (with a
+      confirm step; one transaction) (2026-09-27)
+- [x] ~~Result card shows a bot win as a loss~~ — not real in current code: bots
+      are real seeded accounts now, so `winnerId` is set correctly
+- [x] Pre-rebrand purple in `Toast.svelte` → design tokens (the share page was
+      already on the current palette) (2026-09-27)
+- [x] `/api/breakdown` was an open AI proxy (accepted picks/status from the
+      browser, regenerated every view). Now takes only `contestId`, reads the
+      real picks, and stores the text on the lineup — generated once per result
+      (2026-09-27)
+- [x] ~~`nodemailer` not installed~~ — optional by design (lazy import; invites
+      still work as links without email)
+- [ ] 🟠 Versus ties always go to player A (`scoreA >= scoreB`) — settle exact
+      ties with RPS instead
 - [ ] Browser-test the tournament sector fix _(needs you — wallet sign-in)_
 
 **2. Reshape the modes**
@@ -125,7 +134,9 @@ Last updated: 2026-09-27.
 - [ ] End-to-end test of the full v1 flow — confirms or adjusts v1 scope _(needs you)_
 - [ ] Domain + name decision _(needs you)_
 - [ ] Pitch / landing-page copy _(open until then)_
-- [ ] Rewrite `AGENTS.md` (badly stale — describes the pre-rework app)
+- [ ] Rewrite `AGENTS.md` (badly stale — describes the pre-rework app; also
+      wrong that the DB client is neon-http — it's node-postgres, so real
+      transactions are available)
 - [ ] Update `README.md` (still framed as a buildathon PRD)
 
 ### ⏭️ After launch
