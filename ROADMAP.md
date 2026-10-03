@@ -133,7 +133,30 @@ Last updated: 2026-09-27.
 - [ ] Notifications: match found · result in · trivia live / streak at risk ·
       tournament closing / starting
 
-**9. Before launch**
+**9. Playful, interactive game screens** — turn the live race view (`/game/[id]`,
+today a uPlot line chart) into something you _watch_ like a race. Ships in v1 as
+the base track; the extras below can slip to after launch.
+
+- [ ] **Race track**: each pick is a car on a track; its position is the coin's
+      live % move. Overtakes animate; Versus shows your 5 cars against theirs (or
+      one car per player = lineup total), with the gap between you
+- [ ] **Clashes**: cars bump and spark when they swap places; a coin dumping
+      sharply spins out or crashes; a coin pumping hard gets a speed burst
+- [ ] **Boost = nitro**: a boosted sector's car shows a flame trail, so a boost
+      is visible, not just a ×1.25 label
+- [ ] **Finish line**: photo finish at the window end, checkered flag, confetti on
+      a win, then straight into the result screen
+- [ ] **Tap a car** → token stats (reuse the Token Hover overlay)
+- [ ] **Live commentary ticker**: "SOL overtakes ETH!", "PEPE crashes −6%",
+      "You take the lead"
+- [ ] Data: `price_samples` for live points, with Binance 1-minute klines to
+      backfill stretches nobody was watching (today a contest nobody opens has no
+      graph)
+- [ ] Respect reduced-motion (fall back to the plain chart), keep it light on
+      phones — Canvas/SVG first; WebGL only if a flat track can't do the effect
+      (Three.js is ~170KB vs uPlot's ~21KB)
+
+**10. Before launch**
 
 - [ ] End-to-end test of the full v1 flow — confirms or adjusts v1 scope _(needs you)_
 - [ ] Domain + name decision _(needs you)_
@@ -154,6 +177,11 @@ Last updated: 2026-09-27.
 - [ ] Rest of the perk catalogue (Shield, Second Look, Flip, Double Down…)
 - [ ] Seasons (FPL-style perk allowances, league seasons that actually resolve)
 - [ ] Chain-agnostic rework (wallet, settlement, AI backend — 0G becomes one option)
+- [ ] More playful screens: binary-options calls as ramps/gates the car jumps
+      (green or red light at resolution) · tournaments as a multi-lane grid with
+      race positions as the leaderboard · emoji reactions to your opponent
+      mid-race · replay a finished race · shareable race clip for X · optional
+      sound and phone haptics on overtakes and the finish
 - [ ] Backlog ideas in section 3 below
 
 ---
@@ -564,7 +592,8 @@ thread, nothing new to report.
 - **Rock-paper-scissors mini-game** for tie-breaking wager/tournament conflicts —
   new idea, not yet in any design doc.
 - **Pooled benchmark stake mode** — see Wager Mode above.
-- **WebGL/Three.js race view** — see Live Race View above.
+- **WebGL/Three.js race view** — superseded by the racing-cars plan in the
+  launch tracker (step 9); WebGL stays an option only if the flat track falls short.
 - **XP-multiplier boosts** (second boost flavor, multiplies XP earned rather than
   contest score) — unblocked now that the boost-scoring fix has landed.
 - **Generalized streak-gated perk unlocks** beyond Free Hit.
