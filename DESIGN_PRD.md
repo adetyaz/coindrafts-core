@@ -56,7 +56,7 @@ password anywhere.
 2. **One decision per screen.** Every screen has one obvious next action.
 3. **Always show where you stand.** Your XP, your active match, your streak — visible
    from anywhere.
-4. **Fast to play.** From the home screen to a locked lineup should take under a
+4. **Fast to play.** From opening the app to a locked lineup should take under a
    minute for a returning player.
 5. **Honest numbers.** Never fake a score or a price. If data is missing, say so
    ("price unavailable") rather than showing 0.
@@ -138,7 +138,8 @@ the disc's 3D edge).
 
 ```
 /                     Landing (signed out)
-/dashboard            Home (signed in)
+/dashboard            Dashboard hub (signed in) — sections:
+                        Overview · My Games · Market · Compete   [redesign]
 /trivia               Daily trivia                      [new]
 /matchmaking          Versus setup + queue               [redesign]
 /rps/:id              Rock-paper-scissors tiebreaker     [new]
@@ -150,7 +151,8 @@ the disc's 3D edge).
 /tournament           Tournaments: list, create, detail  [redesign]
 /lobby/:id/result     Tournament group result            [exists]
 /shop                 Boosts & perks shop + inventory    [new]
-/profile              Profile, badges, streaks, settings [redesign]
+/profile              Me: your profile, customization, settings [redesign]
+/profile/:id          Public player card (anyone's profile)     [new]
 /leaderboard          Global XP ranking                  [exists]
 /leagues, /leagues/:id  Friend leagues                   [exists]
 /guide                How to play                        [exists]
@@ -162,16 +164,31 @@ page, standalone Multiplayer lobbies.
 
 ### Navigation
 
-- **Phone (primary):** bottom tab bar with 5 tabs — **Home · Play · Trivia · Shop ·
-  Profile**. "Play" opens a mode picker (Versus, Binary Options, Tournaments,
+- **Phone (primary):** bottom tab bar with 5 tabs — **Dashboard · Play · Trivia ·
+  Shop · Me**. "Play" opens a mode picker (Versus, Binary Options, Tournaments,
   Scrimmage).
-- **Desktop:** top bar with the same destinations; current pattern is grouped
-  dropdowns (Play · Compete · Help).
+- **Desktop:** top bar with the same destinations.
 - **Always visible:** XP balance chip; **active match pill** ("Your match is live —
   2:14 left" → taps through to the game); trivia streak flame when today's set is
   still open.
-- Leaderboard and Leagues live under a "Compete" area (desktop nav, and a section on
-  Home / Profile on phone).
+- **Second-level navigation inside the Dashboard:** a segmented control (phone,
+  swipeable) or tabs/left sidebar (desktop) for its four sections — see §8.2.
+- Leaderboard and Leagues live in **Dashboard → Compete**.
+
+### Where things live — one home per piece of information
+
+| Question the user has                         | Lives in                                             |
+| --------------------------------------------- | ---------------------------------------------------- |
+| What needs me right now?                      | Dashboard → Overview                                 |
+| What games am I in / did I play?              | Dashboard → My Games (the only game list in the app) |
+| What's the market doing before I draft?       | Dashboard → Market                                   |
+| How am I ranking? My leagues and tournaments? | Dashboard → Compete                                  |
+| Who am I as a player (stats, badges)?         | Me (and the public player card others see)           |
+| How do I want the app to behave?              | Me → Settings                                        |
+| What can I buy / what do I own?               | Shop (Store · Inventory)                             |
+
+Nothing is duplicated: Me shows a summary like "142 games · 58% wins" that links
+into Dashboard → My Games rather than repeating the list.
 
 ---
 
@@ -188,7 +205,7 @@ page, standalone Multiplayer lobbies.
 | **Toasts**                         | Bottom-right (desktop) / top (phone). Info, success, error.                                                                                                              |
 | **Modal / bottom sheet**           | Desktop modal; phone bottom sheet.                                                                                                                                       |
 | **Empty / loading / error states** | Skeleton shimmer for loading; friendly one-line empty states with one action; errors say what failed and offer Retry.                                                    |
-| **Install prompt**                 | See §8.12.                                                                                                                                                               |
+| **Install prompt**                 | See §8.13.                                                                                                                                                               |
 | **Notification permission prompt** | Asked in context (after first queue), never on first load.                                                                                                               |
 
 ---
@@ -227,12 +244,14 @@ Each flow lists screens in order. Decision points are marked ◆.
    CTA "Connect wallet to play".
 2. Wallet picker → choose wallet → **Sign to verify** (explain: free, no gas).
 3. ◆ Signature rejected → inline error, "Try again".
-4. **Home** — first-run state: "Start with today's trivia" or "Play a practice
-   match" (Scrimmage), plus install prompt nudge after the first game.
+4. **Dashboard → Overview** — first-run state: "Start with today's trivia" or "Play
+   a practice match" (Scrimmage), a prompt to pick a display name and avatar (can
+   skip), plus install prompt nudge after the first game.
 
 ### F2 — Daily trivia
 
-1. Home card "Today's trivia — 8 questions, 1 minute" (shows streak 🔥 count).
+1. Dashboard → Overview card (or the Trivia tab) "Today's trivia — 8 questions,
+   1 minute" (shows streak 🔥 count).
 2. **Trivia intro** — rules in one line, "Start" (timer starts on tap).
 3. **Question screen** ×8 — question, 4 answers, overall timer bar, progress dots.
    Tap = locked instantly, quick right/wrong flash, auto-advance.
@@ -244,8 +263,10 @@ Each flow lists screens in order. Decision points are marked ◆.
 ### F3 — Versus (1v1) with preferences and RPS
 
 1. Play → **Versus setup**: choose **mode** (Coin draft / Binary), **sector** (or
-   Any), **duration** (or Any), **wager** (No stake / stake tier). Summary line:
-   "You'll be matched with someone who wants the same mode and stake."
+   Any), **duration** (or Any), **wager** (No stake / stake tier). Pre-filled from
+   your play defaults (Me → Customization), so a returning player can just tap
+   "Find match". Summary line: "You'll be matched with someone who wants the same
+   mode and stake."
 2. **Queue** — searching animation, your settings shown, elapsed time, "Cancel".
    After 20s with nobody: "Try Scrimmage instead" (search keeps running).
    Ask for notification permission here: "Get notified when a match is found?"
@@ -325,14 +346,32 @@ Each flow lists screens in order. Decision points are marked ◆.
 
 1. After the first finished game: "Add CoinDraft to your home screen" card.
 2. iPhone: show the steps (Share → Add to Home Screen) — push only works after this.
-3. Notification settings in Profile: match found · result in · trivia live / streak
-   at risk · tournament closing / starting — each a toggle.
+3. Notification settings in **Me → Settings**: match found · result in · trivia
+   live / streak at risk · tournament closing / starting — each a toggle.
 
 ### F10 — Leagues
 
-1. Compete → Leagues → create (public / private with invite code) or join by code.
+1. Dashboard → Compete → Leagues → create (public / private with invite code) or
+   join by code.
 2. League page: standings table (W / L / Pts), invite code (members only), Leave
    (members) / Delete with confirm (creator).
+
+### F11 — Viewing another player
+
+1. Tap any player name — opponent on the match-found card or result, a leaderboard
+   row, a league standing, a tournament bracket.
+2. **Public player card** opens (§8.12): their name, avatar, rank, badge showcase,
+   record, and your head-to-head against them.
+3. Actions: "Challenge" (after launch — needs the online-players list), back.
+
+### F12 — Customizing your profile and defaults
+
+1. Me → Edit profile → display name, avatar, pick up to 3 badges to showcase →
+   Save. Preview shows the public card as others will see it.
+2. Me → Play defaults → preferred mode, sector, duration, stake → used to pre-fill
+   Versus setup.
+3. Me → Settings → notifications, sound & vibration, reduced motion, wallet & USDC
+   chain, sign out.
 
 ---
 
@@ -346,14 +385,47 @@ Each flow lists screens in order. Decision points are marked ◆.
   movers), a short racing-cars teaser animation, footer.
 - **States:** wallet SDK failed to load → message + retry.
 
-### 8.2 Home / Dashboard [redesign]
+### 8.2 Dashboard [redesign]
 
-- **Purpose:** what to do right now.
-- **Blocks (in priority order):** active match card (if any) · today's trivia card
-  (streak) · Play buttons (Versus, Binary, Tournaments) · my tournaments · market
-  context (Sector Wars: 24h sector performance; Whale Watch: ETF flow alerts; hot
-  coins) · recent results.
-- **States:** first run (no games yet), nothing active, loading skeletons.
+- **Purpose:** the hub for your _activity_ — what needs you now, what you've
+  played, the market, and how you're ranking. Split into four sections so nothing
+  is forced into one long scroll (same idea as DraftKings separating the lobby from
+  "My Contests", or Sleeper's tabbed league spaces).
+- **Section switcher:** segmented control under the header on phone (swipe left and
+  right between sections); tabs or a left sidebar on desktop. Remembers the last
+  section you used. Overview is the default on app open.
+
+**Overview** (default)
+
+- Only what needs you now, in priority order: active match card (live / drafting /
+  waiting, with time left and one-tap re-entry) · today's trivia card with streak ·
+  quick play buttons (Versus, Binary Options, Tournament) · "new for you" (badge
+  unlocked, tournament starting soon, result in).
+- States: first run (welcome + "Start with trivia" / "Play a practice match"),
+  nothing active ("Nothing live — start a match"), loading skeletons.
+
+**My Games**
+
+- The single list of every game you're in or played, all modes (Versus, Binary,
+  Scrimmage, Tournaments).
+- Filter chips: **Live · Upcoming · Completed**; secondary filter by mode.
+- Row: mode icon, opponent (or "vs market"), stake, time left / finished date,
+  score or W/L. Tap → live race or result.
+- States: empty per filter ("No live games"), loading, paginated or infinite
+  scroll for Completed.
+
+**Market**
+
+- Pre-draft research: Sector Wars (24h performance by sector, sector-colored bars),
+  Whale Watch (ETF inflow/outflow streak alerts), hot movers (top gainers/losers
+  as token cards — tap for stats, "Draft this" shortcut).
+- States: data unavailable → message + retry; never show fake numbers.
+
+**Compete**
+
+- Your tournaments (status + next action), your leagues (your position in each),
+  leaderboard snapshot (top 5 + your rank) with "See full leaderboard".
+- States: not in any league/tournament → "Join a tournament" / "Create a league".
 
 ### 8.3 Versus setup & queue [redesign]
 
@@ -427,7 +499,7 @@ Each flow lists screens in order. Decision points are marked ◆.
 - Big WIN / LOSS (or X/5 for binary), your score vs theirs, per-pick breakdown
   (coin, sector, % move, points, boost/perk used), XP earned (count-up), badges
   unlocked (toast + inline), short AI-written match breakdown (2–3 sentences).
-- **Actions:** Share result (card image for X), Rematch, Play again, Back home.
+- **Actions:** Share result (card image for X), Rematch, Play again, Back to dashboard.
 - **Practice result:** clearly labelled, practice XP only.
 
 ### 8.9 Tournaments [redesign]
@@ -446,32 +518,64 @@ Each flow lists screens in order. Decision points are marked ◆.
 - Item sheet + purchase flows per F7, including on-chain pending/success/failure.
 - Inventory tab: owned, active (with countdown), used this week.
 
-### 8.11 Profile [redesign]
+### 8.11 Me — profile, customization & settings [redesign]
 
-- Username/avatar, wallet, XP total, win rate (real games only), win streak,
-  trivia/research streak, badges grid (earned vs locked), match history,
-  notification settings (F9), sign out.
+- **Purpose:** your _identity_ as a player, and how you've set the app up. Not a
+  second dashboard: no game lists, no market data.
+- **Header:** avatar, display name, rank / level, XP total, "Edit profile",
+  "View public card" (shows exactly what others see), gear icon → Settings.
+- **Stats summary:** games played, win rate (real games only), current and best win
+  streak, trivia streak — the games figure links to Dashboard → My Games.
+- **Badges:** grid of earned vs locked; the 3 showcased badges marked; tap a badge
+  for how it was earned.
+- **Customization**
+  - _Identity:_ display name, avatar (preset set to start; upload later), up to 3
+    showcased badges, with a live preview of your public card.
+  - _Play defaults:_ preferred mode, sector, duration, stake — pre-fills Versus
+    setup.
+- **Settings** (behind the gear)
+  - Notifications: per-type toggles (match found, result in, trivia live / streak at
+    risk, tournament closing / starting).
+  - Sound & vibration on/off; reduced motion (follows the device by default, with an
+    override).
+  - Wallet: connected address, network, preferred USDC chain (Base / Solana),
+    disconnect / sign out.
+  - Install app (if not installed); help & how to play; terms & privacy.
+- **States:** new player (empty badges with "earn your first badge" hints), save
+  success/failure on edits, name already taken.
 
-### 8.12 Install prompt & notifications [new]
+### 8.12 Public player card [new]
+
+- **Purpose:** what anyone sees when they tap your name — makes opponents feel like
+  real people and gives badges a reason to exist.
+- **Content:** avatar, display name, rank, showcased badges (up to 3), record (W/L,
+  win rate), current streak, favourite sector, and **your head-to-head** against
+  them ("You lead 3–1").
+- **Never shown:** wallet balance, inventory, settings, private league codes.
+- **Entry points:** match-found card, result screen, leaderboard, league
+  standings, tournament bracket.
+- **Opens as:** a bottom sheet on phone, a modal or side panel on desktop.
+
+### 8.13 Install prompt & notifications [new]
 
 - Card/sheet: "Play faster from your home screen and get match alerts." Android/
   desktop: native install button. iPhone: illustrated 2-step instructions.
 - Notification permission asked in context (queue, tournament join), with a
   short reason.
 
-### 8.13 Leaderboard [exists]
+### 8.14 Leaderboard [exists]
 
 - Top 50 by XP, your rank pinned at the bottom if outside the top 50.
 
-### 8.14 Leagues [exists]
+### 8.15 Leagues [exists]
 
 - List (public + mine), create, join by code; detail per F10.
 
-### 8.15 Guide [exists]
+### 8.16 Guide [exists]
 
 - Step-by-step how to play; update for Versus, Binary, Trivia, Shop, RPS.
 
-### 8.16 Public share page [exists]
+### 8.17 Public share page [exists]
 
 - Server-rendered page for link previews: result card image, headline ("I won a
   24h contest on CoinDraft — 312 pts"), CTA "Play CoinDraft".
@@ -541,12 +645,12 @@ beyond defaults.
 
 ## 14. Open decisions
 
-| Decision                                               | Status                                 |
-| ------------------------------------------------------ | -------------------------------------- |
-| Product name & domain                                  | Open — "CoinDraft" is the working name |
-| Final pitch line                                       | Open until launch                      |
-| Binary Options rules (flat = wrong, 1h/24h, XP values) | Proposed, awaiting confirmation        |
-| RPS default variant (Lizard-Spock vs classic)          | Lizard-Spock proposed                  |
-| USDC chains                                            | Base + Solana proposed                 |
-| Shop prices (XP and USDC per item)                     | Not set — design with placeholders     |
-| Bottom tab bar (vs current top nav on phone)           | Proposed in this doc                   |
+| Decision                                                 | Status                                 |
+| -------------------------------------------------------- | -------------------------------------- |
+| Product name & domain                                    | Open — "CoinDraft" is the working name |
+| Final pitch line                                         | Open until launch                      |
+| Binary Options rules (flat = wrong, 1h/24h, XP values)   | Proposed, awaiting confirmation        |
+| RPS default variant (Lizard-Spock vs classic)            | Lizard-Spock proposed                  |
+| USDC chains                                              | Base + Solana proposed                 |
+| Shop prices (XP and USDC per item)                       | Not set — design with placeholders     |
+| Phone bottom tabs: Dashboard · Play · Trivia · Shop · Me | Proposed in this doc                   |
