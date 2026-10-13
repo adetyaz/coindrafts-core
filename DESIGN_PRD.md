@@ -780,4 +780,6 @@ beyond defaults.
 | Rarity tier names                                        | Common · Rare · Epic · Legendary proposed              |
 | 3D renderer                                              | Spline runtime proposed; Three.js fallback             |
 | Camera views beyond isometric                            | Chase cam + top-down proposed                          |
+| Weather data provider                                    | Not chosen — must allow commercial use                 |
+| Sponsored weather ("Storm presented by…")                | Idea only                                              |
 | Ad slot types and pricing                                | Billboard · banner · start/finish arch; prices not set |
