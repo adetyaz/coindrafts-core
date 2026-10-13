@@ -534,7 +534,7 @@ highlighted. A sponsored tournament shows the sponsor's name and livery througho
 - **Coin pool:** search, sector tabs, token cards with "Drop into L1" button; coins
   already picked show "In your lineup".
 - **Sidebar:** projected score (live estimate, mono, big), progress bar, active
-  boosts, perk tray (F8), "Lock lineup".
+  boosts, "Lock lineup" (nitro and pit-stop items are chosen on the pre-race screen, F8).
 - **AI Draft Agent:** floating helper — auto-fill or suggest; costs XP per slot
   (free in Scrimmage); must show the cost before use.
 - **States:** coin unavailable (price missing → hidden/greyed), timer expiring
