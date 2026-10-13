@@ -86,6 +86,11 @@ Last updated: 2026-10-13.
       method from your notes)
 - [ ] Drama: bumps and sparks on overtakes, cars hitting each other, spin-out on a
       sharp dump, speed burst on a pump, nitro flame for boosts, photo finish
+- [ ] **Real-time weather:** the track shows the viewer's local weather and time
+      of day (rain, storm, snow, fog, wind, night with headlights). Cosmetic
+      only — never affects the race. Coarse location from IP (no popup), weather
+      API cached per area, clear-weather fallback; setting for Real / Always
+      clear / Pick. Detail in `isometric_track_roadmap.md` §5
 - [ ] Tap a car → driver card + which picks are moving it
 - [ ] Live commentary ticker ("ETH pulls you into the lead!")
 - [ ] Data: `price_samples` for live points + Binance 1-minute klines to fill gaps

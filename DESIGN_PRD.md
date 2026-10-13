@@ -565,6 +565,11 @@ highlighted. A sponsored tournament shows the sponsor's name and livery througho
   sharp rise gives a speed burst; a nitro-boosted car trails a flame.
 - **Track dressing:** sponsor billboards, trackside banners and a start/finish arch
   (ad slots — see §8.19); a sponsored tournament's track is fully branded.
+- **Weather & time of day:** the scene mirrors the viewer's real local weather
+  and time — sun, cloud, rain (wet road, spray), storm (lightning), snow, fog
+  (headlights on), wind (flapping banners), night (lit billboards). Purely visual;
+  each viewer sees their own. A small weather chip in the HUD ("🌧 Lagos, 24°")
+  opens the weather setting. Changes fade in, never snap.
 - **HUD:** time left, position (P1/P2…), your score vs the leader, **engine panel**
   showing your 5 picks and which are pushing (+) or dragging (−) the car, live
   commentary ticker ("ETH pulls you into P1!"), tap any car → driver card + their
@@ -652,6 +657,8 @@ highlighted. A sponsored tournament shows the sponsor's name and livery througho
     risk, tournament closing / starting).
   - Sound & vibration on/off; reduced motion (follows the device by default, with an
     override).
+  - Race weather: Real weather (default) · Always clear · Pick a weather; optional
+    "use precise location" toggle.
   - Wallet: connected address, network, preferred USDC chain (Base / Solana),
     disconnect / sign out.
   - Install app (if not installed); help & how to play; terms & privacy.
