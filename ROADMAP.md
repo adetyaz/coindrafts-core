@@ -3,7 +3,7 @@
 Single source of truth for what's done, what's left, and why. Start with the
 **Launch tracker** — it's the checklist. Everything below it is reference detail.
 
-Last updated: 2026-09-27.
+Last updated: 2026-10-13.
 
 ---
 
@@ -42,6 +42,10 @@ Last updated: 2026-09-27.
 
 ### ⬜ Left for v1 — in suggested build order
 
+> **Direction changed 2026-10-13: CoinDraft is now a racing game.** You still draft
+> 5 coins; the market drives your car around the track. See "Racing direction"
+> under Background. Steps 3–11 below are the new plan.
+
 **1. Fix what's broken**
 
 - [x] League invite-code leak — private leagues now 404 for non-members; invite
@@ -52,141 +56,167 @@ Last updated: 2026-09-27.
       confirm step; one transaction) (2026-09-27)
 - [x] ~~Result card shows a bot win as a loss~~ — not real in current code: bots
       are real seeded accounts now, so `winnerId` is set correctly
-- [x] Pre-rebrand purple in `Toast.svelte` → design tokens (the share page was
-      already on the current palette) (2026-09-27)
-- [x] `/api/breakdown` was an open AI proxy (accepted picks/status from the
-      browser, regenerated every view). Now takes only `contestId`, reads the
-      real picks, and stores the text on the lineup — generated once per result
-      (2026-09-27)
-- [x] ~~`nodemailer` not installed~~ — optional by design (lazy import; invites
-      still work as links without email)
+- [x] Pre-rebrand purple in `Toast.svelte` → design tokens (2026-09-27)
+- [x] `/api/breakdown` was an open AI proxy — now takes only `contestId` and is
+      generated once per result (2026-09-27)
+- [x] ~~`nodemailer` not installed~~ — optional by design
 - [ ] 🟠 Versus ties always go to player A (`scoreA >= scoreB`) — settle exact
       ties with RPS instead
 - [ ] Browser-test the tournament sector fix _(needs you — wallet sign-in)_
 
 **2. Reshape the modes**
 
-- [x] Removed the standalone Multiplayer mode (2026-09-27) — `/lobby` page,
-      lobby browse/create/join/start, the lobby queue and `lobby-matchmaking.ts`.
-      Kept what tournaments run on: lobby info, lineup, result, "mine", and the
-      `/lobby/[id]/result` page (its "queue another lobby" button now goes to
-      tournaments). `lobby_queue` table left in place.
-- [x] Renamed "Single Match" → "Versus" in nav, matchmaking page, guide and the
-      user-flow diagram (2026-09-27)
-- [ ] Scrimmage supports both draft types — waits on Binary Options (step 3)
+- [x] Removed the standalone Multiplayer mode (2026-09-27); tournaments keep the
+      lobby plumbing
+- [x] Renamed "Single Match" → "Versus" (2026-09-27)
+- [ ] Scrimmage supports both draft types — waits on the Binary race mode (step 5)
 
-**3. Binary Options (solo, vs the market)**
+**3. Race engine — the heart of the game**
 
-- [ ] Pick any 5 coins, call up/down per coin, resolve at window end
-- [ ] Win = 3 of 5 correct; fixed window lengths (e.g. 1h / 24h)
-- [ ] Results, XP rewards, and history alongside other modes
+- [ ] **One car per player.** Its position = the lineup's combined % move. The 5
+      picks are the car's engine — show which pick is pushing or dragging it
+- [ ] Overtakes as the market moves: if your lineup is +5% and theirs +2% you're
+      ahead; when yours drops, they pass you
+- [ ] **Real 3D, low-poly.** Proposed renderer: `@splinetool/runtime` (from your
+      isometric track notes); Three.js as the fallback. Prove phone performance
+      with one track and 5 cars before committing
+- [ ] **Camera views:** isometric is the default; at least one more (chase cam or
+      top-down) switchable mid-race
+- [ ] Continuous track built from matching segments (Catmull-Rom curves, chunk
+      method from your notes)
+- [ ] Drama: bumps and sparks on overtakes, cars hitting each other, spin-out on a
+      sharp dump, speed burst on a pump, nitro flame for boosts, photo finish
+- [ ] Tap a car → driver card + which picks are moving it
+- [ ] Live commentary ticker ("ETH pulls you into the lead!")
+- [ ] Data: `price_samples` for live points + Binance 1-minute klines to fill gaps
+      (today a race nobody watches has no history)
+- [ ] The current 2D chart on `/game/[id]` stays as the fallback for reduced
+      motion and weak devices
 
-**4. Daily Trivia (replaces Gauntlet + Term of the Day)**
+**4. Cars & garage**
 
-- [ ] 8 questions/day, ~1 minute total timer
-- [ ] Pass at 4/8 → XP, scaling per correct answer above that
-- [ ] Streak extends only on a pass
+- [ ] Cars stored in the database first (model, rarity tier, paint, decals,
+      owner); limited editions become NFTs later via ZetaChain (cross-chain)
+- [ ] Free starter car for every new player
+- [ ] Garage: your cars, choose the one you race, customize paint and decals
+- [ ] **Cars are cosmetic.** Speed comes only from the market, plus earned boosts
+      and perks — a bought car never makes you faster
+- [ ] Rarity tiers (e.g. Common · Rare · Epic · Legendary), used for car staking
+- [ ] Car shop: models, limited drops, paint, decals — paid in USDC; some
+      commons and paints unlockable with XP
+
+**5. Binary Options as a race mode**
+
+- [ ] Pick any 5 coins, call each up or down; each call is a checkpoint on the
+      lap, lighting green or red when it resolves
+- [ ] 3 of 5 correct wins; windows 1h / 24h (proposed); flat = wrong (proposed)
+- [ ] XP rewards; Scrimmage gets this mode too
+
+**6. Daily Trivia — the XP fuel**
+
+- [ ] 8 questions/day, ~1 minute total; pass at 4/8 → XP; streak only on a pass
 - [ ] Question supply for 8/day (live-data templates + vocab pool + static bank)
 - [ ] Retire the Gauntlet's single question and its free sector boost
 
-**5. XP economy — boosts & perks**
+**7. XP, boosts and perks — re-themed for racing**
 
-- [ ] Inventory: what each player owns
-- [ ] XP shop with the 4 launch items: Sector Boost, XP Boost, Free Hit, Captain
-- [ ] Captain needs a per-pick weighting change in scoring
-- [ ] Limits: 1 per game/tournament, max 3 per week
-- [ ] Boosts/perks only apply in XP games (never in real-money games)
+- [ ] Boosts become **nitro** (the existing ×1.25 on movement, shown as a flame)
+- [ ] Perks become **pit-stop upgrades** (Free Hit, Captain and later Shield,
+      renamed to fit racing — names open)
+- [ ] XP becomes **garage progression**: levels that unlock common cars and paints
+- [ ] Inventory; limits — 1 per race or tournament, max 3 per week (set per mode)
+- [ ] Performance items are earned with XP or bought for small amounts — never a
+      permanent advantage (cars stay cosmetic)
 
-**6. USDC purchases**
+**8. USDC purchases**
 
-- [ ] Player sends USDC from their wallet; server verifies the transfer on-chain
-      and credits the item (no processor, no held balances)
-- [ ] Decide chains: USDC on Base (EVM) + USDC on Solana _(needs you)_
+- [ ] Wallet sends USDC, server verifies on-chain, item credited (no held balances)
+- [ ] Sells: cars, limited editions, paint/decals, nitro and pit-stop items
+- [ ] Chains: Base + Solana (proposed) _(needs you)_
 - [ ] Purchase history / receipts
 
-**7. New matchmaking + RPS**
+**9. Matchmaking + RPS**
 
-- [ ] Queue with preferences: mode, sector, duration, wager-or-not, stake tier
-- [ ] Hard match on mode, wager-or-not, stake tier; sector/duration may differ
-- [ ] "Any" option (defers to the opponent)
-- [x] RPS rules + server (2026-09-27) — `$lib/rps.ts`, `$lib/server/rps.ts`,
-      `/api/rps/[id]` (GET, polled) and `/api/rps/[id]/throw`. Best of 3, 10s per
-      throw, random throw on timeout, ties replay, opponent's throw hidden until
-      both are in. Classic and Lizard-Spock variants (Lizard-Spock is the default —
-      fewer ties).
-- [x] RPS interface from your design (2026-09-27) — `RpsGame.svelte` (practice vs
-      house + live match mode), rules modal, responsive. Preview at `/design/rps`.
-- [ ] Create the `rps_matches` table in the database (`npm run db:push`) _(needs
-      you — touches the shared database)_
-- [ ] Replace the placeholder hand icons with the design's SVG assets _(needs you
-      — send the files)_
-- [ ] Browser-check `/design/rps` on desktop and phone _(needs you)_
-- [ ] Wire RPS into the new matchmaking (create a match when terms differ, apply
-      the winner's terms)
-- [ ] Check the weekly/duration path (was hardcoded to `daily`)
+- [ ] Queue with preferences: mode, sector, duration, stake; hard match on mode
+      and stake; sector/duration may differ; "Any" option
+- [x] RPS rules, server and UI built (2026-09-27) — preview `/design/rps`
+- [ ] Create the `rps_matches` table (`npm run db:push`) _(needs you)_
+- [ ] Replace placeholder hand icons with the design's SVGs _(needs you)_
+- [ ] Wire RPS into matchmaking; check the weekly/duration path
 
-**8. PWA + push notifications**
+**10. Race tournaments, sponsors and track advertising**
+
+- [ ] **Groups of 5**, Champions-League style: players seeded into pots by
+      rank/XP, drawn into groups of 5, top finishers advance to a knockout/final
+      (today's default group size is 4 → change to 5)
+- [ ] **Sponsored tournaments:** a company pays to host one — name, branding,
+      prize pool, their livery on the track
+- [ ] **Track advertising:** banner and billboard slots on tracks sold to
+      advertisers; sponsor branding on their own tournament's track
+- [ ] Ad-slot management: book a slot for a period, upload the creative, approve
+      before it goes live, report impressions
+
+**11. Car wagering (design left open)**
+
+- [ ] Stake a car; matched against a car of the same rarity tier; the winner
+      takes the loser's car. Open: whether bought cars can be staked, and whether
+      boosts apply in car-stake races
+
+**12. PWA + push notifications**
 
 - [ ] Manifest, icons, service worker, install prompt (iOS needs "Add to Home
       Screen" for push)
-- [ ] Store push subscriptions; per-type on/off in profile
 - [ ] Notifications: match found · result in · trivia live / streak at risk ·
-      tournament closing / starting
+      tournament closing / starting — toggles in Me → Settings
 
-**9. Playful, interactive game screens** — turn the live race view (`/game/[id]`,
-today a uPlot line chart) into something you _watch_ like a race. Ships in v1 as
-the base track; the extras below can slip to after launch.
+**13. Before launch**
 
-- [ ] **Race track**: each pick is a car on a track; its position is the coin's
-      live % move. Overtakes animate; Versus shows your 5 cars against theirs (or
-      one car per player = lineup total), with the gap between you
-- [ ] **Clashes**: cars bump and spark when they swap places; a coin dumping
-      sharply spins out or crashes; a coin pumping hard gets a speed burst
-- [ ] **Boost = nitro**: a boosted sector's car shows a flame trail, so a boost
-      is visible, not just a ×1.25 label
-- [ ] **Finish line**: photo finish at the window end, checkered flag, confetti on
-      a win, then straight into the result screen
-- [ ] **Tap a car** → token stats (reuse the Token Hover overlay)
-- [ ] **Live commentary ticker**: "SOL overtakes ETH!", "PEPE crashes −6%",
-      "You take the lead"
-- [ ] Data: `price_samples` for live points, with Binance 1-minute klines to
-      backfill stretches nobody was watching (today a contest nobody opens has no
-      graph)
-- [ ] Respect reduced-motion (fall back to the plain chart), keep it light on
-      phones — Canvas/SVG first; WebGL only if a flat track can't do the effect
-      (Three.js is ~170KB vs uPlot's ~21KB)
-
-**10. Before launch**
-
-- [ ] End-to-end test of the full v1 flow — confirms or adjusts v1 scope _(needs you)_
+- [ ] End-to-end test of the full v1 flow _(needs you)_
 - [ ] Domain + name decision _(needs you)_
-- [ ] Pitch / landing-page copy _(open until then)_
-- [ ] Rewrite `AGENTS.md` (badly stale — describes the pre-rework app; also
-      wrong that the DB client is neon-http — it's node-postgres, so real
-      transactions are available)
+- [ ] Pitch / landing-page copy — now racing-first _(open until then)_
+- [ ] Rewrite `AGENTS.md` (badly stale; also wrong that the DB client is
+      neon-http — it's node-postgres)
 - [ ] Update `README.md` (still framed as a buildathon PRD)
 
 ### ⏭️ After launch
 
 - [ ] Real-money wagers + escrow + in-house KYC (planned $25 cap)
 - [ ] Paid tournament entry
-- [ ] Binary-options tournaments
-- [ ] Multiplayer binary options — AI agent picks 5 coins from cached news, 3 rerolls
+- [ ] Limited-edition cars as NFTs, cross-chain via ZetaChain
+- [ ] More tracks
+- [ ] Multiplayer binary race — AI picks 5 coins (one per sector) from cached
+      news, 3 rerolls
 - [ ] Head-to-head timed trivia
 - [ ] Visible online-players / challenge list
-- [ ] Rest of the perk catalogue (Shield, Second Look, Flip, Double Down…)
-- [ ] Seasons (FPL-style perk allowances, league seasons that actually resolve)
-- [ ] Chain-agnostic rework (wallet, settlement, AI backend — 0G becomes one option)
-- [ ] More playful screens: binary-options calls as ramps/gates the car jumps
-      (green or red light at resolution) · tournaments as a multi-lane grid with
-      race positions as the leaderboard · emoji reactions to your opponent
-      mid-race · replay a finished race · shareable race clip for X · optional
-      sound and phone haptics on overtakes and the finish
+- [ ] More pit-stop upgrades; seasons (FPL-style allowances)
+- [ ] Chain-agnostic rework (wallet, settlement, AI backend)
+- [ ] Emoji reactions mid-race · race replays · shareable race clips · sound and
+      phone haptics
 - [ ] Backlog ideas in section 3 below
 
 ---
 
 ## Background
+
+**Racing direction (decided 2026-10-13)** — supersedes the chart-based game below
+wherever they conflict.
+
+- **The game:** draft 5 coins exactly as before; your lineup is a car, and the
+  market decides its position on a 3D track. Positions swap as prices move.
+- **One car per player.** Versus = 2 cars; tournaments run in groups of 5,
+  seeded from pots like the Champions League draw.
+- **Cars are cosmetic** (looks, rarity, status). Performance comes only from the
+  market and from earned or small-purchase boosts/perks.
+- **Car wagering:** stake a car against one of the same rarity tier, winner takes
+  it — details left open.
+- **Ownership:** database first; limited editions become NFTs later, cross-chain
+  via ZetaChain.
+- **Views:** multiple 3D camera views, isometric as the default.
+- **Money:** cars, limited editions and customization (USDC); nitro and pit-stop
+  items; sponsored tournaments; paid banner and billboard slots on tracks; later,
+  stake rake and paid entry.
+- **Kept:** draft, trivia (XP fuel), RPS tiebreaker, Versus, Scrimmage, Binary
+  (now a race mode), tournaments, PWA.
 
 **Midnight** was removed 2026-09-26 by force push (it had a Compact KYC contract,
 an on-chain wager age gate, wallet integration, `/profile/kyc`, schema changes).

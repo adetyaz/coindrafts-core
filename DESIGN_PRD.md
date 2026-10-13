@@ -14,26 +14,35 @@ roadmap disagree, the roadmap wins.
 
 ## 1. The product in one minute
 
-CoinDraft is **fantasy sports for crypto**. You make calls on real crypto prices and
-compete against real people.
+CoinDraft is a **racing game driven by the crypto market** (direction set
+2026-10-13). You draft 5 coins; that lineup becomes your car's engine, and live
+prices decide where your car is on the track. If your lineup is up 5% and your
+rival's is up 2%, you're ahead. If yours drops, they overtake you.
 
-- **Draft** 5 coins (one per sector) and race the market against an opponent, or
-- **Call** 5 coins up or down (Binary Options) and try to get at least 3 right.
-- When two players want different match settings, a quick **rock-paper-scissors**
+- **Draft** 5 coins (one per sector) → race your car against other players.
+- **Binary race:** call 5 coins up or down; each call is a checkpoint on the lap.
+  Get 3 right to win.
+- **One car per player.** Versus is 2 cars; tournaments run in groups of 5.
+- **Cars are cosmetic** (models, rarity, paint, decals). Speed comes only from
+  the market, plus earned **nitro** (boosts) and **pit-stop upgrades** (perks).
+- When two players want different race settings, a quick **rock-paper-scissors**
   round decides whose settings apply.
-- A **daily trivia** set earns XP; XP buys **boosts and perks**; boosts and perks can
-  also be bought for ~$1 in USDC.
+- A **daily trivia** set earns XP; XP levels up your garage and buys nitro and
+  pit-stop items.
+- **Money:** cars, limited editions and customization (USDC), nitro and pit-stop
+  items, sponsored tournaments, and paid billboards and banners on the tracks.
 
-**Working pitch (not final):** _"Fantasy sports for crypto: draft 5 coins or call 5
-moves, go head-to-head, and let rock-paper-scissors settle the rest."_
+**Working pitch (not final):** _"Draft 5 coins. The market drives your car."_
 
 ### The core loop
 
 ```
-Daily trivia ──► XP ──► Boosts & perks
-      ▲                       │
-      │                       ▼
- Come back tomorrow ◄── Play (Versus / Binary / Tournament) ──► Win XP, climb ranks
+Daily trivia ──► XP ──► Garage levels, nitro, pit-stop items
+      ▲                            │
+      │                            ▼
+ Come back tomorrow ◄── Race (Versus / Binary / Tournament) ──► Win XP, cars, rank
+                                   │
+                                   └──► Customize & collect cars (shop)
 ```
 
 ### Who it's for
@@ -51,8 +60,8 @@ password anywhere.
 
 ## 2. Design principles
 
-1. **Feels like a game, not a trading terminal.** Races, clashes, finish lines —
-   not candlestick charts. Numbers support the drama; they aren't the drama.
+1. **It's a racing game first.** The race is the screen. Prices explain _why_ a
+   car is where it is; they never replace the race. No candlestick charts.
 2. **One decision per screen.** Every screen has one obvious next action.
 3. **Always show where you stand.** Your XP, your active match, your streak — visible
    from anywhere.
@@ -146,11 +155,13 @@ the disc's 3D edge).
 /scrimmage            Practice vs bot                    [exists]
 /binary               Binary Options setup + calls       [new]
 /draft                Draft 5 coins                      [redesign]
-/game/:id             Live race (cars)                   [redesign]
+/game/:id             Live 3D race (isometric default)   [redesign — key screen]
 /contest/result       Versus / Scrimmage / Binary result [redesign]
 /tournament           Tournaments: list, create, detail  [redesign]
 /lobby/:id/result     Tournament group result            [exists]
-/shop                 Boosts & perks shop + inventory    [new]
+/garage               Your cars: pick, customize, levels [new]
+/shop                 Cars, cosmetics, nitro & pit-stop items + inventory [new]
+/sponsor              Sponsor a tournament / book track ads   [new]
 /profile              Me: your profile, customization, settings [redesign]
 /profile/:id          Public player card (anyone's profile)     [new]
 /leaderboard          Global XP ranking                  [exists]
@@ -177,15 +188,17 @@ page, standalone Multiplayer lobbies.
 
 ### Where things live — one home per piece of information
 
-| Question the user has                         | Lives in                                             |
-| --------------------------------------------- | ---------------------------------------------------- |
-| What needs me right now?                      | Dashboard → Overview                                 |
-| What games am I in / did I play?              | Dashboard → My Games (the only game list in the app) |
-| What's the market doing before I draft?       | Dashboard → Market                                   |
-| How am I ranking? My leagues and tournaments? | Dashboard → Compete                                  |
-| Who am I as a player (stats, badges)?         | Me (and the public player card others see)           |
-| How do I want the app to behave?              | Me → Settings                                        |
-| What can I buy / what do I own?               | Shop (Store · Inventory)                             |
+| Question the user has                         | Lives in                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| What needs me right now?                      | Dashboard → Overview                                                     |
+| What games am I in / did I play?              | Dashboard → My Games (the only game list in the app)                     |
+| What's the market doing before I draft?       | Dashboard → Market                                                       |
+| How am I ranking? My leagues and tournaments? | Dashboard → Compete                                                      |
+| Who am I as a player (stats, badges)?         | Me (and the public player card others see)                               |
+| How do I want the app to behave?              | Me → Settings                                                            |
+| What cars do I own? Which one am I racing?    | Garage (reachable from Me and from the pre-race screen)                  |
+| What can I buy / what items do I own?         | Shop (Store · Inventory)                                                 |
+| How do I sponsor a race or advertise?         | Sponsor portal (`/sponsor`), linked from the footer and tournament pages |
 
 Nothing is duplicated: Me shows a summary like "142 games · 58% wins" that links
 into Dashboard → My Games rather than repeating the list.
@@ -194,19 +207,21 @@ into Dashboard → My Games rather than repeating the list.
 
 ## 5. Global components
 
-| Component                          | Notes                                                                                                                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Wallet connect button**          | Signed out: "Connect wallet". Opens the wallet picker (EVM + Solana), then a "Sign to verify" step (no gas, no funds moved — say so). Signed in: avatar + short address. |
-| **XP chip**                        | Live XP balance; ticks up with a small count-up animation when XP is earned.                                                                                             |
-| **Active match pill**              | Appears whenever you're in a queue, RPS round, draft or live game. Shows mode + time left. One tap back in.                                                              |
-| **Token card**                     | Coin logo, symbol, name, price (mono), 24h change pill (mint/red), volume. Tapping or hovering opens Token Stats (stats + news tabs).                                    |
-| **Sector badge / slot card**       | Sector color band, "L1 sector" label, empty state = dashed border + "+". Filled = coin logo in a glowing sector-colored circle.                                          |
-| **Countdown timer**                | Mono digits, blinking dot. Turns red under 10s.                                                                                                                          |
-| **Toasts**                         | Bottom-right (desktop) / top (phone). Info, success, error.                                                                                                              |
-| **Modal / bottom sheet**           | Desktop modal; phone bottom sheet.                                                                                                                                       |
-| **Empty / loading / error states** | Skeleton shimmer for loading; friendly one-line empty states with one action; errors say what failed and offer Retry.                                                    |
-| **Install prompt**                 | See §8.13.                                                                                                                                                               |
-| **Notification permission prompt** | Asked in context (after first queue), never on first load.                                                                                                               |
+| Component                          | Notes                                                                                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Wallet connect button**          | Signed out: "Connect wallet". Opens the wallet picker (EVM + Solana), then a "Sign to verify" step (no gas, no funds moved — say so). Signed in: avatar + short address.   |
+| **XP chip**                        | Live XP balance; ticks up with a small count-up animation when XP is earned.                                                                                               |
+| **Active match pill**              | Appears whenever you're in a queue, RPS round, draft or live game. Shows mode + time left. One tap back in.                                                                |
+| **Token card**                     | Coin logo, symbol, name, price (mono), 24h change pill (mint/red), volume. Tapping or hovering opens Token Stats (stats + news tabs).                                      |
+| **Sector badge / slot card**       | Sector color band, "L1 sector" label, empty state = dashed border + "+". Filled = coin logo in a glowing sector-colored circle.                                            |
+| **Countdown timer**                | Mono digits, blinking dot. Turns red under 10s.                                                                                                                            |
+| **Toasts**                         | Bottom-right (desktop) / top (phone). Info, success, error.                                                                                                                |
+| **Modal / bottom sheet**           | Desktop modal; phone bottom sheet.                                                                                                                                         |
+| **Empty / loading / error states** | Skeleton shimmer for loading; friendly one-line empty states with one action; errors say what failed and offer Retry.                                                      |
+| **Install prompt**                 | See §8.13.                                                                                                                                                                 |
+| **Notification permission prompt** | Asked in context (after first queue), never on first load.                                                                                                                 |
+| **Car card**                       | 3D/rendered car thumbnail, model name, rarity badge (Common · Rare · Epic · Legendary), paint swatch. States: owned, equipped, locked (level/price), limited (count left). |
+| **Driver chip**                    | Player avatar + name + small car icon in their car's paint color — used on the track, leaderboards, groups and results so a car always maps to a person.                   |
 
 ---
 
@@ -215,6 +230,15 @@ into Dashboard → My Games rather than repeating the list.
 - **Coin draft:** 5 picks, one per sector (L1, L2, DeFi, Meme, Wildcard). Score =
   each coin's % move over the window, added up. A boosted sector multiplies that
   coin's movement by **×1.25** (it amplifies losses too).
+- **Race position:** one car per player. The car's place on the track is the
+  lineup's combined % move — higher score = further ahead. Positions update live
+  as prices move; the order at the window's end is the result.
+- **Cars are cosmetic:** a car's model, rarity, paint or price never changes its
+  speed. Only the market, nitro (boost) and pit-stop items (perks) do.
+- **Car staking (rules still open):** stake a car against one of the same rarity
+  tier; the winner takes the loser's car. Design the flow, but mark it "rules TBC".
+- **Tournaments:** groups of 5, seeded from pots (by rank/XP) like a Champions
+  League draw; top finishers advance to the final.
 - **Durations (Versus):** 10 min · 20 min · 45 min · 3 hours · 24 hours (default) ·
   7 days.
 - **Stake tiers (XP wagers):** 0 (no stake) · 25 · 50 · 100 · 250 XP. Tiers you can't
@@ -226,8 +250,11 @@ into Dashboard → My Games rather than repeating the list.
 - **Rock-paper-scissors:** best of 3, 10 seconds per throw, a random throw if you run
   out of time, ties replay. Default variant adds Lizard & Spock (5 shapes, fewer
   ties); classic 3-shape also supported.
-- **Perks & boosts:** one per game or tournament, max 3 per week. Only work in
-  XP games — never in real-money games.
+- **Nitro (boosts) & pit-stop items (perks):** one per race or tournament, max 3 per
+  week. Earned with XP or bought for small amounts. Final names open — design with
+  racing names (e.g. Nitro, Spare Tyre = Free Hit, Turbo = Captain).
+- **Garage levels:** XP raises your garage level, which unlocks common cars and
+  paints.
 - **Trivia:** 8 questions per day, about one minute total. 4/8 to pass and earn XP;
   only a pass extends your streak.
 - **XP rewards (existing):** Versus win 250, loss 60.
@@ -296,19 +323,27 @@ Each flow lists screens in order. Decision points are marked ◆.
 3. **Call each** UP or DOWN — big thumb-friendly toggles per coin, current price
    shown as the line to beat.
 4. Review → Lock (entry prices captured at lock).
-5. **Live view** — each call as a lane; green/red as price is above/below entry;
-   "3 right to win" tracker.
+5. **Live race** — your car runs a lap with 5 checkpoints, one per call. Each
+   checkpoint shows green or red live as the price sits above or below entry, and
+   locks at resolution. HUD: "3 right to win" tracker.
 6. **Result** — each call ✓/✗ with entry → exit price, X/5, win/lose, XP.
 
 ### F6 — Tournaments
 
 **Create:**
 
-1. Tournaments → "Create" → name, public/private, draft type (coin draft or binary —
-   binary tournaments are after launch), sector restriction (none / one sector),
-   group size, registration closing time (this is also the start time), payout
-   (winner takes all / top 3).
+1. Tournaments → "Create" → name, public/private, race type (coin draft or binary),
+   sector restriction (none / one sector), registration closing time (this is also
+   the start time), payout (winner takes all / top 3). Groups are always 5 cars.
 2. Review → Create → share link / invite.
+
+**Group draw (at registration close):**
+
+1. Players are sorted into **pots** by rank/XP (Pot 1 = strongest).
+2. An animated **draw** places one player from each pot into each group of 5 —
+   the Champions League draw moment. Designed to be watchable and shareable.
+3. Group table per group: position, driver chip, points, races run.
+4. Top finishers in each group advance to the final race.
 
 **Join:**
 
@@ -320,27 +355,64 @@ Each flow lists screens in order. Decision points are marked ◆.
 4. Draft (restricted tournaments use 5 open slots from that sector).
 5. Qualifier group result → ◆ advanced → final → final result.
 
-**Detail screen** shows bracket: qualifier groups → final, your position highlighted.
+**Detail screen** shows the pots, the groups of 5, then the final, with your car
+highlighted. A sponsored tournament shows the sponsor's name and livery throughout.
 
 ### F7 — Shop: buy with XP or USDC
 
-1. Shop → catalogue (launch items: Sector Boost, XP Boost, Free Hit, Captain).
-2. Item sheet → what it does, how many you own, weekly limit used (e.g. "2/3 used
-   this week"), price in XP and in USDC.
+1. Shop → tabs **Cars · Customize · Nitro & Pit-stop**.
+   - _Cars:_ models by rarity; **limited editions** show "37 of 100 left" and a
+     drop countdown.
+   - _Customize:_ paint, decals, number plates, preview on your car.
+   - _Nitro & Pit-stop:_ the launch items (Nitro = Sector Boost, XP Boost, Spare
+     Tyre = Free Hit, Turbo = Captain — names TBC).
+2. Item sheet → 3D preview you can rotate (cars and cosmetics) or what it does
+   (items), how many you own, weekly limit used (e.g. "2/3 used this week"), price
+   in XP and/or USDC. "Cosmetic — doesn't change speed" on every car.
 3. ◆ **Pay with XP** → confirm → owned count +1.
 4. ◆ **Pay with USDC** → choose chain (Base or Solana) → wallet opens to approve the
    transfer → "Confirming on-chain…" (spinner + tx link) → success → item added.
    Failure states: rejected in wallet, insufficient USDC, confirmation timeout.
 5. Inventory tab — owned items, active boosts with time left.
 
-### F8 — Using a perk or boost in a game
+### F8 — Pre-race: car, nitro and pit-stop
 
-1. On the draft/lock screen, a "Use a perk" tray shows owned items (disabled if the
-   weekly limit is used or the game is a real-money game).
-2. Pick one → apply to the lineup or a specific pick (Captain → choose a pick;
-   Sector Boost → choose a sector).
-3. Only one per game — tray locks after use; shown on the race (nitro flame) and on
-   the result.
+1. After the draft locks, a **pre-race screen**: your car on the grid, "Change
+   car" (opens the Garage picker), and a **pit-stop tray** of owned nitro and
+   pit-stop items (disabled once the weekly limit is used).
+2. Pick one → apply it (Turbo → choose a pick; Nitro → choose a sector).
+3. Only one per race — the tray locks after use; it shows on the track (nitro
+   flame) and on the result.
+4. "Start race" → the live race.
+
+### F13 — Garage
+
+1. Me → Garage (or "Change car" pre-race) → grid of your cars (car cards) with
+   the equipped one marked.
+2. Tap a car → 3D showroom view (rotate, zoom) → **Equip** / **Customize**.
+3. Customize → paint, decals, plate → live preview → Save. Unowned items show a
+   price and link to the shop.
+4. Garage level bar (XP progress) with what the next level unlocks.
+
+### F14 — Car staking (rules TBC)
+
+1. Versus setup → Stake: **Car** → choose one of your cars; only opponents with a
+   car of the **same rarity tier** are matched.
+2. Match found → both cars shown side by side, "Winner takes the car".
+3. Race → result: the winner's garage gains the car with a "won" animation; the
+   loser sees it leave their garage. Confirm-before-staking step with a clear
+   warning.
+
+### F15 — Sponsor a tournament / book track ads
+
+1. Sponsor portal (`/sponsor`) → choose **Sponsor a tournament** or **Book a
+   billboard / banner**.
+2. _Tournament:_ name, dates, prize, branding (logo, colors, car livery) → preview
+   the track dressed in their branding → pay → review/approval → live.
+3. _Ads:_ pick a track and slot (billboard, trackside banner, start/finish arch)
+   on a visual track map, pick dates (booked dates greyed), upload artwork with
+   size guidance → preview in 3D → pay → approval → live.
+4. Sponsor dashboard: active and upcoming bookings, impressions/views, invoices.
 
 ### F9 — Install & notifications
 
@@ -480,43 +552,84 @@ Each flow lists screens in order. Decision points are marked ◆.
 
 ### 8.7 Live race [redesign — key screen]
 
-- **Purpose:** make waiting fun. This is where people spend the most time.
-- **Track:** each pick is a car in a lane; position = live % move. Versus: your
-  cars vs theirs (or one car per player = lineup total) with the gap shown.
-- **Moments:** overtakes animate; cars bump and spark when they swap places; a
-  sharply dumping coin spins out/crashes; a pumping coin gets a speed burst;
-  boosted car has a nitro flame.
-- **HUD:** time left, your total vs theirs, live commentary ticker ("SOL overtakes
-  ETH!"), tap a car → token stats.
-- **Finish:** photo finish → checkered flag → confetti on a win → result.
-- **Binary variant:** each call is a lane with the entry price as a line; lane is
-  green/red depending on side.
-- **States:** no data yet ("warming up the engines"), price feed gap (car freezes
-  with a "no data" tag — never drops to zero), reduced motion → plain chart.
+- **Purpose:** this _is_ the game. Where players spend the most time and what they
+  share.
+- **View:** real 3D, low-poly art, **isometric camera by default**. Camera switcher
+  (isometric · chase cam · top-down — at least two at launch), remembered per player.
+- **Cars:** one per player, in their own model and paint, with a driver chip
+  floating above. Versus = 2 cars; tournament group = 5 cars.
+- **Position = the market:** each car's place on the track is its lineup's combined
+  % move. Leader in front; gaps open and close as prices move.
+- **Drama:** overtakes animate with a bump and sparks; cars hit each other when
+  positions swap at close range; a sharp drop makes a car spin out or wobble; a
+  sharp rise gives a speed burst; a nitro-boosted car trails a flame.
+- **Track dressing:** sponsor billboards, trackside banners and a start/finish arch
+  (ad slots — see §8.19); a sponsored tournament's track is fully branded.
+- **HUD:** time left, position (P1/P2…), your score vs the leader, **engine panel**
+  showing your 5 picks and which are pushing (+) or dragging (−) the car, live
+  commentary ticker ("ETH pulls you into P1!"), tap any car → driver card + their
+  picks.
+- **Finish:** photo finish → checkered flag → podium (top 3 in tournaments) →
+  confetti on a win → result.
+- **Binary variant:** one lap with 5 checkpoints, one per call; each lights green
+  or red live and locks at resolution.
+- **States:** before start ("warming up the engines" — cars on the grid), price
+  feed gap (car holds position with a "no data" tag — never jumps backwards to
+  zero), reconnecting, reduced motion or a weak device → 2D fallback (the existing
+  chart).
+- **Performance:** must run smoothly on a mid-range phone; design with few
+  polygons and limited particles.
 
 ### 8.8 Result [redesign]
 
-- Big WIN / LOSS (or X/5 for binary), your score vs theirs, per-pick breakdown
-  (coin, sector, % move, points, boost/perk used), XP earned (count-up), badges
-  unlocked (toast + inline), short AI-written match breakdown (2–3 sentences).
+- Finishing position (P1 / P2…) or X/5 for binary, the podium, your score vs the
+  field, per-pick breakdown (coin, sector, % move, points, nitro/pit-stop used), XP
+  earned (count-up), garage level progress, badges unlocked, short AI-written race
+  recap (2–3 sentences).
+- **Car stake races:** the car changing hands, shown clearly (won / lost).
 - **Actions:** Share result (card image for X), Rematch, Play again, Back to dashboard.
 - **Practice result:** clearly labelled, practice XP only.
 
 ### 8.9 Tournaments [redesign]
 
-- **List:** tabs Public / Mine; cards with name, players/size, restriction badge,
-  "closes in". Create button.
+- **List:** tabs Public / Mine / Sponsored; cards with name, players, race type,
+  restriction badge, "closes in", sponsor logo if sponsored. Create button.
 - **Create:** form per F6; inline explanation that the close time is the start.
-- **Detail:** status (open / starting / live / finished / cancelled), countdown,
-  participants, bracket view (groups → final) with you highlighted, invite (private),
-  Draft / View result buttons by state.
+- **Detail:** status (open / drawing / live / finished / cancelled), countdown,
+  **pots → animated group draw → groups of 5 → final**, your car highlighted,
+  invite (private), Draft / Watch race / View result buttons by state.
+- **Group table:** Champions-League style — position, driver chip, points, form.
 
 ### 8.10 Shop & inventory [new]
 
-- Grid of item cards: icon, name, one-line effect, price chips (XP and USDC), owned
-  count. Weekly limit meter.
-- Item sheet + purchase flows per F7, including on-chain pending/success/failure.
-- Inventory tab: owned, active (with countdown), used this week.
+- Tabs: **Cars · Customize · Nitro & Pit-stop · Inventory**.
+- Car cards with rarity, price (USDC, some XP), limited-edition counter and drop
+  countdown; "Cosmetic — doesn't change speed" label.
+- Item sheet with 3D preview (cars/cosmetics) + purchase flows per F7, including
+  on-chain pending/success/failure.
+- Inventory: owned items, active nitro (with countdown), used this week (x/3).
+
+### 8.18 Garage [new]
+
+- Showroom feel: equipped car on a turntable (rotate, zoom), car grid below with
+  rarity filters, "Equip" and "Customize".
+- Customize: paint, decals, plate, live 3D preview, unowned items priced with a
+  shop link.
+- Garage level + XP progress, next unlock preview.
+- States: only the starter car (nudge to the shop / levels), car locked in an
+  active stake ("racing for this car").
+
+### 8.19 Sponsor portal & track ads [new]
+
+- For companies, not players — can be a simpler, more businesslike layout.
+- Landing: what you can buy (tournament sponsorship, billboards, banners, arch),
+  reach stats, example screenshots of a branded track.
+- Booking: track map with selectable slots, calendar availability, artwork upload
+  with size specs, 3D preview of the ad in place, price, pay, submitted-for-review
+  state.
+- Dashboard: bookings (pending / live / ended), impressions/views, invoices.
+- Player-facing rule: ads appear only as track dressing — never over the HUD or
+  covering cars.
 
 ### 8.11 Me — profile, customization & settings [redesign]
 
@@ -531,8 +644,9 @@ Each flow lists screens in order. Decision points are marked ◆.
 - **Customization**
   - _Identity:_ display name, avatar (preset set to start; upload later), up to 3
     showcased badges, with a live preview of your public card.
-  - _Play defaults:_ preferred mode, sector, duration, stake — pre-fills Versus
-    setup.
+  - _Play defaults:_ preferred mode, sector, duration, stake, default camera view —
+    pre-fills Versus setup.
+  - _Garage:_ shortcut to your cars (§8.18).
 - **Settings** (behind the gear)
   - Notifications: per-type toggles (match found, result in, trivia live / streak at
     risk, tournament closing / starting).
@@ -637,20 +751,26 @@ Each flow lists screens in order. Decision points are marked ◆.
 
 ## 13. Not in v1 (don't design yet)
 
-Real-money wagers & KYC screens · paid tournament entry · binary-options tournaments
-· multiplayer binary options (AI picks 5 coins, 3 rerolls) · head-to-head trivia ·
-online-players / challenge list · extra perks (Shield, Second Look, Flip, Double
-Down) · seasons · race replays and shareable race clips · sound & haptics settings
+Real-money wagers & KYC screens · paid tournament entry · limited cars as NFTs
+(ZetaChain cross-chain) · more tracks · multiplayer binary race (AI picks 5 coins,
+3 rerolls) · head-to-head trivia · online-players / challenge list · extra pit-stop
+items · seasons · race replays and shareable race clips · sound & haptics settings
 beyond defaults.
 
 ## 14. Open decisions
 
-| Decision                                                 | Status                                 |
-| -------------------------------------------------------- | -------------------------------------- |
-| Product name & domain                                    | Open — "CoinDraft" is the working name |
-| Final pitch line                                         | Open until launch                      |
-| Binary Options rules (flat = wrong, 1h/24h, XP values)   | Proposed, awaiting confirmation        |
-| RPS default variant (Lizard-Spock vs classic)            | Lizard-Spock proposed                  |
-| USDC chains                                              | Base + Solana proposed                 |
-| Shop prices (XP and USDC per item)                       | Not set — design with placeholders     |
-| Phone bottom tabs: Dashboard · Play · Trivia · Shop · Me | Proposed in this doc                   |
+| Decision                                                 | Status                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------ |
+| Product name & domain                                    | Open — "CoinDraft" is the working name                 |
+| Final pitch line                                         | Open until launch                                      |
+| Binary Options rules (flat = wrong, 1h/24h, XP values)   | Proposed, awaiting confirmation                        |
+| RPS default variant (Lizard-Spock vs classic)            | Lizard-Spock proposed                                  |
+| USDC chains                                              | Base + Solana proposed                                 |
+| Shop prices (XP and USDC per item)                       | Not set — design with placeholders                     |
+| Phone bottom tabs: Dashboard · Play · Trivia · Shop · Me | Proposed in this doc                                   |
+| Car staking rules (paid cars stakeable? boosts allowed?) | Open — design the flow, mark "TBC"                     |
+| Nitro / pit-stop item names                              | Open — racing names proposed                           |
+| Rarity tier names                                        | Common · Rare · Epic · Legendary proposed              |
+| 3D renderer                                              | Spline runtime proposed; Three.js fallback             |
+| Camera views beyond isometric                            | Chase cam + top-down proposed                          |
+| Ad slot types and pricing                                | Billboard · banner · start/finish arch; prices not set |
