@@ -376,9 +376,10 @@ Each one is a toggle in Me → Settings, with **quiet hours** (default 22:00–0
 
 ---
 
-## F12 — Sponsors and track ads ✅ (after launch)
+## F12 — Sponsors and track ads ✅
 
-Not built yet; comes after launch, once there are players. Payment method is a separate decision.
+Not built yet. Moved into the build (2026-11-13), not after launch. Payment method is a separate
+decision.
 
 1. **Sponsor portal** → **Sponsor a tournament** or **Book trackside ads**.
 2. **Tournament:** name, dates, prize, branding (logo, livery on the cars) → preview → pay → your

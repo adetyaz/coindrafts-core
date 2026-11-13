@@ -336,6 +336,26 @@ Build (11–14 Nov; the 3D race from 2–8 Nov counts for this entry too):
       neon-http — it's node-postgres)
 - [ ] Update `README.md` (still framed as a buildathon PRD)
 
+**16. Build order from GAMEPLAY_FLOWS.md (agreed 2026-11-13)**
+
+Every flow in [GAMEPLAY_FLOWS.md](GAMEPLAY_FLOWS.md) is agreed. Built in this order, one step at a
+time, plain functional layouts until the new design system lands.
+
+- [ ] 1. Real circuits on the 3D track (Monza, Suzuka, Spa, Interlagos from measured data) — F2
+- [ ] 2. Race stages: car step (last-used pre-selected), track step, pre-race screen, podium — F2
+- [ ] 3. First sign-in: your first car reveal, racing name, straight into a 1-minute race — F1
+- [ ] 4. Landing: live race hero, "Run your game", "Back your takes" — F1
+- [ ] 5. Showroom, customising, Sell now, car history (Gears sinks) — F3
+- [ ] 6. Car races for players (stake a car, same rarity) — F3
+- [ ] 7. Daily trivia (8 questions) and nitro / pit-stop items in the pre-race tray — F7, F8
+- [ ] 8. Tournaments: pots and draw, groups of 5 with bots, Gears prizes, marquee finals, auto cups — F4
+- [ ] 9. Leagues: league night, home track, monthly seasons — F5
+- [ ] 10. Profile, player cards, bot cards — F6
+- [ ] 11. Binary race mode — F9
+- [ ] 12. The bots' daily life (one bot day per day, automatically) — F10
+- [ ] 13. Sponsors and track ads — F12
+- [ ] 14. Install (PWA) and notifications — F11
+
 ### ⏭️ After launch
 
 - [ ] Real-money wagers + escrow + in-house KYC (planned $25 cap)
