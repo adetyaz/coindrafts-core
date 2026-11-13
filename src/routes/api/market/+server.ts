@@ -1,10 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { parseSessionToken } from '$lib/server/auth';
+import { flushOutbox } from '$lib/server/cars';
 import { MarketError, buyListing, cancelListing, getMarket, listCar } from '$lib/server/market';
 
 // GET: the Car Market (tier prices with reasons, open listings, recent sales).
 // POST { action: 'list' | 'buy' | 'cancel', ... }: trade.
 export async function GET() {
+	// Market views also nudge the NEAR queue along: capped at 3s, and safe to
+	// overlap because the flusher holds a lock (see flushOutbox).
+	await Promise.race([flushOutbox(20).catch(() => null), new Promise((r) => setTimeout(r, 3000))]);
 	return json(await getMarket());
 }
 

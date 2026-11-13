@@ -234,7 +234,9 @@ export async function runBotMarket(): Promise<string[]> {
 	for (const l of botOpen) {
 		const rarity = l.rarity as Rarity;
 		const fair = fairPrice(rarity, markets[rarity]).value;
-		if (!isStale(l.price, fair)) continue;
+		// Judged against what this bot would normally ask, or a bot that always
+		// asks over the odds would take its car down and re-list it every round.
+		if (!isStale(l.price, fair * personalityOf(l.seller).trade.askMarkup)) continue;
 		await db
 			.update(carListings)
 			.set({ status: 'cancelled', closedAt: new Date() })
@@ -243,12 +245,17 @@ export async function runBotMarket(): Promise<string[]> {
 		log.push(`${l.seller} took down its ${rarity} at ${l.price}: the going rate fell to ${fair}`);
 	}
 
+	// One query for who already has a car up, instead of one per bot.
+	const sellingNow = new Set(
+		(
+			await db
+				.select({ sellerId: carListings.sellerId })
+				.from(carListings)
+				.where(eq(carListings.status, 'open'))
+		).map((r) => r.sellerId)
+	);
 	for (const bot of await botWallets()) {
-		const [hasOpen] = await db
-			.select({ id: carListings.id })
-			.from(carListings)
-			.where(and(eq(carListings.sellerId, bot.id), eq(carListings.status, 'open')));
-		if (hasOpen) continue;
+		if (sellingNow.has(bot.id)) continue;
 		const decision = botListing(bot.wallet, markets, personalityOf(bot.username).trade);
 		if (!decision.value) continue;
 		try {

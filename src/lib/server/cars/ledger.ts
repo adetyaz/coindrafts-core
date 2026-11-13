@@ -53,11 +53,21 @@ async function enqueue(tx: Tx, method: string, args: Record<string, unknown>) {
  * operator, created on chain, so the explorer shows `nina.coindraft.testnet`.
  * Returns null when NEAR is off.
  */
+// A user's NEAR account never changes once set, so it's cached per server
+// instance. Every payout and trade looks it up; without this each one cost an
+// extra database round trip (a simulated week makes hundreds).
+const knownAccounts = new Map<string, string>();
+
 export async function ensureNearAccount(userId: string): Promise<string | null> {
 	if (!nearConfig()) return null;
+	const cached = knownAccounts.get(userId);
+	if (cached) return cached;
 	const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 	if (!user) throw new Error(`User ${userId} not found`);
-	if (user.nearAccountId) return user.nearAccountId;
+	if (user.nearAccountId) {
+		knownAccounts.set(userId, user.nearAccountId);
+		return user.nearAccountId;
+	}
 
 	let accountId: string;
 	let keyCipher: string | null = null;
@@ -83,6 +93,8 @@ export async function ensureNearAccount(userId: string): Promise<string | null> 
 }
 
 async function nearIdOf(tx: Tx, userId: string): Promise<string | null> {
+	const cached = knownAccounts.get(userId);
+	if (cached) return cached;
 	const [row] = await tx
 		.select({ id: users.nearAccountId })
 		.from(users)

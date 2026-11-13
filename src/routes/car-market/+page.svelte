@@ -97,6 +97,63 @@
 		}
 	}
 
+	// ── Simulate a week ──────────────────────────────────────────────────────
+	type SimRace = {
+		a: string;
+		b: string;
+		winner: string;
+		aMove: number;
+		bMove: number;
+		carWon?: { model: string; rarity: string };
+	};
+	type SimDay = {
+		date: string;
+		races: SimRace[];
+		market: string[];
+		prices: Record<string, number>;
+	};
+	type Sim = {
+		days: SimDay[];
+		bots: { username: string; gears: number; cars: number }[];
+		near: { sent: number; pending: number } | null;
+	};
+	let sim = $state<Sim | null>(null);
+	let simulating = $state(false);
+	let simDay = $state(0);
+
+	// Plays the week one day per request, so each day appears as it finishes.
+	async function simulate() {
+		simulating = true;
+		sim = { days: [], bots: [], near: null };
+		try {
+			for (let day = 1; day <= 7; day++) {
+				simDay = day;
+				const res = await fetch('/api/simulate', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ day })
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) throw new Error(data.error ?? 'Simulation failed');
+				sim.days = [...sim.days, data.day];
+				if (data.done) {
+					sim.bots = data.bots ?? [];
+					sim.near = data.near ?? null;
+				}
+				void load();
+			}
+			await loadMe();
+		} catch (e) {
+			toast(e instanceof Error ? e.message : 'Simulation failed', 'error');
+		} finally {
+			simulating = false;
+		}
+	}
+
+	function fmtMove(n: number) {
+		return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+	}
+
 	function ago(iso: string) {
 		const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
 		if (s < 60) return `${s}s ago`;
@@ -134,6 +191,87 @@
 				>My garage</a
 			>
 		</div>
+	</div>
+
+	<!-- Simulate a week: the bot economy over 7 real market days, in about a minute -->
+	<div class="mb-7 rounded-[20px] border border-border bg-surface-alt p-5">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<div class="max-w-[64ch]">
+				<div class="text-sm font-black">Simulate a week</div>
+				<p class="mt-1 text-xs text-text-muted">
+					Replays the last 7 days of real market moves. Each day the bots race each other (half of
+					them car-for-car: winner takes the loser's car), get paid in Gears, then trade here. Every
+					change is recorded on NEAR. Your own cars and Gears aren't touched.
+				</p>
+			</div>
+			<button
+				onclick={simulate}
+				disabled={simulating}
+				class="h-11 cursor-pointer rounded-full border-none bg-text px-6 text-sm font-extrabold text-surface disabled:cursor-wait disabled:opacity-60"
+			>
+				{simulating ? `Day ${simDay} of 7…` : 'Simulate a week'}
+			</button>
+		</div>
+
+		{#if sim}
+			<div class="mt-5 flex flex-col gap-3">
+				{#each sim.days as day (day.date)}
+					<details
+						class="rounded-2xl border border-border bg-surface p-4"
+						open={day === sim.days.at(-1)}
+					>
+						<summary class="cursor-pointer text-xs font-extrabold">
+							{day.date} · {day.races.filter((r) => r.carWon).length} cars won ·
+							{day.market.filter((m) => m.includes('bought')).length} sold · Common ⚙️ {day.prices
+								.Common} · Rare ⚙️ {day.prices.Rare}
+						</summary>
+						<div class="mt-3 flex flex-col gap-1.5 text-xs">
+							{#each day.races as r, i (i)}
+								<div>
+									<span class="font-bold">{r.winner}</span> beat
+									{r.winner === r.a ? r.b : r.a}
+									<span class="font-mono text-text-muted"
+										>({fmtMove(r.winner === r.a ? r.aMove : r.bMove)} vs {fmtMove(
+											r.winner === r.a ? r.bMove : r.aMove
+										)})</span
+									>
+									{#if r.carWon}
+										· <span class="font-bold">won their {r.carWon.rarity} {r.carWon.model}</span>
+									{/if}
+								</div>
+							{/each}
+							{#each day.market as m, i (i)}
+								<div class="text-text-muted">🛒 {m}</div>
+							{/each}
+						</div>
+					</details>
+				{/each}
+
+				{#if sim.bots.length > 0}
+					<div class="rounded-2xl border border-border bg-surface p-4">
+						<div class="mb-2 text-xs font-extrabold">After the week</div>
+						<div class="grid grid-cols-4 gap-2 text-xs max-sm:grid-cols-2">
+							{#each sim.bots as b (b.username)}
+								<div class="rounded-xl bg-surface-alt px-3 py-2">
+									<div class="font-bold">{b.username}</div>
+									<div class="font-mono text-text-muted">{b.cars} cars · ⚙️ {b.gears}</div>
+								</div>
+							{/each}
+						</div>
+						<p class="mt-3 text-[11px] text-text-muted">
+							{#if sim.near}
+								NEAR: {sim.near.sent} changes recorded so far{sim.near.pending > 0
+									? `, ${sim.near.pending} more go through as the market refreshes`
+									: ''}.
+							{:else}
+								Recording the week on NEAR in the background; it goes through as the market
+								refreshes.
+							{/if}
+						</p>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	{#if phase === 'loading'}
