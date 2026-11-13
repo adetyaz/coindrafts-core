@@ -9,6 +9,7 @@
 	import Toast from '$lib/components/Toast.svelte';
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
 	import { streamPrices } from '$lib/race/priceStream';
+	import { circuitForRace } from '$lib/race/circuits';
 	import {
 		MOOD_LABEL,
 		lineFor,
@@ -51,6 +52,7 @@
 	const SAMPLE_SECONDS = 4;
 
 	const contestId = page.params.id;
+	const circuit = circuitForRace(contestId ?? '');
 
 	let live = $state<Live | null>(null);
 	let phase = $state<'loading' | 'waiting' | 'start' | 'racing' | 'error'>('loading');
@@ -566,7 +568,11 @@
 		</div>
 
 		{#if view === 'race'}
+			<p class="mb-2 text-xs font-bold text-text-muted">
+				{circuit.name}, {circuit.place} · {circuit.lengthKm} km · {circuit.character}
+			</p>
 			<RaceTrack3D
+				circuit={circuit.id}
 				cars={raceCars}
 				finished={msRemaining <= 0}
 				{onOvertake}

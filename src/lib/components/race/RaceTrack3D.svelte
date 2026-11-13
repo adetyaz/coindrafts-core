@@ -13,14 +13,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
+	import { circuitById, DEFAULT_CIRCUIT } from '$lib/race/circuits';
+	import { buildTrackPath } from '$lib/race/trackPath';
 
 	let {
 		cars,
+		circuit = DEFAULT_CIRCUIT,
 		finished = false,
 		onOvertake,
 		onUnsupported
 	}: {
 		cars: RaceCar[];
+		/** Circuit id from $lib/race/circuits (real layouts). Fixed for the life of the component. */
+		circuit?: string;
 		finished?: boolean;
 		onOvertake?: (passer: RaceCar, passed: RaceCar) => void;
 		onUnsupported?: () => void;
@@ -44,11 +49,12 @@
 	const ACCEL_DECAY = 1.6;
 	const NITRO_THRESHOLD = 0.15;
 
-	// Stadium-shaped track in the XZ plane.
-	const STRAIGHT = 44;
-	const RADIUS = 15;
-	const ROAD_WIDTH = 8;
-	const PERIMETER = 2 * STRAIGHT + 2 * Math.PI * RADIUS;
+	// A real circuit, from measured centerline data (see $lib/race/circuits).
+	// Road width is exaggerated well past scale so five cars fit side by side.
+	const ROAD_WIDTH = 7;
+	// The circuit is fixed for the life of a race, so it is read once.
+	// svelte-ignore state_referenced_locally
+	const path = buildTrackPath(circuitById(circuit));
 
 	let host: HTMLDivElement;
 	let canvas: HTMLCanvasElement;
@@ -67,41 +73,8 @@
 
 	/** Position and heading at track progress `u` (laps), offset sideways by `lane`. */
 	function trackAt(u: number, lane = 0): { pos: THREE.Vector3; dir: THREE.Vector3 } {
-		let d = (((u % 1) + 1) % 1) * PERIMETER;
-		const half = STRAIGHT / 2;
-		const arc = Math.PI * RADIUS;
-		let x: number, z: number, dx: number, dz: number;
-		if (d < STRAIGHT) {
-			// bottom straight, heading +x
-			x = -half + d;
-			z = RADIUS;
-			dx = 1;
-			dz = 0;
-		} else if ((d -= STRAIGHT) < arc) {
-			// right bend
-			const a = d / RADIUS;
-			x = half + Math.sin(a) * RADIUS;
-			z = Math.cos(a) * RADIUS;
-			dx = Math.cos(a);
-			dz = -Math.sin(a);
-		} else if ((d -= arc) < STRAIGHT) {
-			// top straight, heading -x
-			x = half - d;
-			z = -RADIUS;
-			dx = -1;
-			dz = 0;
-		} else {
-			// left bend
-			d -= STRAIGHT;
-			const a = d / RADIUS;
-			x = -half - Math.sin(a) * RADIUS;
-			z = -Math.cos(a) * RADIUS;
-			dx = -Math.cos(a);
-			dz = Math.sin(a);
-		}
-		// Left-hand normal of the heading; lanes spread across the road.
-		const pos = new THREE.Vector3(x - dz * lane, 0, z + dx * lane);
-		return { pos, dir: new THREE.Vector3(dx, 0, dz) };
+		const p = path.at(u, lane);
+		return { pos: new THREE.Vector3(p.x, p.y, p.z), dir: new THREE.Vector3(p.dx, 0, p.dz) };
 	}
 
 	function cssColor(value: string): THREE.Color {
@@ -141,30 +114,32 @@
 		const white = token('surface');
 		scene.add(new THREE.HemisphereLight(white, token('race-grass-dark'), 1.4));
 		const sun = new THREE.DirectionalLight(white, 1.6);
-		sun.position.set(30, 60, 20);
+		sun.position.set(60, 120, 40);
 		sun.castShadow = true;
 		sun.shadow.mapSize.set(1024, 1024);
-		Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 40, bottom: -40 });
+		Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, far: 400 });
 		sun.shadow.camera.updateProjectionMatrix();
 		scene.add(sun);
 
 		// ── Ground ────────────────────────────────────────────────────────
+		const { minX, maxX, minZ, maxZ } = path.bounds;
+		const centre = new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
 		const ground = new THREE.Mesh(
-			keep(new THREE.PlaneGeometry(220, 160)),
+			keep(new THREE.PlaneGeometry(maxX - minX + 80, maxZ - minZ + 80)),
 			mat(token('race-grass'))
 		);
 		ground.rotation.x = -Math.PI / 2;
-		ground.position.y = -0.02;
+		ground.position.set(centre.x, -0.02, centre.z);
 		ground.receiveShadow = true;
 		scene.add(ground);
 
-		// ── Road: a ribbon sampled along the stadium path ──────────────────
-		const SAMPLES = 240;
+		// ── Road: a ribbon along the real centerline ──────────────────────
+		const SAMPLES = 900;
 		const verts: number[] = [];
 		for (let i = 0; i <= SAMPLES; i++) {
 			const inner = trackAt(i / SAMPLES, -ROAD_WIDTH / 2).pos;
 			const outer = trackAt(i / SAMPLES, ROAD_WIDTH / 2).pos;
-			verts.push(inner.x, 0, inner.z, outer.x, 0, outer.z);
+			verts.push(inner.x, inner.y + 0.01, inner.z, outer.x, outer.y + 0.01, outer.z);
 		}
 		const index: number[] = [];
 		for (let i = 0; i < SAMPLES; i++) {
@@ -179,27 +154,52 @@
 		road.receiveShadow = true;
 		scene.add(road);
 
-		// Kerbs: alternating blocks along both edges.
-		const kerbGeo = keep(new THREE.BoxGeometry(1.6, 0.12, 0.5));
-		const kerbs = new THREE.InstancedMesh(kerbGeo, mat(white), 2 * 120);
+		// Bridge pillars wherever the road is raised (Suzuka's crossover).
+		const pillarGeo = keep(new THREE.BoxGeometry(0.8, 1, 0.8));
+		const pillarMat = mat(token('race-road'));
+		for (let i = 0; i < SAMPLES; i += 12) {
+			for (const side of [-1, 1]) {
+				const p = trackAt(i / SAMPLES, side * (ROAD_WIDTH / 2 - 0.6)).pos;
+				if (p.y < 0.8) continue;
+				const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+				pillar.scale.y = p.y;
+				pillar.position.set(p.x, p.y / 2, p.z);
+				pillar.castShadow = true;
+				scene.add(pillar);
+			}
+		}
+
+		// Kerbs: red-and-white blocks on the outside of every corner.
+		const KERB_STEPS = 600;
+		const kerbSpots: { pos: THREE.Vector3; dir: THREE.Vector3; alt: boolean }[] = [];
+		for (let i = 0; i < KERB_STEPS; i++) {
+			const u = i / KERB_STEPS;
+			const now = trackAt(u).dir;
+			const next = trackAt(u + 2 / KERB_STEPS).dir;
+			// Signed turn between the two headings: its sign says which way the road bends.
+			const turn = now.x * next.z - now.z * next.x;
+			if (Math.abs(turn) < 0.04) continue;
+			// The outside of the corner is the side the car is pushed towards.
+			const side = turn > 0 ? 1 : -1;
+			const { pos, dir } = trackAt(u, side * (ROAD_WIDTH / 2 + 0.3));
+			kerbSpots.push({ pos, dir, alt: i % 2 === 0 });
+		}
+		const kerbGeo = keep(new THREE.BoxGeometry(0.9, 0.12, 0.6));
+		const kerbs = new THREE.InstancedMesh(kerbGeo, mat(white), Math.max(1, kerbSpots.length));
 		const kerbA = token('race-kerb');
 		const kerbB = token('race-line');
 		const m4 = new THREE.Matrix4();
 		const q = new THREE.Quaternion();
-		let k = 0;
-		for (let i = 0; i < 120; i++) {
-			for (const side of [-1, 1]) {
-				const { pos, dir } = trackAt(i / 120, side * (ROAD_WIDTH / 2 + 0.25));
-				q.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
-				m4.compose(pos.setY(0.05), q, new THREE.Vector3(1, 1, 1));
-				kerbs.setMatrixAt(k, m4);
-				kerbs.setColorAt(k, i % 2 ? kerbA : kerbB);
-				k++;
-			}
-		}
+		kerbSpots.forEach(({ pos, dir, alt }, k) => {
+			q.setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir);
+			m4.compose(pos.setY(pos.y + 0.06), q, new THREE.Vector3(1, 1, 1));
+			kerbs.setMatrixAt(k, m4);
+			kerbs.setColorAt(k, alt ? kerbA : kerbB);
+		});
+		kerbs.count = kerbSpots.length;
 		scene.add(kerbs);
 
-		// Start/finish line: a checkered strip across the bottom straight.
+		// Start/finish line: a chequered strip across the road at lap 0.
 		const checker = document.createElement('canvas');
 		checker.width = 64;
 		checker.height = 16;
@@ -218,36 +218,32 @@
 			keep(new THREE.PlaneGeometry(ROAD_WIDTH, 1.4)),
 			keep(new THREE.MeshBasicMaterial({ map: lineTex }))
 		);
-		startLine.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
-		startLine.position.copy(trackAt(0).pos).setY(0.03);
+		const start = trackAt(0);
+		startLine.rotation.set(-Math.PI / 2, 0, Math.atan2(-start.dir.z, start.dir.x) + Math.PI / 2);
+		startLine.position.copy(start.pos).setY(start.pos.y + 0.04);
 		scene.add(startLine);
 
-		// A few low-poly trees in the infield and around the outside.
+		// Low-poly trees scattered off the circuit. Seeded by the circuit, so a
+		// track always looks the same.
 		const trunkGeo = keep(new THREE.CylinderGeometry(0.3, 0.4, 1.6, 6));
 		const crownGeo = keep(new THREE.ConeGeometry(1.8, 4, 7));
 		const trunkMat = mat(token('race-trunk'));
 		const crownMat = mat(token('race-tree'));
-		const treeSpots = [
-			[-12, 0],
-			[0, -4],
-			[12, 2],
-			[-4, 5],
-			[6, -6],
-			[-40, -26],
-			[-20, 28],
-			[24, 29],
-			[44, -24],
-			[52, 8],
-			[-55, 6],
-			[2, -30]
-		];
-		for (const [x, z] of treeSpots) {
+		let seed = [...circuit].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+		const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+		let planted = 0;
+		for (let tries = 0; tries < 400 && planted < 45; tries++) {
+			const x = minX - 25 + rand() * (maxX - minX + 50);
+			const z = minZ - 25 + rand() * (maxZ - minZ + 50);
+			const clear = path.points.every((p) => Math.hypot(p.x - x, p.z - z) > ROAD_WIDTH + 4);
+			if (!clear) continue;
 			const trunk = new THREE.Mesh(trunkGeo, trunkMat);
 			trunk.position.set(x, 0.8, z);
 			const crown = new THREE.Mesh(crownGeo, crownMat);
 			crown.position.set(x, 3.4, z);
 			crown.castShadow = trunk.castShadow = true;
 			scene.add(trunk, crown);
+			planted++;
 		}
 
 		// ── Cars ──────────────────────────────────────────────────────────
@@ -332,10 +328,19 @@
 		}
 
 		// ── Cameras ───────────────────────────────────────────────────────
-		const iso = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
+		const iso = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
 		// True isometric: looking down the (1, 1, 1) diagonal.
-		iso.position.set(80, 80, 80);
-		iso.lookAt(0, 0, 0);
+		iso.position.set(centre.x + 150, 150, centre.z + 150);
+		iso.lookAt(centre);
+		iso.updateMatrixWorld();
+		// Fit the whole circuit: its extent as the iso camera sees it.
+		const seen = path.points.map((p) =>
+			new THREE.Vector3(p.x, p.y, p.z).applyMatrix4(iso.matrixWorldInverse)
+		);
+		const span = {
+			w: Math.max(...seen.map((v) => v.x)) - Math.min(...seen.map((v) => v.x)) + 16,
+			h: Math.max(...seen.map((v) => v.y)) - Math.min(...seen.map((v) => v.y)) + 16
+		};
 		const chase = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
 
 		function resize() {
@@ -343,7 +348,7 @@
 			const h = host.clientHeight;
 			renderer.setSize(w, h, false);
 			const aspect = w / h;
-			const view = 46;
+			const view = Math.max(span.h, span.w / aspect);
 			iso.left = (-view * aspect) / 2;
 			iso.right = (view * aspect) / 2;
 			iso.top = view / 2;
@@ -468,9 +473,17 @@
 			const target = me ? state.get(me.id) : undefined;
 			if (camera === 'chase' && target) {
 				const { pos, dir } = trackAt(target.s, target.lane);
-				const want = pos.clone().addScaledVector(dir, -9).setY(4.5);
+				const want = pos
+					.clone()
+					.addScaledVector(dir, -9)
+					.setY(pos.y + 4.5);
 				chase.position.lerp(want, Math.min(1, dt * 3));
-				chase.lookAt(pos.clone().addScaledVector(dir, 6).setY(1));
+				chase.lookAt(
+					pos
+						.clone()
+						.addScaledVector(dir, 6)
+						.setY(pos.y + 1)
+				);
 			}
 			const active = camera === 'chase' ? chase : iso;
 			renderer.render(scene, active);
