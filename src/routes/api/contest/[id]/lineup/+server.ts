@@ -6,6 +6,7 @@ import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
 import { getAllPrices } from '$lib/server/prices';
 import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
+import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
 
 export async function POST({ params, request, cookies }) {
@@ -155,7 +156,7 @@ export async function POST({ params, request, cookies }) {
 		for (let attempt = 0; attempt < 2 && !botReady; attempt++) {
 			try {
 				const bot = pickScrimmageBot();
-				const botPicks = await draftBotLineup();
+				const botPicks = await draftBotLineup(personalityOf(bot.username).draft);
 				if (botPicks.length !== 5) throw new Error('Bot draft returned an incomplete lineup');
 
 				const [botLineup] = await db

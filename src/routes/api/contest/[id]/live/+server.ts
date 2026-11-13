@@ -5,6 +5,7 @@ import { contests, lineups, lineupPicks, users, priceSamples, stakes } from '$li
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
 import { getAllPrices } from '$lib/server/prices';
+import { botRival } from '$lib/server/rivalry';
 
 // Don't re-sample more often than this. Two players watching the same game
 // would otherwise each write a full set of rows every poll.
@@ -122,9 +123,12 @@ export async function GET({ params, cookies }) {
 		return { userId, name, picks: enriched, totalPct: Number(total.toFixed(3)) };
 	}
 
-	const [me, opponent] = await Promise.all([
+	const opponentId = contest.userAId === parsed.userId ? contest.userBId : contest.userAId;
+	const [me, opponent, rival] = await Promise.all([
 		sideFor(parsed.userId),
-		sideFor(contest.userAId === parsed.userId ? contest.userBId : contest.userAId)
+		sideFor(opponentId),
+		// A bot opponent's personality and its mood towards this player.
+		opponentId ? botRival(opponentId, parsed.userId).catch(() => null) : null
 	]);
 
 	const now = Date.now();
@@ -204,6 +208,7 @@ export async function GET({ params, cookies }) {
 		msRemaining: endAt ? Math.max(0, endAt - now) : null,
 		finished: endAt ? now >= endAt : false,
 		me,
-		opponent
+		opponent,
+		rival
 	});
 }

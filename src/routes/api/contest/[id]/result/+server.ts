@@ -13,6 +13,7 @@ import { parseSessionToken } from '$lib/server/auth';
 import { resolveContest } from '$lib/server/contest-resolution';
 import { awardWinBadges } from '$lib/server/badges';
 import { headToHead } from '$lib/server/wager';
+import { botRival } from '$lib/server/rivalry';
 
 export async function GET({ params, cookies }) {
 	const token = cookies.get('session');
@@ -173,6 +174,8 @@ export async function GET({ params, cookies }) {
 		// nemesis worth rematching — it's the point of the loop.
 		record: opponentId && !contest.isPaper ? await headToHead(parsed.userId, opponentId) : null,
 		canRematch: Boolean(opponentId) && !contest.isPaper,
+		// A bot opponent reacts to the result in its own voice (mood includes this race).
+		rival: opponentId ? await botRival(opponentId, parsed.userId).catch(() => null) : null,
 		// What the wager did, so the result screen can state it rather than
 		// leaving the player to infer it from an XP change.
 		stake: await (async () => {

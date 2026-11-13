@@ -31,6 +31,14 @@ export type TierMarket = {
 
 export type Decision<T> = { value: T; reason: string };
 
+/**
+ * How hard a bot haggles, from its personality (src/lib/bots/personalities.ts):
+ * `askMarkup` scales what it asks when selling, `payTolerance` what it will pay.
+ * 1 and 1 is a calm trader; a big spender pays more, a cautious one less.
+ */
+export type Temper = { askMarkup: number; payTolerance: number };
+const CALM: Temper = { askMarkup: 1, payTolerance: 1 };
+
 // ── Price ────────────────────────────────────────────────────────────────────
 
 /**
@@ -87,14 +95,15 @@ export const SAVING_BELOW = 1000;
  */
 export function botListing(
 	bot: BotWallet,
-	markets: Record<Rarity, TierMarket>
+	markets: Record<Rarity, TierMarket>,
+	temper: Temper = CALM
 ): Decision<{ carId: string; price: number } | null> {
 	if (bot.cars.length === 0) return { value: null, reason: 'No cars to sell' };
 
 	if (bot.gears < BROKE_BELOW && bot.cars.length > 1) {
 		const car = [...bot.cars].sort((a, b) => BASE_PRICE[a.rarity] - BASE_PRICE[b.rarity])[0];
 		const fair = fairPrice(car.rarity, markets[car.rarity]);
-		const price = roundPrice(fair.value * 0.7);
+		const price = roundPrice(fair.value * 0.7 * temper.askMarkup);
 		return {
 			value: { carId: car.id, price },
 			reason: `Fire sale: down to ${bot.gears} Gears and needs to race again`
@@ -106,7 +115,7 @@ export function botListing(
 		if (ofTier.length > 2) {
 			const fair = fairPrice(rarity, markets[rarity]);
 			return {
-				value: { carId: ofTier[0].id, price: fair.value },
+				value: { carId: ofTier[0].id, price: roundPrice(fair.value * temper.askMarkup) },
 				reason: `Owns ${ofTier.length} ${plural(rarity)} and only needs 2 (${fair.reason})`
 			};
 		}
@@ -117,7 +126,7 @@ export function botListing(
 			if (ofTier.length >= 2) {
 				const fair = fairPrice(rarity, markets[rarity]);
 				return {
-					value: { carId: ofTier[0].id, price: roundPrice(fair.value * 1.05) },
+					value: { carId: ofTier[0].id, price: roundPrice(fair.value * 1.05 * temper.askMarkup) },
 					reason: `Has ${ofTier.length} ${plural(rarity)} and is saving up for something better`
 				};
 			}
@@ -141,9 +150,11 @@ export function botListing(
 export function botWouldBuy(
 	bot: BotWallet,
 	listing: { price: number; rarity: Rarity },
-	market: TierMarket
+	market: TierMarket,
+	temper: Temper = CALM
 ): Decision<boolean> {
-	const fair = fairPrice(listing.rarity, market).value;
+	// A bot that pays over the odds sees the going rate as higher than it is.
+	const fair = fairPrice(listing.rarity, market).value * temper.payTolerance;
 	if (bot.cars.length >= 6) return { value: false, reason: 'Garage is full' };
 	if (listing.price > (bot.gears * 2) / 3) return { value: false, reason: 'Too expensive for it' };
 	if (listing.price <= fair * 0.9) {

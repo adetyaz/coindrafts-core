@@ -6,6 +6,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { db } from '$lib/server/db';
 import { carListings, cars, users } from '$lib/server/schema';
 import { tradeCar } from '$lib/server/cars';
+import { personalityOf } from '$lib/bots/personalities';
 import {
 	RARITIES,
 	botListing,
@@ -248,7 +249,7 @@ export async function runBotMarket(): Promise<string[]> {
 			.from(carListings)
 			.where(and(eq(carListings.sellerId, bot.id), eq(carListings.status, 'open')));
 		if (hasOpen) continue;
-		const decision = botListing(bot.wallet, markets);
+		const decision = botListing(bot.wallet, markets, personalityOf(bot.username).trade);
 		if (!decision.value) continue;
 		try {
 			await listCar(bot.id, decision.value.carId, decision.value.price, decision.reason);
@@ -285,7 +286,12 @@ export async function runBotMarket(): Promise<string[]> {
 		for (const listing of open) {
 			if (taken.has(listing.id) || listing.sellerId === bot.id) continue;
 			const rarity = listing.rarity as Rarity;
-			const decision = botWouldBuy(bot.wallet, { price: listing.price, rarity }, markets[rarity]);
+			const decision = botWouldBuy(
+				bot.wallet,
+				{ price: listing.price, rarity },
+				markets[rarity],
+				personalityOf(bot.username).trade
+			);
 			if (!decision.value) continue;
 			try {
 				await buyListing(bot.id, listing.id, decision.reason);

@@ -10,6 +10,7 @@
 // assignment instead.
 import { classifySector } from '$lib/sectors';
 import { getTokensWithPrices, type TokenWithPrice } from '$lib/server/sosovalue';
+import type { DraftStyle } from '$lib/bots/personalities';
 
 // Mirrors bots-service/keep-bots-online.cjs's roster exactly — same 8 seeded
 // accounts, already present in the database (wallet_address = 'seed:<username>').
@@ -38,8 +39,30 @@ export type BotPick = {
 
 const SECTORS = ['l1', 'l2', 'defi', 'meme', 'wildcard'] as const;
 
+/**
+ * Each bot drafts in its own style (src/lib/bots/personalities.ts), reading
+ * the same 24h moves players see on the draft board.
+ */
+function pickByStyle(pool: TokenWithPrice[], style: DraftStyle): TokenWithPrice {
+	const move = (t: TokenWithPrice) => t.change24h ?? 0;
+	const by = (score: (t: TokenWithPrice) => number) =>
+		pool.reduce((best, t) => (score(t) > score(best) ? t : best));
+	switch (style) {
+		case 'momentum':
+			return by(move);
+		case 'contrarian':
+			return by((t) => -move(t));
+		case 'steady':
+			return by((t) => -Math.abs(move(t)));
+		case 'volatile':
+			return by((t) => Math.abs(move(t)));
+		default:
+			return pool[Math.floor(Math.random() * pool.length)];
+	}
+}
+
 /** Drafts 5 sector-correct picks from the live token pool for a bot opponent. */
-export async function draftBotLineup(): Promise<BotPick[]> {
+export async function draftBotLineup(style: DraftStyle = 'chaos'): Promise<BotPick[]> {
 	const tokens = await getTokensWithPrices();
 
 	const bySector = new Map<string, TokenWithPrice[]>(SECTORS.map((s) => [s, []]));
@@ -56,7 +79,7 @@ export async function draftBotLineup(): Promise<BotPick[]> {
 			inSector.length > 0 ? inSector : tokens.filter((t) => t.symbol && !used.has(t.symbol));
 		if (pool.length === 0) continue;
 
-		const chosen = pool[Math.floor(Math.random() * pool.length)];
+		const chosen = pickByStyle(pool, style);
 		used.add(chosen.symbol as string);
 		// When the live pool has no token for this slot's sector, the fallback
 		// above pulls from the whole pool — label with the token's own real

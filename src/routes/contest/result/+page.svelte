@@ -4,6 +4,10 @@
 	import { toast } from '$lib/toast';
 	import Toast from '$lib/components/Toast.svelte';
 	import { BADGE_MAP } from '$lib/badges';
+	import { lineFor, personalityOf, type HeadToHead, type Mood } from '$lib/bots/personalities';
+
+	// A bot opponent's reaction to the result, in its own voice.
+	let botReaction = $state<{ name: string; line: string } | null>(null);
 
 	// Starts empty on purpose. This page previously initialised with a realistic
 	// fabricated result ("YOU WON · 1482 / 1215" over five invented picks), which
@@ -88,6 +92,17 @@
 				breakdown = data.breakdown;
 			}
 			opponentName = data.opponentName ?? null;
+			const rival = data.rival as { username: string; mood: Mood; record: HeadToHead } | null;
+			if (rival) {
+				const botWon = data.status !== 'YOU WON';
+				botReaction = {
+					name: rival.username,
+					line: lineFor(personalityOf(rival.username), rival.mood, botWon ? 'wins' : 'loses', {
+						you: 'you',
+						record: rival.record
+					})
+				};
+			}
 			record = data.record ?? null;
 			canRematch = Boolean(data.canRematch);
 			stakeInfo = data.stake ?? null;
@@ -257,6 +272,11 @@
 							>
 								{record.wins}–{record.losses} vs {opponentName ?? 'them'}
 							</div>
+						{/if}
+						{#if botReaction}
+							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-bold">
+								{botReaction.name}: “{botReaction.line}”
+							</p>
 						{/if}
 					</div>
 				</div>

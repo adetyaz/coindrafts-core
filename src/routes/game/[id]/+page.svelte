@@ -9,6 +9,13 @@
 	import Toast from '$lib/components/Toast.svelte';
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
 	import { streamPrices } from '$lib/race/priceStream';
+	import {
+		MOOD_LABEL,
+		lineFor,
+		personalityOf,
+		type HeadToHead,
+		type Mood
+	} from '$lib/bots/personalities';
 
 	type Pick = {
 		sector: string;
@@ -31,6 +38,12 @@
 		me: Side;
 		opponent: Side;
 		stakeId?: string | null;
+		rival?: {
+			username: string;
+			tagline: string;
+			mood: Mood;
+			record: HeadToHead;
+		} | null;
 		history: { at: string; prices: Record<string, number> }[];
 	};
 
@@ -277,8 +290,57 @@
 		const line = pick
 			? `${pick} pulls ${who} past ${passed.isMe ? 'you' : passed.name}!`
 			: `${passer.isMe ? 'You overtake' : `${passer.name} overtakes`} ${passed.isMe ? 'you' : passed.name}!`;
-		commentary = [line, ...commentary].slice(0, 3);
+		const lines = [line];
+
+		// A bot opponent answers the overtake in its own voice. At most one line
+		// every 20s, so it reacts rather than spams.
+		const now = Date.now();
+		if (live?.rival && botChat === 'on' && now - lastTaunt > 20_000) {
+			lastTaunt = now;
+			const bot = personalityOf(live.rival.username);
+			const taunt = lineFor(bot, live.rival.mood, passer.isMe ? 'youPass' : 'passesYou', {
+				you: live.me?.name ?? 'you',
+				coin: pick,
+				record: live.rival.record
+			});
+			lines.push(`${live.rival.username}: “${taunt}”`);
+		}
+		commentary = [...lines.reverse(), ...commentary].slice(0, 4);
 	}
+
+	// ── Bot opponent ─────────────────────────────────────────────────────────
+	// Bot chat: on (grid, overtakes, result) · quiet (grid and result only) · off.
+	let botChat = $state<'on' | 'quiet' | 'off'>('on');
+	let lastTaunt = 0;
+	let gridLine = $state<string | null>(null);
+
+	onMount(() => {
+		try {
+			const saved = localStorage.getItem('botChat');
+			if (saved === 'on' || saved === 'quiet' || saved === 'off') botChat = saved;
+		} catch {
+			// Storage blocked: keep the default.
+		}
+	});
+
+	function setBotChat(mode: 'on' | 'quiet' | 'off') {
+		botChat = mode;
+		try {
+			localStorage.setItem('botChat', mode);
+		} catch {
+			// Storage blocked: the choice lasts for this visit.
+		}
+	}
+
+	// Picked once per visit, so the line doesn't change on every poll.
+	$effect(() => {
+		if (live?.rival && gridLine === null) {
+			gridLine = lineFor(personalityOf(live.rival.username), live.rival.mood, 'grid', {
+				you: live.me?.name ?? 'you',
+				record: live.rival.record
+			});
+		}
+	});
 </script>
 
 <div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18">
@@ -361,6 +423,32 @@
 				Watch the race →
 			</button>
 		</div>
+
+		{#if live?.rival}
+			{@const r = live.rival}
+			<div
+				class="mt-4.5 flex flex-wrap items-start gap-4 rounded-[20px] border border-border bg-surface p-5"
+			>
+				<div class="min-w-0 flex-1">
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="text-lg font-black">{r.username}</span>
+						<span class="rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
+							>BOT</span
+						>
+						<span class="text-xs text-text-muted">{r.tagline}</span>
+					</div>
+					<div class="mt-1 text-xs text-text-muted">
+						{MOOD_LABEL[r.mood]}
+						{#if r.record.races > 0}
+							· you’re {r.record.playerWins}–{r.record.botWins} against it
+						{/if}
+					</div>
+					{#if gridLine && botChat !== 'off'}
+						<p class="mt-3 rounded-2xl bg-surface-alt px-4 py-3 text-sm font-bold">“{gridLine}”</p>
+					{/if}
+				</div>
+			</div>
+		{/if}
 
 		{#if live?.stakeId}
 			<div class="mt-4.5">
@@ -447,17 +535,34 @@
 			</div>
 		</div>
 
-		<div class="mb-3 flex w-fit gap-1 self-start rounded-full border border-border bg-surface p-1">
-			{#each [['race', 'Race'], ['chart', 'Chart']] as [mode, label] (mode)}
-				<button
-					type="button"
-					onclick={() => (view = mode as 'race' | 'chart')}
-					class="cursor-pointer rounded-full border-none px-4 py-1.5 text-xs font-extrabold transition {view ===
-					mode
-						? 'bg-text text-surface'
-						: 'bg-transparent text-text-muted'}">{label}</button
-				>
-			{/each}
+		<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+			<div class="flex w-fit gap-1 rounded-full border border-border bg-surface p-1">
+				{#each [['race', 'Race'], ['chart', 'Chart']] as [mode, label] (mode)}
+					<button
+						type="button"
+						onclick={() => (view = mode as 'race' | 'chart')}
+						class="cursor-pointer rounded-full border-none px-4 py-1.5 text-xs font-extrabold transition {view ===
+						mode
+							? 'bg-text text-surface'
+							: 'bg-transparent text-text-muted'}">{label}</button
+					>
+				{/each}
+			</div>
+			{#if live?.rival}
+				<div class="flex items-center gap-1 text-[11px] font-bold text-text-muted">
+					Bot chat
+					{#each [['on', 'On'], ['quiet', 'Quiet'], ['off', 'Off']] as [mode, label] (mode)}
+						<button
+							type="button"
+							onclick={() => setBotChat(mode as 'on' | 'quiet' | 'off')}
+							class="cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-extrabold {botChat ===
+							mode
+								? 'border-text bg-text text-surface'
+								: 'border-border bg-transparent text-text-muted'}">{label}</button
+						>
+					{/each}
+				</div>
+			{/if}
 		</div>
 
 		{#if view === 'race'}
