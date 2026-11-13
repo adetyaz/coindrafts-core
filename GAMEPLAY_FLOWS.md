@@ -66,13 +66,14 @@ Mode ─► Car ─► Track ─► Draft (your 5 coins) ─► Opponent / grid 
 
 ### 1. Mode ✅
 
-Scrimmage (vs bots, practice) · Versus (1v1) · Tournament. Then race length: 1 min, 5 min, 10 min,
-20 min, 45 min, 3 h, 24 h, 7 days.
+Scrimmage (vs bots, practice) · Versus (1v1) · Tournament · **Car race** (stake a car, see F3). Then
+race length: 1 min, 5 min, 10 min, 20 min, 45 min, 3 h, 24 h, 7 days.
 
 ### 2. Car 🧪
 
-Choose one of your cars. Shows each car's model, rarity, races and wins. Cosmetic only — the screen
-says so. If the car is staked or listed for sale it can't be picked (with the reason).
+Choose one of your cars. **Your last-used car is pre-selected**, so it's one tap. Shows each car's
+model, rarity, races and wins. Cosmetic only — the screen says so. If the car is staked or listed
+for sale it can't be picked (with the reason).
 
 _Order note: car → track → draft is the one being tried. The alternative (draft first, then car and
 track) stays on the table after playtesting._
@@ -84,8 +85,9 @@ Choose a circuit. **Tracks are real circuit shapes**, built from measured center
 credit required). Each has its own layout, corners and length; the 3D track is generated from the
 data, not drawn by hand. Cosmetic only — results never depend on the track.
 
-- Launch set: to be picked from the 25 (candidates: Spa, Monza, Silverstone, Suzuka, Interlagos,
-  Zandvoort, Austin). ⏳
+- Launch set ✅: **Monza** (long straights, very fast), **Suzuka** (figure-of-eight crossover),
+  **Spa** (big flowing sweeps), **Interlagos** (compact and twisty) — picked to look as different
+  from each other as possible. More from the 25 later.
 - Names: shown by city/region (e.g. "Spa", "Monza") — the circuit names are places; no series or
   event branding.
 - Versus: each player picks a track; if they differ, the **rock-paper-scissors tiebreak** decides and
@@ -130,8 +132,58 @@ Cars roll to a stop (built), then a **podium** (not built): positions, each driv
 
 ---
 
+## F3 — Garage, Showroom, Car Market and car races ✅
+
+Cars are cosmetic, owned assets. Gears are the currency. This flow decides where cars come from,
+where they go, and what Gears are for.
+
+### Where cars come from and go
+
+| Source             | What happens                                                                                                                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Starter car**    | Free, on first sign-in (F1). Can never be staked in a car race                                                                                                                                            |
+| **Showroom** (new) | Buy a brand-new car from the game for Gears at the base price (Common 300, Rare 900, Epic 2,500, Legendary 7,000). Rare, Epic and Legendary have **limited weekly stock**. Gears spent here are destroyed |
+| **Car Market**     | Buy from or sell to players and bots (built)                                                                                                                                                              |
+| **Car race**       | Win your opponent's staked car, or lose yours                                                                                                                                                             |
+
+### What Gears are for
+
+Earned from races (F2) · spent in the **Showroom**, on **customising** (paint, decals, number plate)
+and in the **Car Market**. Showroom and customising spend **destroys** the Gears, so they don't pile
+up (the simulation showed bots reaching 3,000–6,000 with nothing to spend on).
+
+### Garage
+
+1. Your Gears and your cars (built), with **your last-used car marked** — it's the one the race flow
+   pre-selects.
+2. Each car: model, rarity, races, wins, status (available · staked · for sale at X) (built).
+3. **Car history** (new): every owner and how it moved — "bought from the Showroom", "bought from
+   ChartWizard for 450", "won from Rusty Rex in a car race".
+4. **Customise** (new): paint, decals, number plate, priced in Gears, with a preview. Cosmetic only.
+5. **Sell:** list at your own price, pre-filled with the going rate (built) — **or Sell now**: an
+   instant sale to a bot at about 80% of the going rate (new).
+6. Your NEAR account and the garage contract, linked (built).
+
+### Car Market (built)
+
+Going rate per tier with trend and reason · listings from players and bots, BOT tags, "Why:" lines,
+Buy · recent sales with buyers' reasons · **Simulate a week**.
+
+### Car race (new for players)
+
+1. **Mode → Car race** → choose a car to stake. The starter car can't be picked.
+2. Matched only against a car of the **same rarity**: a player if one is waiting, otherwise a bot.
+3. **Confirm with a clear warning:** "Winner takes both cars. If you lose, this car leaves your
+   garage."
+4. Then the normal race flow from Track onwards; both cars are held by the contract during the race.
+5. Result: the winner's garage gains the car (with a "won" moment); the loser sees it leave. The car's
+   history records it.
+
+Built today: contract escrow and the server side; bots already race for cars in Simulate a week.
+
+---
+
 ## Still to discuss ⏳
 
-Car Market & car staking · Garage (equip, customise) · Simulate a week · Tournaments (pots, groups
-of 5) · Leagues · Profile & settings · Daily trivia · Binary race mode · Shop · Nitro & pit-stop ·
-PWA & notifications · Sponsors & track ads.
+Simulate a week · Tournaments (pots, groups of 5) · Leagues · Profile & settings · Daily trivia ·
+Binary race mode · Nitro & pit-stop · PWA & notifications · Sponsors & track ads.
