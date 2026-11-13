@@ -11,6 +11,7 @@ import {
 	botListing,
 	botWouldBuy,
 	fairPrice,
+	isStale,
 	trendPct,
 	type BotWallet,
 	type Rarity,
@@ -217,6 +218,30 @@ export async function runBotMarket(): Promise<string[]> {
 	const log: string[] = [];
 	const markets = await tierMarkets();
 
+	// Stale bot listings come down first, so they re-list at today's price.
+	const botOpen = await db
+		.select({
+			id: carListings.id,
+			price: carListings.price,
+			rarity: cars.rarity,
+			seller: users.username
+		})
+		.from(carListings)
+		.innerJoin(cars, eq(cars.id, carListings.carId))
+		.innerJoin(users, eq(users.id, carListings.sellerId))
+		.where(and(eq(carListings.status, 'open'), like(users.walletAddress, 'seed:%')));
+	for (const l of botOpen) {
+		const rarity = l.rarity as Rarity;
+		const fair = fairPrice(rarity, markets[rarity]).value;
+		if (!isStale(l.price, fair)) continue;
+		await db
+			.update(carListings)
+			.set({ status: 'cancelled', closedAt: new Date() })
+			.where(and(eq(carListings.id, l.id), eq(carListings.status, 'open')));
+		markets[rarity].forSale = Math.max(0, markets[rarity].forSale - 1);
+		log.push(`${l.seller} took down its ${rarity} at ${l.price}: the going rate fell to ${fair}`);
+	}
+
 	for (const bot of await botWallets()) {
 		const [hasOpen] = await db
 			.select({ id: carListings.id })
@@ -227,6 +252,9 @@ export async function runBotMarket(): Promise<string[]> {
 		if (!decision.value) continue;
 		try {
 			await listCar(bot.id, decision.value.carId, decision.value.price, decision.reason);
+			// The next bot prices against a market that includes this listing.
+			const listed = bot.wallet.cars.find((c) => c.id === decision.value!.carId);
+			if (listed) markets[listed.rarity].forSale++;
 			log.push(`${bot.username} listed a car for ${decision.value.price}: ${decision.reason}`);
 		} catch (e) {
 			log.push(`${bot.username} couldn't list: ${(e as Error).message}`);

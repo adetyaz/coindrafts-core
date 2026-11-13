@@ -43,12 +43,18 @@ export function fairPrice(rarity: Rarity, market: TierMarket): Decision<number> 
 	const demand = clamp(1 + 0.05 * market.soldLast24h, 1, 1.4);
 	const price = roundPrice(BASE_PRICE[rarity] * supply * demand);
 	const parts: string[] = [];
-	if (supply < 1) parts.push(`${market.forSale} ${rarity}s for sale`);
-	if (supply > 1) parts.push(`only ${market.forSale} ${rarity}s for sale`);
+	if (supply < 1) parts.push(`${market.forSale} ${plural(rarity)} for sale`);
+	if (supply > 1) {
+		parts.push(
+			market.forSale === 0 ? `no ${plural(rarity)} for sale` : `only ${market.forSale} for sale`
+		);
+	}
 	if (market.soldLast24h > 0) parts.push(`${market.soldLast24h} sold today`);
 	return {
 		value: price,
-		reason: parts.length ? `${parts.join(', ')}` : `${rarity}s are trading at their usual price`
+		reason: parts.length
+			? `${parts.join(', ')}`
+			: `${plural(rarity)} are trading at their usual price`
 	};
 }
 
@@ -75,7 +81,7 @@ export const SAVING_BELOW = 1000;
  * Whether a bot lists one of its cars, which one, and at what price.
  * - Broke: fire sale, its cheapest car at 70% of fair price
  * - More than 2 cars of one tier: sells a spare at fair price
- * - Saving up (3+ cars, under SAVING_BELOW Gears): sells a duplicate at 10% over
+ * - Saving up (3+ cars, under SAVING_BELOW Gears): sells a duplicate at 5% over
  *   fair price, holding out for a good offer
  * - Otherwise it keeps its garage
  */
@@ -101,7 +107,7 @@ export function botListing(
 			const fair = fairPrice(rarity, markets[rarity]);
 			return {
 				value: { carId: ofTier[0].id, price: fair.value },
-				reason: `Owns ${ofTier.length} ${rarity}s and only needs 2 (${fair.reason})`
+				reason: `Owns ${ofTier.length} ${plural(rarity)} and only needs 2 (${fair.reason})`
 			};
 		}
 	}
@@ -111,8 +117,8 @@ export function botListing(
 			if (ofTier.length >= 2) {
 				const fair = fairPrice(rarity, markets[rarity]);
 				return {
-					value: { carId: ofTier[0].id, price: roundPrice(fair.value * 1.1) },
-					reason: `Has ${ofTier.length} ${rarity}s and is saving up for something better`
+					value: { carId: ofTier[0].id, price: roundPrice(fair.value * 1.05) },
+					reason: `Has ${ofTier.length} ${plural(rarity)} and is saving up for something better`
 				};
 			}
 		}
@@ -128,6 +134,9 @@ export function botListing(
  * - Never owns more than 6 cars
  * - Buys anything at least 10% under fair price (a bargain)
  * - Buys a tier it doesn't own yet at up to fair price (filling its garage)
+ * - With Gears to spare (3× the price) and under 4 cars, buys a fairly priced
+ *   car (up to 15% over the going rate): this is the steady demand that keeps
+ *   cars changing hands when there are no bargains
  */
 export function botWouldBuy(
 	bot: BotWallet,
@@ -147,6 +156,12 @@ export function botWouldBuy(
 	if (!bot.cars.some((c) => c.rarity === listing.rarity) && listing.price <= fair) {
 		return { value: true, reason: `Wanted its first ${listing.rarity}` };
 	}
+	if (bot.cars.length < 4 && bot.gears >= listing.price * 3 && listing.price <= fair * 1.15) {
+		return {
+			value: true,
+			reason: `Had Gears to spare and liked the price for a ${listing.rarity}`
+		};
+	}
 	return { value: false, reason: 'Not a good enough deal' };
 }
 
@@ -154,6 +169,19 @@ export function botWouldBuy(
 
 function clamp(n: number, lo: number, hi: number) {
 	return Math.max(lo, Math.min(hi, n));
+}
+
+export function plural(rarity: Rarity): string {
+	return rarity === 'Legendary' ? 'Legendaries' : `${rarity}s`;
+}
+
+/**
+ * A bot's listing has gone stale when the market has moved well below it:
+ * nobody will pay 25% over the going rate, so the bot takes it down and
+ * re-lists at today's price next round.
+ */
+export function isStale(price: number, fair: number): boolean {
+	return price > fair * 1.25;
 }
 
 /** Prices land on round tens so they read like prices, not computations. */
