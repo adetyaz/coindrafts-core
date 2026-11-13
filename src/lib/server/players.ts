@@ -21,6 +21,7 @@ import { SCRIMMAGE_BOTS } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { BADGES } from '$lib/badges';
 import { normalizeDuration } from '$lib/constants';
+import { notify } from '$lib/server/notify';
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const isBotWallet = (w: string | null | undefined) => Boolean(w?.startsWith('seed:'));
@@ -319,6 +320,16 @@ export async function sendChallenge(
 			message: message?.slice(0, 140) || null
 		})
 		.returning();
+	const [from] = await db
+		.select({ username: users.username })
+		.from(users)
+		.where(eq(users.id, fromUserId));
+	await notify(target.id, 'challenge', {
+		title: `${from?.username ?? 'Someone'} challenged you`,
+		body: message?.slice(0, 140) || 'A Versus race, on their terms. You have 24 hours.',
+		url: '/profile',
+		tag: `challenge-${c.id}`
+	});
 	return c;
 }
 

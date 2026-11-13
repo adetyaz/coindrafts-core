@@ -1,4 +1,5 @@
 <script lang="ts">
+	import InstallPrompt from '$lib/components/InstallPrompt.svelte';
 	import { ITEMS, type LineupItem } from '$lib/race/items';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -337,6 +338,8 @@
 
 		<div class="mt-4.5 flex flex-wrap gap-4.5">
 			<div class="min-w-0 flex-[1_1_520px]">
+				<!-- After a finished race: offer the home-screen install (F11). -->
+				<div class="mb-6"><InstallPrompt /></div>
 				{#if calls}
 					<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
 						Your calls · {calls.filter((c) => c.right).length} of {calls.length} right

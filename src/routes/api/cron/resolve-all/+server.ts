@@ -10,6 +10,7 @@ import { cancelAbandonedCarRaces } from '$lib/server/carRace';
 import { sweepTournaments } from '$lib/server/tournament-resolution';
 import { sweepLeagues } from '$lib/server/leagues';
 import { playBotDay } from '$lib/server/botDay';
+import { dailyNudges } from '$lib/server/nudges';
 
 // Merges the contest and lobby resolution sweeps into a single cron job.
 // Vercel's Hobby plan caps cron jobs at once/day and limits how many a
@@ -59,6 +60,9 @@ async function sweep(authHeader: string | null) {
 		)
 		.catch((e) => ({ error: String(e) }));
 
+	// Daily notifications: trivia for streak keepers, bots with a grudge.
+	const nudges = await dailyNudges().catch((e) => ({ error: String(e) }));
+
 	// Car races nobody started within the hour: cars go back to their garages.
 	const carRacesCancelled = await cancelAbandonedCarRaces().catch((e) => {
 		console.error('[cron/resolve-all] car race cleanup failed:', e);
@@ -74,6 +78,7 @@ async function sweep(authHeader: string | null) {
 		carRacesCancelled,
 		tournaments: tournamentSweep,
 		botDay,
+		nudges,
 		contests: {
 			checked: dueContests.length,
 			resolved: contestResults.filter((r) => r.resolved).length,

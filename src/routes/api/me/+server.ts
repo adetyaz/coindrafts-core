@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { cars, userBadges, users } from '$lib/server/schema';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { parseSessionToken } from '$lib/server/auth';
+import { NOTIFY_KIND_IDS } from '$lib/notifications';
 
 export async function GET({ cookies }) {
 	const token = cookies.get('session');
@@ -111,6 +112,18 @@ export async function PATCH({ request, cookies }) {
 			next.notifications = body.settings.notifications;
 		if (typeof body.settings.reducedMotion === 'boolean')
 			next.reducedMotion = body.settings.reducedMotion;
+		// Notifications: one toggle per kind, quiet hours (local hours 0–23).
+		if (body.settings.notify && typeof body.settings.notify === 'object') {
+			const notify = { ...(next.notify ?? {}) };
+			for (const k of NOTIFY_KIND_IDS) {
+				if (typeof body.settings.notify[k] === 'boolean') notify[k] = body.settings.notify[k];
+			}
+			next.notify = notify;
+		}
+		for (const key of ['quietStart', 'quietEnd'] as const) {
+			const h = body.settings[key];
+			if (Number.isInteger(h) && h >= 0 && h <= 23) next[key] = h;
+		}
 		set.settings = next;
 	}
 

@@ -62,11 +62,12 @@ export const users = pgTable('users', {
 	// contact and notifications, and must never grant access to anything.
 	email: text('email'),
 	showcaseBadges: jsonb('showcase_badges').$type<string[]>(),
-	settings: jsonb('settings').$type<{
-		botChat?: 'on' | 'quiet' | 'off';
-		notifications?: boolean;
-		reducedMotion?: boolean;
-	}>()
+	settings: jsonb('settings').$type<
+		{
+			botChat?: 'on' | 'quiet' | 'off';
+			reducedMotion?: boolean;
+		} & import('../notifications').NotifySettings
+	>()
 });
 
 // Sponsors and track ads (GAMEPLAY_FLOWS.md, F12, $lib/sponsors).
@@ -105,6 +106,18 @@ export const sponsorBookings = pgTable('sponsor_bookings', {
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	paidAt: timestamp('paid_at'),
 	decidedAt: timestamp('decided_at')
+});
+
+// A browser that agreed to notifications (Web Push). One player can have several.
+export const pushSubscriptions = pgTable('push_subscriptions', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+		.references(() => users.id)
+		.notNull(),
+	endpoint: text('endpoint').notNull().unique(),
+	p256dh: text('p256dh').notNull(),
+	auth: text('auth').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 // One row per bot day the daily job played (GAMEPLAY_FLOWS.md, F10). The row

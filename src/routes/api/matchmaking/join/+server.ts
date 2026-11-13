@@ -7,6 +7,7 @@ import { DEFAULT_DURATION_MINUTES, normalizeDuration } from '$lib/constants';
 import { normalizeTier, createStakeForContest } from '$lib/server/wager';
 
 import { findOpponent, enqueue } from '$lib/server/matchmaking';
+import { notify } from '$lib/server/notify';
 
 export async function POST({ request, cookies }) {
 	const token = cookies.get('session');
@@ -75,6 +76,12 @@ export async function POST({ request, cookies }) {
 			if (stake.ok) stakeId = stake.stakeId;
 		}
 
+		await notify(opponentId, 'match', {
+			title: 'Match found',
+			body: 'Your Versus opponent is here. Draft your lineup.',
+			url: `/draft?contestId=${newContest.id}&type=${newContest.type}`,
+			tag: `match-${newContest.id}`
+		});
 		return json({ status: 'matched', contestId: newContest.id, opponentId, stakeId, stakeTier });
 	}
 

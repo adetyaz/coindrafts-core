@@ -4,11 +4,14 @@
 	import favicon from '$lib/assets/images/logo_v4_appicon.svg';
 	import Ticker from '$lib/components/ui/Ticker.svelte';
 	import Nav from '$lib/components/Nav.svelte';
+	import { listenForInstall } from '$lib/push';
 
 	let { children, data } = $props();
 	let tickerItems = $state<string[]>([]);
 
 	onMount(async () => {
+		// Keep Chrome/Android's one-time install prompt for after the first race.
+		listenForInstall();
 		// Me → Settings → Reduce motion, remembered in this browser (see layout.css).
 		try {
 			if (localStorage.getItem('reducedMotion') === '1')

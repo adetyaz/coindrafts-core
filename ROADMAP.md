@@ -354,7 +354,7 @@ time, plain functional layouts until the new design system lands.
 - [x] 11. Binary race mode — F9
 - [x] 12. The bots' daily life (one bot day per day, automatically) — F10
 - [x] 13. Sponsors and track ads — F12
-- [ ] 14. Install (PWA) and notifications — F11
+- [x] 14. Install (PWA) and notifications — F11 _(needs scripts/migrate-step14.sql; VAPID keys in Vercel)_
 
 ### ⏭️ After launch
 

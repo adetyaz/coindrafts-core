@@ -6,6 +6,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { db } from '$lib/server/db';
 import { carListings, cars, users } from '$lib/server/schema';
 import { tradeCar } from '$lib/server/cars';
+import { notify } from '$lib/server/notify';
 import { personalityOf } from '$lib/bots/personalities';
 import {
 	RARITIES,
@@ -130,6 +131,12 @@ export async function buyListing(buyerId: string, listingId: string, buyReason?:
 			throw new MarketError('The seller no longer owns that car');
 		}
 		await tradeCar(claimed.carId, buyerId, claimed.price);
+		await notify(claimed.sellerId, 'carSold', {
+			title: 'Your car sold',
+			body: `It went for ⚙️ ${claimed.price} in the Car Market.`,
+			url: '/garage',
+			tag: `sold-${claimed.id}`
+		});
 		return claimed;
 	} catch (e) {
 		await db

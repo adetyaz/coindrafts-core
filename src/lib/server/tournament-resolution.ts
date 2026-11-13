@@ -30,6 +30,7 @@ import { resolveLobby } from '$lib/server/lobby-resolution';
 import { personalityOf, type DraftStyle } from '$lib/bots/personalities';
 import { SHOWROOM_MODELS, type Rarity } from '$lib/economy/rules';
 import { countAdViews } from '$lib/server/sponsors';
+import { notifyAll } from '$lib/server/notify';
 
 export const QUALIFIER_STAGE = 0;
 export const FINAL_STAGE = 1;
@@ -191,6 +192,16 @@ export async function runDraw(tournamentId: string) {
 		}
 		await createStage(t, QUALIFIER_STAGE, seats);
 	}
+	await notifyAll(
+		entrants.map((e) => e.userId),
+		'tournament',
+		{
+			title: `${t.name}: the draw is out`,
+			body: 'Your group is set. Draft in the next 5 minutes or race an auto-drafted lineup.',
+			url: `/tournament/${t.id}`,
+			tag: `draw-${t.id}`
+		}
+	);
 	return { ok: true as const, outcome: 'started' as const, groups: groupCount };
 }
 
@@ -357,6 +368,16 @@ export async function onLobbyResolved(lobby: {
 		return;
 	}
 	await createStage(t, FINAL_STAGE, advancers);
+	await notifyAll(
+		advancers.filter((a) => !a.bot).map((a) => a.userId),
+		'tournament',
+		{
+			title: `${t.name}: you're in the final`,
+			body: 'Draft your lineup for the final in the next 5 minutes.',
+			url: `/tournament/${t.id}`,
+			tag: `final-${t.id}`
+		}
+	);
 }
 
 /**

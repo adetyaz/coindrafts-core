@@ -30,6 +30,7 @@ import { kickOffIfReady } from '$lib/server/tournament-resolution';
 import { resolveLobby } from '$lib/server/lobby-resolution';
 import { grantGears } from '$lib/server/cars';
 import { awardLeagueChampionBadge } from '$lib/server/badges';
+import { notifyAll } from '$lib/server/notify';
 
 export const GRID_SIZE = 5;
 /** Grids open this long before lights out, for drafting ahead. */
@@ -125,6 +126,12 @@ async function openNight(league: League, now = new Date()) {
 			.insert(lobbyParticipants)
 			.values(seats.map((userId) => ({ lobbyId: lobby.id, userId })));
 	}
+	await notifyAll(ids, 'league', {
+		title: `${league.name}: league night is open`,
+		body: 'Draft before lights out, or race an auto-drafted lineup.',
+		url: `/leagues/${league.id}`,
+		tag: `league-${night.id}`
+	});
 }
 
 /**

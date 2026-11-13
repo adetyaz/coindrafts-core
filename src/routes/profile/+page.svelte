@@ -1,4 +1,6 @@
 <script lang="ts">
+	import NotificationSettings from '$lib/components/NotificationSettings.svelte';
+	import type { NotifySettings } from '$lib/notifications';
 	// Me (GAMEPLAY_FLOWS.md, F6): your name and showcased car, stats, the badges
 	// you show (up to 3), rivals (bots' moods and humans you race often),
 	// challenges, links to the Garage and NEAR, and settings.
@@ -16,7 +18,7 @@
 		botChat: 'on' | 'quiet' | 'off';
 		notifications: boolean;
 		reducedMotion: boolean;
-	};
+	} & NotifySettings;
 	type Profile = {
 		card: {
 			id: string;
@@ -432,15 +434,9 @@
 						{/if}
 					</div>
 				</div>
-				<label class="flex items-center justify-between gap-2">
-					<span class="font-bold">Notifications</span>
-					<input
-						type="checkbox"
-						checked={p.settings.notifications}
-						onchange={(e) => setSetting('notifications', e.currentTarget.checked)}
-						class="h-5 w-5"
-					/>
-				</label>
+				<div class="border-y border-border py-4">
+					<NotificationSettings settings={p.settings} save={(s) => save({ settings: s })} />
+				</div>
 				<label class="flex items-center justify-between gap-2">
 					<span class="font-bold">Reduce motion</span>
 					<input

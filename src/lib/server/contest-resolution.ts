@@ -9,6 +9,7 @@ import { flushOutbox, grantGears, settleCarRace } from '$lib/server/cars';
 import { stakedCars } from '$lib/server/carRace';
 import { runBotMarket } from '$lib/server/market';
 import { itemFactors } from '$lib/race/items';
+import { notifyAll } from '$lib/server/notify';
 import { BINARY_SOLO, SOLO_TO_WIN, callRight, isBinaryMode, tallyCalls } from '$lib/race/binary';
 
 /** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
@@ -318,6 +319,18 @@ export async function resolveContest(
 		.where(and(eq(contests.id, contestId), eq(contests.status, 'live')))
 		.returning({ id: contests.id });
 	if (!claimed) return { resolved: false, reason: 'already_resolved' };
+
+	// Result is in (F11). Bots are skipped inside notify.
+	await notifyAll(
+		[contest.userAId, contest.userBId].filter((id): id is string => Boolean(id)),
+		'match',
+		{
+			title: 'Your race result is in',
+			body: 'See who crossed the line first.',
+			url: `/contest/result?contestId=${contestId}`,
+			tag: `result-${contestId}`
+		}
+	);
 
 	// Car race: the winner takes every staked car. After the claim, so it runs
 	// exactly once; settleCarRace moves the cars and records car_events.
