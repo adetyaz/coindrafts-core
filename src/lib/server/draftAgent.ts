@@ -6,21 +6,18 @@
 // of ever returning a token that doesn't actually exist in the live pool.
 import { classifySector } from '$lib/sectors';
 import { getTokensWithPrices, type TokenWithPrice } from '$lib/server/sosovalue';
-import {
-	createChatCompletion,
-	extractTrace,
-	activeBackend,
-	type ComputeTrace
-} from '$lib/server/aiCompute';
+import { createChatCompletion, AI_MODEL } from '$lib/server/aiCompute';
 
 export type AgentPick = { sector: string; symbol: string; name: string; currencyId: string };
 
-/** Picks plus the inference receipt that produced them (see ComputeTrace). */
-export type AgentResult = { picks: AgentPick[]; trace: ComputeTrace | null };
+/** Picks plus which model produced them; `model` is null when the procedural fallback ran. */
+export type AgentResult = { picks: AgentPick[]; model: string | null };
 
 function bestPerformer(tokens: TokenWithPrice[]): TokenWithPrice | undefined {
 	if (tokens.length === 0) return undefined;
-	return tokens.reduce((a, b) => ((a.change24h ?? -Infinity) >= (b.change24h ?? -Infinity) ? a : b));
+	return tokens.reduce((a, b) =>
+		(a.change24h ?? -Infinity) >= (b.change24h ?? -Infinity) ? a : b
+	);
 }
 
 // Weighted toward the model's top choice, but not locked to it. Two opponents
@@ -31,7 +28,9 @@ function bestPerformer(tokens: TokenWithPrice[]): TokenWithPrice | undefined {
 const RANK_WEIGHTS = [0.55, 0.3, 0.15];
 function weightedPick(rankedSymbols: string[]): string | null {
 	if (rankedSymbols.length === 0) return null;
-	const weights = rankedSymbols.map((_, i) => RANK_WEIGHTS[i] ?? RANK_WEIGHTS[RANK_WEIGHTS.length - 1]);
+	const weights = rankedSymbols.map(
+		(_, i) => RANK_WEIGHTS[i] ?? RANK_WEIGHTS[RANK_WEIGHTS.length - 1]
+	);
 	const total = weights.reduce((a, b) => a + b, 0);
 	let r = Math.random() * total;
 	for (let i = 0; i < rankedSymbols.length; i++) {
@@ -41,7 +40,7 @@ function weightedPick(rankedSymbols: string[]): string | null {
 	return rankedSymbols[rankedSymbols.length - 1];
 }
 
-/** Picks one token per requested sector, reasoning over live data via 0G Compute/Groq. */
+/** Picks one token per requested sector, reasoning over live data via Groq. */
 export async function pickForSectors(sectors: string[]): Promise<AgentResult> {
 	const tokens = await getTokensWithPrices();
 	const priced = tokens.filter((t) => t.symbol && t.price != null);
@@ -59,7 +58,7 @@ export async function pickForSectors(sectors: string[]): Promise<AgentResult> {
 		candidatesBySector.set(sector, pool && pool.length > 0 ? pool : priced);
 	}
 
-	const { chosen, trace } = await askAgent(candidatesBySector);
+	const { chosen, model } = await askAgent(candidatesBySector);
 
 	// Resolved sequentially with a shared `used` set — multiple slots often
 	// share the same fallback candidate pool (when a sector's own bucket is
@@ -73,9 +72,9 @@ export async function pickForSectors(sectors: string[]): Promise<AgentResult> {
 		const validSymbols = new Set(candidates.map((t) => (t.symbol ?? '').toUpperCase()));
 		// Only the model's real, unused-so-far suggestions are eligible — an
 		// invented or already-picked symbol just falls out of the running list.
-		const ranked = [
-			...new Set((chosen.get(sector) ?? []).map((s) => s.toUpperCase()))
-		].filter((s) => validSymbols.has(s) && !used.has(s));
+		const ranked = [...new Set((chosen.get(sector) ?? []).map((s) => s.toUpperCase()))].filter(
+			(s) => validSymbols.has(s) && !used.has(s)
+		);
 		const pickedSymbol = weightedPick(ranked);
 		const match = pickedSymbol
 			? candidates.find((t) => (t.symbol ?? '').toUpperCase() === pickedSymbol)
@@ -95,18 +94,20 @@ export async function pickForSectors(sectors: string[]): Promise<AgentResult> {
 			currencyId: token.currency_id
 		});
 	}
-	return { picks, trace };
+	return { picks, model };
 }
 
 async function askAgent(
 	candidatesBySector: Map<string, TokenWithPrice[]>
-): Promise<{ chosen: Map<string, string[]>; trace: ComputeTrace | null }> {
+): Promise<{ chosen: Map<string, string[]>; model: string | null }> {
 	const lines: string[] = [];
 	for (const [sector, candidates] of candidatesBySector) {
 		lines.push(`${sector.toUpperCase()} slot — rank your top picks:`);
 		for (const t of candidates.slice(0, 12)) {
 			const chg = t.change24h ?? 0;
-			lines.push(`  ${(t.symbol ?? '').toUpperCase()}: $${t.price} (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% 24h)`);
+			lines.push(
+				`  ${(t.symbol ?? '').toUpperCase()}: $${t.price} (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% 24h)`
+			);
 		}
 	}
 
@@ -129,24 +130,26 @@ async function askAgent(
 			max_tokens: 400,
 			temperature: 0.4
 		});
-		const backend = activeBackend();
-		const trace = extractTrace(res, backend.model, backend.via);
 		const raw = res.choices[0]?.message?.content ?? '';
 		const jsonMatch = raw.match(/\{[\s\S]*\}/);
-		if (!jsonMatch) return { chosen: new Map(), trace };
+		if (!jsonMatch) return { chosen: new Map(), model: AI_MODEL };
 		const parsed = JSON.parse(jsonMatch[0]);
 		const out = new Map<string, string[]>();
 		for (const [sector, value] of Object.entries(parsed)) {
 			// Accept a bare string too — cheap robustness against the model
 			// occasionally reverting to the old single-symbol shape.
 			if (typeof value === 'string') out.set(sector, [value]);
-			else if (Array.isArray(value)) out.set(sector, value.filter((s): s is string => typeof s === 'string'));
+			else if (Array.isArray(value))
+				out.set(
+					sector,
+					value.filter((s): s is string => typeof s === 'string')
+				);
 		}
-		return { chosen: out, trace };
+		return { chosen: out, model: AI_MODEL };
 	} catch (e) {
 		console.error('[draftAgent] LLM pick failed, falling back to best-performer per sector:', e);
-		// No trace on failure — the picks that follow are procedural, not AI, and
+		// No model on failure — the picks that follow are procedural, not AI, and
 		// must not be recorded as AI-assisted.
-		return { chosen: new Map(), trace: null };
+		return { chosen: new Map(), model: null };
 	}
 }

@@ -2,10 +2,6 @@ import { db } from '$lib/server/db';
 import { gauntletQuestions, vocabPool, vocabPoolBatches, dailyTerms } from '$lib/server/schema';
 import { eq, sql } from 'drizzle-orm';
 import { createChatCompletion } from '$lib/server/aiCompute';
-import { ZG_STORAGE } from '$lib/server/zgNetwork';
-import { writeFile, unlink } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 const SECTORS = ['l1', 'l2', 'defi', 'meme', 'wildcard'] as const;
 
@@ -126,7 +122,8 @@ const TERM_BANK: { term: string; definition: string; distractors: string[] }[] =
 	},
 	{
 		term: 'DEX',
-		definition: 'Decentralized Exchange — a trading venue with no central custodian, run by smart contracts.',
+		definition:
+			'Decentralized Exchange — a trading venue with no central custodian, run by smart contracts.',
 		distractors: [
 			'A type of hardware wallet used to store private keys offline.',
 			'An index that tracks the average price of the top 10 tokens.',
@@ -213,9 +210,9 @@ type QuestionOutput = {
 	boostSector: string;
 };
 
-function shuffleOptions<T extends { question: string; options: { label: string; value: string }[] }>(
-	q: T
-): T {
+function shuffleOptions<
+	T extends { question: string; options: { label: string; value: string }[] }
+>(q: T): T {
 	return { ...q, options: shuffle(q.options) };
 }
 
@@ -249,7 +246,9 @@ async function generateLiveQuestion(fetchFn: SvelteFetch): Promise<QuestionOutpu
 		const templates: Array<() => QuestionOutput | null> = [
 			() => {
 				const sample = shuffle(validTokens).slice(0, 4);
-				const best = sample.reduce((a, b) => ((a.change24h ?? -Infinity) >= (b.change24h ?? -Infinity) ? a : b));
+				const best = sample.reduce((a, b) =>
+					(a.change24h ?? -Infinity) >= (b.change24h ?? -Infinity) ? a : b
+				);
 				return {
 					question: 'Which of these tokens has the best 24h performance right now?',
 					options: sample.map((t) => ({
@@ -264,7 +263,9 @@ async function generateLiveQuestion(fetchFn: SvelteFetch): Promise<QuestionOutpu
 			},
 			() => {
 				const sample = shuffle(validTokens).slice(0, 4);
-				const highest = sample.reduce((a, b) => ((a.price ?? -Infinity) >= (b.price ?? -Infinity) ? a : b));
+				const highest = sample.reduce((a, b) =>
+					(a.price ?? -Infinity) >= (b.price ?? -Infinity) ? a : b
+				);
 				return {
 					question: 'Which of these tokens is trading at the highest price right now?',
 					options: sample.map((t) => ({
@@ -280,7 +281,9 @@ async function generateLiveQuestion(fetchFn: SvelteFetch): Promise<QuestionOutpu
 			() => {
 				if (validSectors.length < 4) return null;
 				const sample = shuffle(validSectors).slice(0, 4);
-				const leader = sample.reduce((a, b) => ((a.change ?? -Infinity) >= (b.change ?? -Infinity) ? a : b));
+				const leader = sample.reduce((a, b) =>
+					(a.change ?? -Infinity) >= (b.change ?? -Infinity) ? a : b
+				);
 				return {
 					question: 'Which sector is leading today by 24h performance?',
 					options: sample.map((s) => ({ label: s.name, value: s.id })),
@@ -353,8 +356,14 @@ function validateQuestion(raw: unknown, category: QuestionCategory): QuestionInp
 
 	const cleanOptions = rawOptions.map((o) => {
 		if (!o || typeof o !== 'object') return null;
-		const label = typeof (o as Record<string, unknown>).label === 'string' ? (o as Record<string, unknown>).label as string : '';
-		const value = typeof (o as Record<string, unknown>).value === 'string' ? (o as Record<string, unknown>).value as string : '';
+		const label =
+			typeof (o as Record<string, unknown>).label === 'string'
+				? ((o as Record<string, unknown>).label as string)
+				: '';
+		const value =
+			typeof (o as Record<string, unknown>).value === 'string'
+				? ((o as Record<string, unknown>).value as string)
+				: '';
 		return label.trim() && value.trim() ? { label: label.trim(), value: value.trim() } : null;
 	});
 	if (cleanOptions.some((o) => !o)) return null;
@@ -386,10 +395,15 @@ function validateQuestion(raw: unknown, category: QuestionCategory): QuestionInp
 		// another term name — "Smart Contract" ended up as its own definition.
 		// Every option must be a real phrase (>=4 words), and the correct one
 		// must not just restate the term.
-		const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+		const normalize = (s: string) =>
+			s
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, ' ')
+				.trim();
 		const termNorm = normalize(term);
 		const defNorm = normalize(matched.label);
-		if (!termNorm || !defNorm || defNorm.includes(termNorm) || termNorm.includes(defNorm)) return null;
+		if (!termNorm || !defNorm || defNorm.includes(termNorm) || termNorm.includes(defNorm))
+			return null;
 		if (options.some((o) => o.label.trim().split(/\s+/).length < 4)) return null;
 
 		return {
@@ -412,7 +426,16 @@ function validateQuestion(raw: unknown, category: QuestionCategory): QuestionInp
 
 	const sectorRaw = typeof r.sector === 'string' ? r.sector : '';
 	const sector = (SECTORS as readonly string[]).includes(sectorRaw) ? sectorRaw : 'wildcard';
-	return { question, options, correctAnswer, sector, xpReward: 50, boostSector: sector, category, term: null };
+	return {
+		question,
+		options,
+		correctAnswer,
+		sector,
+		xpReward: 50,
+		boostSector: sector,
+		category,
+		term: null
+	};
 }
 
 function buildMarketPrompt(liveContext: string): string {
@@ -466,7 +489,12 @@ const VOCAB_POOL_MIN = 40; // top up once the pool drops below this
 const VOCAB_BATCH_CHUNK = 10; // items requested per AI call — small enough for the model to return reliably
 const VOCAB_BATCH_MAX_CALLS = 10; // safety cap on AI calls in one top-up pass — covers reaching TARGET from empty in one pass
 
-type VocabItem = { term: string; question: string; options: { label: string; value: string }[]; correctAnswer: string };
+type VocabItem = {
+	term: string;
+	question: string;
+	options: { label: string; value: string }[];
+	correctAnswer: string;
+};
 
 function buildVocabBatchPrompt(count: number, avoidTerms: string[]): string {
 	return [
@@ -514,7 +542,13 @@ async function generateVocabChunk(count: number, avoidTerms: string[]): Promise<
 		const items: VocabItem[] = [];
 		for (const raw of parseJsonArrayLoose(content)) {
 			const v = validateQuestion(raw, 'vocab');
-			if (v && v.term) items.push({ term: v.term, question: v.question, options: v.options, correctAnswer: v.correctAnswer });
+			if (v && v.term)
+				items.push({
+					term: v.term,
+					question: v.question,
+					options: v.options,
+					correctAnswer: v.correctAnswer
+				});
 		}
 		return items;
 	} catch (e) {
@@ -536,7 +570,11 @@ export async function ensureVocabPool(): Promise<void> {
 	const seenTerms = new Set(existing.map((e) => e.term.toLowerCase()));
 	const collected: VocabItem[] = [];
 
-	for (let call = 0; call < VOCAB_BATCH_MAX_CALLS && existing.length + collected.length < VOCAB_POOL_TARGET; call++) {
+	for (
+		let call = 0;
+		call < VOCAB_BATCH_MAX_CALLS && existing.length + collected.length < VOCAB_POOL_TARGET;
+		call++
+	) {
 		const chunk = await generateVocabChunk(VOCAB_BATCH_CHUNK, [...seenTerms]);
 		for (const item of chunk) {
 			const key = item.term.toLowerCase();
@@ -554,7 +592,12 @@ export async function ensureVocabPool(): Promise<void> {
 				{ label: t.definition, value: t.definition },
 				...t.distractors.map((d) => ({ label: d, value: d }))
 			]);
-			collected.push({ term: t.term, question: `What is "${t.term}"?`, options, correctAnswer: t.definition });
+			collected.push({
+				term: t.term,
+				question: `What is "${t.term}"?`,
+				options,
+				correctAnswer: t.definition
+			});
 		}
 	}
 
@@ -576,10 +619,6 @@ export async function ensureVocabPool(): Promise<void> {
 		// only real defence against two concurrent top-ups both generating the
 		// same term, since there's no in-process lock here.
 		.onConflictDoNothing();
-
-	pushVocabBatchToStorage(batch.id, collected).catch((e) =>
-		console.error('[gauntlet] vocab pool storage write skipped:', e)
-	);
 }
 
 /**
@@ -594,7 +633,9 @@ export async function ensureVocabPool(): Promise<void> {
 export async function ensureVocabPoolReady(): Promise<void> {
 	const existing = await db.select({ term: vocabPool.term }).from(vocabPool).limit(1);
 	if (existing.length > 0) {
-		ensureVocabPool().catch((e) => console.error('[gauntlet] background vocab pool top-up failed:', e));
+		ensureVocabPool().catch((e) =>
+			console.error('[gauntlet] background vocab pool top-up failed:', e)
+		);
 		return;
 	}
 	await ensureVocabPool();
@@ -634,90 +675,6 @@ async function pickFromVocabPool(dateStr: string): Promise<QuestionInput | null>
 		category: 'vocab',
 		term: entry.term
 	};
-}
-
-/**
- * Permanent record of a vocab batch on 0G Storage. `ZG_STORAGE_PRIVATE_KEY`
- * is configured, but `@0gfoundation/0g-storage-ts-sdk` still isn't installed
- * (npm install blocked in this environment) — so this genuinely attempts the
- * real upload and only degrades to a no-op if that import fails, rather than
- * being a no-op by design. Installing the package is the only remaining step
- * to make this write for real. Never blocks seeding: the caller swallows
- * failures here.
- *
- * Deliberately per-batch, not per-day: batching vocab into one document per
- * top-up (instead of one write per day) is the whole point of pre-generating
- * it in bulk — far fewer 0G Storage transactions, and the batch itself reads
- * as an actual knowledge-base artifact rather than a trickle of one-offs.
- */
-async function pushVocabBatchToStorage(batchId: string, items: VocabItem[]): Promise<void> {
-	const privateKey = ZG_STORAGE.privateKey;
-	if (!privateKey) return; // not configured — the key exists but the SDK isn't installed yet
-
-	// Lazy import: @0gfoundation/0g-storage-ts-sdk isn't installed yet (see
-	// src/0g-storage.d.ts for the ambient types that let this type-check
-	// anyway). This degrades to a no-op (logged once) instead of crashing the
-	// whole Gauntlet feature on module load, and starts working the moment
-	// it IS installed — no further code change needed.
-	let ZgFile: (typeof import('@0gfoundation/0g-storage-ts-sdk'))['ZgFile'];
-	let Indexer: (typeof import('@0gfoundation/0g-storage-ts-sdk'))['Indexer'];
-	let JsonRpcProvider: (typeof import('ethers'))['JsonRpcProvider'];
-	let Wallet: (typeof import('ethers'))['Wallet'];
-	try {
-		const [sdk, ethersMod] = await Promise.all([
-			import('@0gfoundation/0g-storage-ts-sdk'),
-			import('ethers')
-		]);
-		({ ZgFile, Indexer } = sdk);
-		({ JsonRpcProvider, Wallet } = ethersMod);
-	} catch {
-		console.error('[gauntlet] 0G Storage SDK not installed yet — skipping storage write for this batch');
-		return;
-	}
-	const rpcUrl = ZG_STORAGE.rpcUrl;
-	const indexerUrl = ZG_STORAGE.indexerUrl;
-	if (!indexerUrl) {
-		// Mainnet's indexer URL has no hardcoded fallback (unlike testnet's) —
-		// deliberately, since a mainnet 0G Storage indexer address isn't
-		// something safe to guess. Same degrade-gracefully rule as `privateKey`
-		// above: skip this write, never block seeding.
-		console.error('[gauntlet] ZG_STORAGE_INDEXER_URL_MAINNET not set — skipping storage write for this batch');
-		return;
-	}
-
-	const tmpPath = join(tmpdir(), `coindraft-vocab-batch-${batchId}.json`);
-	await writeFile(
-		tmpPath,
-		JSON.stringify({ batchId, generatedAt: new Date().toISOString(), items }),
-		'utf-8'
-	);
-
-	try {
-		const provider = new JsonRpcProvider(rpcUrl);
-		const signer = new Wallet(privateKey, provider);
-		const indexer = new Indexer(indexerUrl);
-
-		const file = await ZgFile.fromFilePath(tmpPath);
-		const [tree, treeErr] = await file.merkleTree();
-		if (treeErr || !tree) throw treeErr ?? new Error('merkleTree() returned no tree');
-		const rootHash = tree.rootHash();
-
-		const [tx, uploadErr] = await indexer.upload(file, rpcUrl, signer);
-		await file.close();
-		if (uploadErr) throw uploadErr;
-
-		await db
-			.update(vocabPoolBatches)
-			.set({
-				storageRootHash: rootHash,
-				// Exact field name unconfirmed until this runs for real against the
-				// live network — adjust here if the SDK's tx shape differs.
-				storageTxSeq: tx && typeof tx === 'object' && 'txSeq' in tx ? String((tx as { txSeq: unknown }).txSeq) : null
-			})
-			.where(eq(vocabPoolBatches.id, batchId));
-	} finally {
-		await unlink(tmpPath).catch(() => {});
-	}
 }
 
 /** Ensures today's Gauntlet question exists. Safe to call repeatedly (idempotent per day). */

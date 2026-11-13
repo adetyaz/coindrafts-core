@@ -7,7 +7,11 @@
 		emptySectors,
 		isPaper = false,
 		onPicks
-	}: { emptySectors: string[]; isPaper?: boolean; onPicks: (picks: AgentPick[]) => void } = $props();
+	}: {
+		emptySectors: string[];
+		isPaper?: boolean;
+		onPicks: (picks: AgentPick[]) => void;
+	} = $props();
 
 	const XP_COST_PER_SLOT = 15;
 
@@ -16,8 +20,6 @@
 	let confirming = $state<'one' | 'all' | null>(null);
 	let submitting = $state(false);
 	let freeHitsAvailable = $state(0);
-	// Receipt for the most recent assist, when 0G served it.
-	let lastReceipt = $state<{ requestId: string | null } | null>(null);
 
 	// How close the cursor has to get before the agent stops running away.
 	// Without this it sat at a fixed offset from the cursor forever, so moving
@@ -64,15 +66,10 @@
 			});
 			const data = await res.json();
 			if (!res.ok) {
-				// A provider-balance failure charges nothing, so say so rather than
-				// leaving the player wondering whether they paid for nothing.
 				toast(data.error ?? 'Draft agent unavailable', 'error');
 				return;
 			}
 			onPicks(data.picks);
-			// The receipt is shown, not just stored — a penalty the player can't
-			// see evidence of is indistinguishable from one we made up.
-			lastReceipt = data.verifiedOn === '0g' ? { requestId: data.requestId ?? null } : null;
 			toast(
 				data.freeHitUsed
 					? `Free Hit used — ${data.picks.length} pick(s) added, no XP cost`
@@ -112,21 +109,6 @@
 					class="absolute top-13 left-0 w-72 rounded-2xl border border-border bg-surface p-4 shadow-[0_16px_40px_rgba(26,36,33,0.2)]"
 				>
 					{#if !confirming}
-						{#if lastReceipt}
-							<div class="mb-3 rounded-xl border border-border bg-surface-alt px-3 py-2.5">
-								<div class="flex items-center gap-1.5 text-[11px] font-extrabold text-positive-ink">
-									<span>✓</span> Assist verified on 0G
-								</div>
-								<p class="mt-1 text-[10.5px] leading-snug text-text-muted">
-									This draft is recorded as AI-assisted, with the inference receipt attached.
-								</p>
-								{#if lastReceipt.requestId}
-									<code class="mt-1.5 block truncate font-mono text-[10px] text-text-muted" title={lastReceipt.requestId}>
-										{lastReceipt.requestId}
-									</code>
-								{/if}
-							</div>
-						{/if}
 						<p class="mb-3 text-[13px] font-bold text-text">Need a hand?</p>
 						<div class="flex flex-col gap-2">
 							<button
@@ -136,7 +118,11 @@
 							>
 								Fill the next empty slot
 								<span class="block font-mono text-[11px] font-normal text-text-muted">
-									{isPaper ? 'Free — Scrimmage mode' : freeHitsAvailable > 0 ? 'Free Hit available' : `-${costFor(1)} XP`}
+									{isPaper
+										? 'Free — Scrimmage mode'
+										: freeHitsAvailable > 0
+											? 'Free Hit available'
+											: `-${costFor(1)} XP`}
 								</span>
 							</button>
 							<button
@@ -146,7 +132,11 @@
 							>
 								Auto-draft everything left ({emptySectors.length})
 								<span class="block font-mono text-[11px] font-normal text-text-muted">
-									{isPaper ? 'Free — Scrimmage mode' : freeHitsAvailable > 0 ? 'Free Hit available' : `-${costFor(emptySectors.length)} XP`}
+									{isPaper
+										? 'Free — Scrimmage mode'
+										: freeHitsAvailable > 0
+											? 'Free Hit available'
+											: `-${costFor(emptySectors.length)} XP`}
 								</span>
 							</button>
 						</div>

@@ -20,7 +20,7 @@ The app has grown past its original Wave 1 scope (single head-to-head draft loop
 - **Styling**: Tailwind CSS v4 (via `@tailwindcss/vite`), design tokens in `src/routes/layout.css`
 - **Database**: Neon serverless Postgres via Drizzle ORM (`drizzle-orm/neon-http`)
 - **Auth**: Reown AppKit (EVM via Wagmi + SIWE; Solana via ed25519 signatures)
-- **AI**: Groq SDK — default model `openai/gpt-oss-120b`, optional 0G Compute Router backend behind a feature flag
+- **AI**: Groq SDK — model `openai/gpt-oss-120b` (0G was removed 2026-10-30)
 - **Data**: SoSoValue API (server-side only, in-memory cached)
 - **Deployment**: Vercel (`@sveltejs/adapter-vercel`) with two daily cron jobs
 
@@ -60,16 +60,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/coindraft"
 SOSOVALUE_API_KEY=your_key_here
 SOSOVALUE_BASE_URL=https://openapi.sosovalue.com/openapi/v1
 
-# AI — default backend (Groq)
+# AI (Groq)
 GROQ_API_KEY=your_key_here
-
-# AI — optional 0G Compute Router backend for /api/mentor and /api/breakdown.
-# Leave USE_0G_COMPUTE=false/unset to stay on Groq. Partial config falls back
-# to Groq with a warning. See docs-project/0g-compute-integration-findings.md.
-USE_0G_COMPUTE=false
-ZG_COMPUTE_API_KEY=sk-your_0g_router_key_here
-ZG_COMPUTE_BASE_URL=https://router-api-testnet.integratenetwork.work/v1
-ZG_COMPUTE_MODEL=your_chosen_model_id_here
 
 # Auth
 SESSION_SECRET=your_random_32_char_secret_key_here
@@ -81,7 +73,7 @@ PUBLIC_REOWN_PROJECT_ID=your_reown_project_id_here
 CRON_SECRET=your_random_cron_secret_here
 ```
 
-**Security rule**: `SOSOVALUE_API_KEY`, `GROQ_API_KEY`, and `ZG_COMPUTE_*` must never be used in client-side code. All third-party calls go through SvelteKit `+server.ts` API routes.
+**Security rule**: `SOSOVALUE_API_KEY` and `GROQ_API_KEY` must never be used in client-side code. All third-party calls go through SvelteKit `+server.ts` API routes.
 
 ---
 
@@ -118,7 +110,7 @@ src/
 │       ├── gauntlet.ts   # Daily question seeding (live-data templates + static fallback bank)
 │       ├── badges.ts     # Server-side badge awarding (idempotent)
 │       ├── sodex.ts      # SoDEX price shim — currently just wraps SoSoValue snapshot
-│       ├── aiCompute.ts  # Shared AI client factory (Groq default, 0G Router when flagged)
+│       ├── aiCompute.ts  # Shared AI client (Groq)
 │       └── resultCard.ts # 1200x630 SVG result card renderer (standalone, no CSS vars)
 └── routes/
     ├── +layout.svelte    # Root layout: Nav, token ticker
@@ -205,7 +197,7 @@ src/
 
 ### AI (mentor + breakdown)
 
-- Both `/api/mentor` and `/api/breakdown` use `getAiClient()` from `src/lib/server/aiCompute.ts`: Groq with model `openai/gpt-oss-120b` by default; if `USE_0G_COMPUTE=true` **and** all three `ZG_COMPUTE_*` vars are set, the same `groq-sdk` client is pointed at 0G's OpenAI-compatible Router via `baseURL` override.
+- Both `/api/mentor` and `/api/breakdown` use `createChatCompletion()` from `src/lib/server/aiCompute.ts`: Groq with model `openai/gpt-oss-120b`.
 - `/api/mentor` streams plain text; its system prompt is rebuilt per request from live `/api/sectors`, `/api/tokens`, `/api/news` data. History capped at 8 messages.
 - `/api/breakdown` returns 2–3 sentences of post-match analysis; news fetch failure is non-fatal.
 - `max_tokens` is 400 on both because gpt-oss is a reasoning model that spends part of the budget on its internal trace.
@@ -322,13 +314,13 @@ There is **no automated test suite**. Validation is manual:
    - Manually trigger crons with `POST /api/gauntlet/seed` and `POST /api/cron/resolve-all`.
 - `docs-project/testing-findings.md` records past manual testing sessions.
 
-`docs-project/` also holds the design PRD, user stories, 0G/Midnight integration research, and roadmap docs — check there before changing product behavior.
+`docs-project/` also holds the design PRD, user stories, older integration research, and roadmap docs — check there before changing product behavior.
 
 ---
 
 ## Security Considerations
 
-- **Never expose `SOSOVALUE_API_KEY`, `GROQ_API_KEY`, or `ZG_COMPUTE_API_KEY` to the browser.** They are only imported in `+server.ts` files or `src/lib/server/` modules.
+- **Never expose `SOSOVALUE_API_KEY` or `GROQ_API_KEY` to the browser.** They are only imported in `+server.ts` files or `src/lib/server/` modules.
 - Session cookie: `httpOnly`, `sameSite: 'strict'`, 7-day expiry. The token scheme is a secret-suffix signature, not a true HMAC — adequate for current scope, worth upgrading if auth stakes grow.
 - The nonce cookie is deleted after successful verification.
 - Wallet auth is the only auth method.

@@ -4,12 +4,7 @@ import { db } from '$lib/server/db';
 import { contests, lineups, lineupPicks } from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getNews } from '$lib/server/sosovalue';
-import {
-	createChatCompletion,
-	isInsufficientBalance,
-	AiConfigError,
-	activeBackend
-} from '$lib/server/aiCompute';
+import { createChatCompletion, AiConfigError } from '$lib/server/aiCompute';
 
 interface Pick {
 	sector: string;
@@ -116,22 +111,12 @@ export async function POST({ request, cookies }) {
 
 		const text = chat.choices[0]?.message?.content?.trim() ?? '';
 		if (text) await db.update(lineups).set({ breakdown: text }).where(eq(lineups.id, lineup.id));
-		// Which backend answered, surfaced rather than assumed.
-		return json({ breakdown: text, via: activeBackend().via });
+		return json({ breakdown: text });
 	} catch (e: unknown) {
 		const message = e instanceof Error ? e.message : String(e);
 		console.error('[/api/breakdown]', message);
 		if (e instanceof AiConfigError) {
 			return json({ error: e.message, reason: 'ai_misconfigured' }, { status: 500 });
-		}
-		if (isInsufficientBalance(e)) {
-			return json(
-				{
-					error: 'The AI provider account is out of balance, so the breakdown is unavailable.',
-					reason: 'insufficient_balance'
-				},
-				{ status: 503 }
-			);
 		}
 		return json({ error: 'AI breakdown unavailable', detail: message }, { status: 502 });
 	}

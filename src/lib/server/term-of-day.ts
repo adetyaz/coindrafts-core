@@ -2,7 +2,7 @@
 // Gauntlet. Its planned UI home, the Knowledge Base page, has been removed
 // (see ROADMAP.md) — this backend still runs (bumpResearchStreak is still
 // called from /api/term/answer) but currently has no page to surface on.
-// Both draw from the SAME AI-generated, 0G-Storage-backed vocab pool (see ensureVocabPool in
+// Both draw from the SAME AI-generated vocab pool (see ensureVocabPool in
 // gauntlet.ts) — this is deliberately not a second, separate generator. They
 // must never show the same term on the same day though: if the Gauntlet's
 // 'vocab' category has already been seeded for today, its term is excluded
