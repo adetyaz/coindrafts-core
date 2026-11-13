@@ -66,6 +66,29 @@ export const cars = pgTable('cars', {
 	createdAt: timestamp('created_at').defaultNow()
 });
 
+// ─── Car Market ───────────────────────────────────────────────────────────────
+// A car for sale, by a player or a bot. A sale moves Gears and the car in one
+// ledger trade (cars/ledger.ts → tradeCar), on chain too when CAR_LEDGER=near.
+
+export const carListings = pgTable('car_listings', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	carId: uuid('car_id')
+		.references(() => cars.id)
+		.notNull(),
+	sellerId: uuid('seller_id')
+		.references(() => users.id)
+		.notNull(),
+	price: integer('price').notNull(), // Gears
+	// The one-line "why" behind a bot's listing price, shown as a tooltip.
+	reason: text('reason'),
+	status: text('status').default('open').notNull(), // 'open' | 'sold' | 'cancelled'
+	buyerId: uuid('buyer_id').references(() => users.id),
+	// The buyer's reason, when the buyer is a bot.
+	buyReason: text('buy_reason'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	closedAt: timestamp('closed_at')
+});
+
 // ─── NEAR outbox ──────────────────────────────────────────────────────────────
 // Every on-chain write goes through here, in order. The game updates Postgres
 // first and never waits on the chain to stay playable; this queue replays the

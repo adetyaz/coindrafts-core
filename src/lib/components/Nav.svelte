@@ -45,6 +45,13 @@
 			]
 		},
 		{
+			label: 'garage',
+			items: [
+				{ href: '/garage', label: 'my garage' },
+				{ href: '/car-market', label: 'car market' }
+			]
+		},
+		{
 			label: 'compete',
 			items: [{ href: '/leaderboard', label: 'leaderboard' }]
 		},

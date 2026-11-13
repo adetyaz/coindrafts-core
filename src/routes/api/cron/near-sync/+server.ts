@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { SCRIMMAGE_BOTS } from '$lib/server/botDraft';
 import { flushOutbox, grantStarterKit, nearConfig } from '$lib/server/cars';
+import { runBotMarket } from '$lib/server/market';
 
 // Gives every seeded bot its named NEAR account and starter garage (once),
 // then replays queued on-chain writes. Safe to run any number of times.
@@ -19,8 +20,9 @@ async function sync(authHeader: string | null) {
 		}
 	}
 
+	const market = await runBotMarket().catch((e) => [`bot market failed: ${e}`]);
 	const outbox = await flushOutbox(100);
-	return json({ ledger: nearConfig() ? 'near' : 'db', bots, outbox });
+	return json({ ledger: nearConfig() ? 'near' : 'db', bots, market, outbox });
 }
 
 export async function GET({ request }) {

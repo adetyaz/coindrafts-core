@@ -5,6 +5,7 @@ import { getAllPrices } from '$lib/server/prices';
 import { calcPickScore, boostFactor, type ActiveBoost } from '$lib/server/scoring';
 import { settleStakeForContest } from '$lib/server/wager';
 import { flushOutbox, grantGears } from '$lib/server/cars';
+import { runBotMarket } from '$lib/server/market';
 
 /** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
 const GEARS_REAL = [150, 40] as const;
@@ -281,6 +282,8 @@ export async function resolveContest(
 		const [win, lose] = contest.isPaper ? GEARS_SCRIMMAGE : GEARS_REAL;
 		if (winnerId) await grantGears(winnerId, win * xpMultiplier, `won ${contestId}`);
 		if (loserId) await grantGears(loserId, lose * xpMultiplier, `raced ${contestId}`);
+		// Bots react to the new money: list spares, chase bargains (rules.ts).
+		await runBotMarket().catch((e) => console.error('[resolveContest] bot market failed:', e));
 		await Promise.race([flushOutbox(10), new Promise((r) => setTimeout(r, 4000))]);
 	} catch (e) {
 		console.error('[resolveContest] gears payout failed:', e);

@@ -10,7 +10,7 @@
 // the daily cron) picks them up in order.
 import { and, asc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { cars, nearOutbox, users } from '$lib/server/schema';
+import { carListings, cars, nearOutbox, users } from '$lib/server/schema';
 import {
 	MAX_CALLS_PER_TX,
 	botAccountId,
@@ -296,6 +296,20 @@ export async function getGarage(userId: string) {
 		.from(cars)
 		.where(eq(cars.ownerId, userId))
 		.orderBy(asc(cars.createdAt));
+	const listings = owned.length
+		? await db
+				.select({ id: carListings.id, carId: carListings.carId, price: carListings.price })
+				.from(carListings)
+				.where(
+					and(
+						inArray(
+							carListings.carId,
+							owned.map((c) => c.id)
+						),
+						eq(carListings.status, 'open')
+					)
+				)
+		: [];
 	const cfg = nearConfig();
 	return {
 		gears: user.gears,
@@ -306,7 +320,8 @@ export async function getGarage(userId: string) {
 			rarity: c.rarity,
 			races: c.races,
 			wins: c.wins,
-			stakedInRace: c.stakedInRace
+			stakedInRace: c.stakedInRace,
+			listing: listings.find((l) => l.carId === c.id) ?? null
 		})),
 		near: cfg
 			? {
