@@ -317,17 +317,13 @@
 	onMount(() => {
 		if (user) return;
 
-		let retryCount = 0;
-		const MAX_RETRIES = 3;
-
+		// Asks for the sign-in signature once per account per page. If it fails or
+		// is dismissed, the "Try again" button is the only way to ask again.
+		// This used to auto-retry up to 3 times on top of a 3-second poll and every
+		// wallet event, which with an installed Phantom meant a signature prompt
+		// that kept coming back.
 		function tick() {
 			walletConnected = !!getAppKitProvider();
-			if (signError && retryCount < MAX_RETRIES) {
-				retryCount++;
-				console.log('[Auth] Auto-retry attempt', retryCount);
-				lastAttemptedWallet = '';
-				signError = false;
-			}
 			void ensureWalletSession();
 		}
 
