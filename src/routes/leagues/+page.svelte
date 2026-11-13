@@ -119,7 +119,8 @@
 	<div class="mb-4.5 flex w-fit gap-1 rounded-full border border-border bg-surface p-1">
 		<button
 			onclick={() => (tab = 'mine')}
-			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab === 'mine'
+			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab ===
+			'mine'
 				? 'bg-primary text-text'
 				: 'text-text-muted'}"
 		>
@@ -127,7 +128,8 @@
 		</button>
 		<button
 			onclick={() => (tab = 'public')}
-			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab === 'public'
+			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab ===
+			'public'
 				? 'bg-primary text-text'
 				: 'text-text-muted'}"
 		>
@@ -144,7 +146,9 @@
 	{:else}
 		{@const list = tab === 'mine' ? myLeagues : publicLeagues}
 		{#if list.length === 0}
-			<div class="rounded-[20px] border border-dashed border-border-strong bg-surface py-16 text-center">
+			<div
+				class="rounded-[20px] border border-dashed border-border-strong bg-surface py-16 text-center"
+			>
 				<p class="text-sm font-bold text-text-muted">
 					{tab === 'mine' ? "You haven't joined any leagues yet" : 'No public leagues available'}
 				</p>
@@ -159,7 +163,8 @@
 						<div class="mb-4 flex items-center justify-between">
 							<span
 								class="rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-[0.1em] uppercase"
-								style="background:var(--color-primary-muted);color:var(--color-primary-ink)">{league.type}</span
+								style="background:var(--color-primary-muted);color:var(--color-primary-ink)"
+								>{league.type}</span
 							>
 							<span class="font-mono text-xs text-text-muted">{league.memberCount} members</span>
 						</div>
@@ -179,7 +184,9 @@
 		<div class="w-full max-w-sm rounded-[24px] bg-surface p-7">
 			<h2 class="mb-4.5 text-xl font-extrabold tracking-[-0.02em]">Create league</h2>
 			<div class="mb-4">
-				<label for="league-name" class="mb-1.5 block text-xs font-bold text-text-muted">League name</label>
+				<label for="league-name" class="mb-1.5 block text-xs font-bold text-text-muted"
+					>League name</label
+				>
 				<input
 					id="league-name"
 					type="text"
@@ -237,7 +244,9 @@
 		<div class="w-full max-w-sm rounded-[24px] bg-surface p-7">
 			<h2 class="mb-4.5 text-xl font-extrabold tracking-[-0.02em]">Join league</h2>
 			<div class="mb-6">
-				<label for="invite-code" class="mb-1.5 block text-xs font-bold text-text-muted">Invite code</label>
+				<label for="invite-code" class="mb-1.5 block text-xs font-bold text-text-muted"
+					>Invite code</label
+				>
 				<input
 					id="invite-code"
 					type="text"

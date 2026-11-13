@@ -45,7 +45,10 @@ export async function scoreLineupPicks(
 	// Refusing to score is the right failure: a contest that settles late is
 	// recoverable, a contest that settles wrong is not.
 	const unpriced = picks
-		.map((p) => ({ symbol: p.tokenSymbol, price: quotes?.get(p.tokenSymbol.toUpperCase())?.price ?? null }))
+		.map((p) => ({
+			symbol: p.tokenSymbol,
+			price: quotes?.get(p.tokenSymbol.toUpperCase())?.price ?? null
+		}))
 		.filter((x) => !(x.price != null && x.price > 0))
 		.map((x) => x.symbol);
 
@@ -143,7 +146,10 @@ export async function resolveContest(
 		}
 		throw e;
 	}
-	await db.update(lineups).set({ finalScore: String(scoreA) }).where(eq(lineups.id, lineupA.id));
+	await db
+		.update(lineups)
+		.set({ finalScore: String(scoreA) })
+		.where(eq(lineups.id, lineupA.id));
 
 	let scoreB = 0;
 	let didAWin = false;
@@ -179,7 +185,10 @@ export async function resolveContest(
 			}
 			throw e;
 		}
-		await db.update(lineups).set({ finalScore: String(scoreB) }).where(eq(lineups.id, lineupB.id));
+		await db
+			.update(lineups)
+			.set({ finalScore: String(scoreB) })
+			.where(eq(lineups.id, lineupB.id));
 
 		didAWin = scoreA >= scoreB;
 	} else {
@@ -253,14 +262,8 @@ export async function resolveContest(
 	}
 
 	if (contest.userBId) {
-		await db
-			.update(users)
-			.set({ matchmakingStatus: 'idle' })
-			.where(eq(users.id, contest.userAId));
-		await db
-			.update(users)
-			.set({ matchmakingStatus: 'idle' })
-			.where(eq(users.id, contest.userBId));
+		await db.update(users).set({ matchmakingStatus: 'idle' }).where(eq(users.id, contest.userAId));
+		await db.update(users).set({ matchmakingStatus: 'idle' }).where(eq(users.id, contest.userBId));
 
 		if (loserId) {
 			const winnerLeagues = await db

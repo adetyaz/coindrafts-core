@@ -27,9 +27,13 @@ export async function POST({ params, request, cookies }) {
 
 	if (!result.ok) {
 		const status =
-			result.reason === 'age_not_confirmed' ? 403 :
-			result.reason === 'not_found' ? 404 :
-			result.reason === 'insufficient_balance' ? 402 : 400;
+			result.reason === 'age_not_confirmed'
+				? 403
+				: result.reason === 'not_found'
+					? 404
+					: result.reason === 'insufficient_balance'
+						? 402
+						: 400;
 		const message =
 			result.reason === 'age_not_confirmed'
 				? 'You must confirm you are 18 or over before staking.'

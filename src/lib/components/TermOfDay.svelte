@@ -58,7 +58,9 @@
 </script>
 
 <div class="rounded-[20px] border border-border bg-surface p-[22px]">
-	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">Word of the day</div>
+	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
+		Word of the day
+	</div>
 
 	{#if loading}
 		<div class="h-24 animate-pulse rounded-2xl bg-surface-alt"></div>

@@ -326,7 +326,10 @@
 
 	<div class="legend-head">
 		<span class="legend-time">{hoverLabel}</span>
-		<span class="legend-span" title="Distance between the best and worst performer — the chart auto-zooms to fit it">
+		<span
+			class="legend-span"
+			title="Distance between the best and worst performer — the chart auto-zooms to fit it"
+		>
 			{spanLabel}
 		</span>
 		{#if isolated}
@@ -350,7 +353,10 @@
 				<span class="swatch" style="background:{r.colour};{r.mine ? '' : 'opacity:.55'}"></span>
 				<span class="sym">{r.label}</span>
 				<span class="who">{r.mine ? 'you' : 'opp'}</span>
-				<span class="val" style="color:{(v ?? 0) >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}">
+				<span
+					class="val"
+					style="color:{(v ?? 0) >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
+				>
 					{fmtPct(v)}
 				</span>
 			</button>

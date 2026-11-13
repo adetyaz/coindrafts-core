@@ -58,8 +58,11 @@ export async function POST({ request, cookies }) {
 
 	const contestType = body.contestType === 'weekly' ? 'weekly' : 'daily';
 	const accessType = body.accessType === 'private' ? 'private' : 'public';
-	const payoutStructure = body.payoutStructure === 'top3_weighted' ? 'top3_weighted' : 'winner_take_all';
-	const sectorRestriction = SECTORS.includes(body.sectorRestriction) ? body.sectorRestriction : null;
+	const payoutStructure =
+		body.payoutStructure === 'top3_weighted' ? 'top3_weighted' : 'winner_take_all';
+	const sectorRestriction = SECTORS.includes(body.sectorRestriction)
+		? body.sectorRestriction
+		: null;
 	const groupSize = Number.isInteger(body.groupSize) && body.groupSize >= 2 ? body.groupSize : 4;
 
 	const [tournament] = await db

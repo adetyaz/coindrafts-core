@@ -1,7 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { contests, lineups, lineupPicks, users, stakes, stakeParticipants } from '$lib/server/schema';
+import {
+	contests,
+	lineups,
+	lineupPicks,
+	users,
+	stakes,
+	stakeParticipants
+} from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { resolveContest } from '$lib/server/contest-resolution';
 import { awardWinBadges } from '$lib/server/badges';
@@ -131,7 +138,9 @@ export async function GET({ params, cookies }) {
 			pct: Number(Number(p.pctChange ?? 0).toFixed(2)),
 			// null rather than a placeholder — the page renders a dash, so an
 			// opponent with no lineup reads as absent instead of as a real pick.
-			opponent: opp ? `${opp.tokenSymbol} (${oppPct != null && oppPct >= 0 ? '+' : ''}${oppPct}%)` : null,
+			opponent: opp
+				? `${opp.tokenSymbol} (${oppPct != null && oppPct >= 0 ? '+' : ''}${oppPct}%)`
+				: null,
 			opponentPick: opp?.tokenSymbol ?? null,
 			opponentPct: oppPct,
 			points: Number(Number(p.score ?? 0).toFixed(2))
@@ -175,7 +184,9 @@ export async function GET({ params, cookies }) {
 			const mine = await db
 				.select()
 				.from(stakeParticipants)
-				.where(and(eq(stakeParticipants.stakeId, s.id), eq(stakeParticipants.userId, parsed.userId)))
+				.where(
+					and(eq(stakeParticipants.stakeId, s.id), eq(stakeParticipants.userId, parsed.userId))
+				)
 				.limit(1)
 				.then((r) => r[0] ?? null);
 			return {

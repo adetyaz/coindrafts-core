@@ -20,20 +20,88 @@ type RawNewsItem = {
 // topic). SoSoValue's own `category` field turned out useless — sampled 50
 // articles, every single one came back the same value — so this is a
 // keyword classifier over the real title/content/tags instead.
-export type NewsCategory = 'regulation' | 'security' | 'defi' | 'nfts' | 'markets' | 'business' | 'general';
+export type NewsCategory =
+	| 'regulation'
+	| 'security'
+	| 'defi'
+	| 'nfts'
+	| 'markets'
+	| 'business'
+	| 'general';
 
 const CATEGORY_KEYWORDS: Record<Exclude<NewsCategory, 'general'>, string[]> = {
-	regulation: ['sec ', 'regulat', 'lawsuit', 'congress', 'senate', 'court', 'legal', 'compliance', 'cftc', 'doj', 'subpoena', 'ban ', 'policy'],
-	security: ['hack', 'exploit', 'breach', 'scam', 'phishing', 'stolen', 'drain', 'vulnerability', 'rug pull', 'attacker'],
-	defi: ['defi', 'liquidity', 'lending', 'borrow', 'yield', ' amm', ' dex', 'staking', 'protocol', 'tvl'],
+	regulation: [
+		'sec ',
+		'regulat',
+		'lawsuit',
+		'congress',
+		'senate',
+		'court',
+		'legal',
+		'compliance',
+		'cftc',
+		'doj',
+		'subpoena',
+		'ban ',
+		'policy'
+	],
+	security: [
+		'hack',
+		'exploit',
+		'breach',
+		'scam',
+		'phishing',
+		'stolen',
+		'drain',
+		'vulnerability',
+		'rug pull',
+		'attacker'
+	],
+	defi: [
+		'defi',
+		'liquidity',
+		'lending',
+		'borrow',
+		'yield',
+		' amm',
+		' dex',
+		'staking',
+		'protocol',
+		'tvl'
+	],
 	nfts: ['nft', 'collectible', 'opensea'],
-	markets: ['price', 'rally', 'surge', 'plunge', ' etf', 'trading', 'whale', 'bull', 'bear', 'market cap', 'volume'],
-	business: ['funding', 'raise', 'raised', 'partnership', 'acquisition', 'ipo', 'valuation', 'invest', 'launch']
+	markets: [
+		'price',
+		'rally',
+		'surge',
+		'plunge',
+		' etf',
+		'trading',
+		'whale',
+		'bull',
+		'bear',
+		'market cap',
+		'volume'
+	],
+	business: [
+		'funding',
+		'raise',
+		'raised',
+		'partnership',
+		'acquisition',
+		'ipo',
+		'valuation',
+		'invest',
+		'launch'
+	]
 };
 
 function classifyNewsCategory(title: string, content: string, tags: string[]): NewsCategory {
 	const haystack = ` ${title} ${content} ${tags.join(' ')} `.toLowerCase();
-	for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS) as [Exclude<NewsCategory, 'general'>, string[]][]) {
+	for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS) as [
+		Exclude<NewsCategory, 'general'>,
+		string[]
+	][]) {
 		if (keywords.some((k) => haystack.includes(k))) return category;
 	}
 	return 'general';

@@ -28,9 +28,7 @@ export function normalizeTier(value: unknown): number {
 	if (!Number.isFinite(n)) return 0;
 	// Snap to the nearest legal tier rather than rejecting — the tier is a
 	// matching bucket, not a precise amount.
-	return STAKE_TIERS.reduce((best, t) =>
-		Math.abs(t - n) < Math.abs(best - n) ? t : best
-	);
+	return STAKE_TIERS.reduce((best, t) => (Math.abs(t - n) < Math.abs(best - n) ? t : best));
 }
 
 /** Creates the stake for a contest once both players are known. */

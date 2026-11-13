@@ -106,9 +106,7 @@ export async function POST({ params, request, cookies, url }) {
 				tournamentName: tournament.name,
 				inviterName: inviter,
 				joinUrl,
-				closesAt: tournament.registrationClosesAt
-					? new Date(tournament.registrationClosesAt)
-					: null
+				closesAt: tournament.registrationClosesAt ? new Date(tournament.registrationClosesAt) : null
 			});
 
 			const sent = await sendEmail({ to: email, subject, content });

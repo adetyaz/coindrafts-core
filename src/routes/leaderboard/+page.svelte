@@ -61,8 +61,9 @@
 							>{row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : '🥉'}</span
 						>
 						{#if row.streak > 0}
-							<span class="font-mono text-xs font-bold" style={i === 0 ? '' : 'color:var(--color-primary-ink)'}
-								>{row.streak}&nbsp;🔥</span
+							<span
+								class="font-mono text-xs font-bold"
+								style={i === 0 ? '' : 'color:var(--color-primary-ink)'}>{row.streak}&nbsp;🔥</span
 							>
 						{/if}
 					</div>

@@ -30,5 +30,12 @@ export const SECTOR_THEME: Record<string, SectorTheme> = {
 export const SECTOR_LIST: SectorTheme[] = SECTORS.map((s) => SECTOR_THEME[s.id]);
 
 export function sectorTheme(id: string): SectorTheme {
-	return SECTOR_THEME[id] ?? { id, label: id, color: 'var(--color-text-muted)', ink: 'var(--color-text-muted)' };
+	return (
+		SECTOR_THEME[id] ?? {
+			id,
+			label: id,
+			color: 'var(--color-text-muted)',
+			ink: 'var(--color-text-muted)'
+		}
+	);
 }

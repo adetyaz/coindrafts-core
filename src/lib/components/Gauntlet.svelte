@@ -74,7 +74,9 @@
 </script>
 
 <div class="rounded-[20px] border border-border bg-surface p-[22px]">
-	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">Daily gauntlet</div>
+	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
+		Daily gauntlet
+	</div>
 
 	{#if loading}
 		<div class="h-24 animate-pulse rounded-2xl bg-surface-alt"></div>
@@ -83,7 +85,9 @@
 	{:else if result}
 		<div
 			class="rounded-2xl p-4"
-			style={result.correct ? 'background:rgba(104,194,168,0.12)' : 'background:rgba(232,112,112,0.1)'}
+			style={result.correct
+				? 'background:rgba(104,194,168,0.12)'
+				: 'background:rgba(232,112,112,0.1)'}
 		>
 			<p
 				class="mb-1 text-sm font-extrabold"
@@ -127,7 +131,8 @@
 		<button
 			onclick={submitAnswer}
 			disabled={!selected || submitting}
-			class="mt-3.5 w-full rounded-full py-3 text-sm font-extrabold transition-colors {selected && !submitting
+			class="mt-3.5 w-full rounded-full py-3 text-sm font-extrabold transition-colors {selected &&
+			!submitting
 				? 'cursor-pointer bg-primary text-text hover:bg-primary-hover'
 				: 'cursor-not-allowed bg-surface-alt text-text-muted'}"
 		>

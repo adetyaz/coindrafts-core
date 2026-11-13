@@ -36,7 +36,8 @@ export async function GET({ params, cookies }) {
 		currency: stake.currency,
 		status: stake.status,
 		// Only revealed once locked — before that it would leak the opponent's number.
-		agreedAmount: stake.status === 'locked' || stake.status === 'settled' ? stake.agreedAmount : null,
+		agreedAmount:
+			stake.status === 'locked' || stake.status === 'settled' ? stake.agreedAmount : null,
 		myCommit: me.committed,
 		myPayout: me.payout,
 		confirmedAdult: Boolean(me.confirmedAdult),

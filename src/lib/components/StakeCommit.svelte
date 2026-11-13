@@ -119,8 +119,8 @@
 				Matched at {stake.tierAmount} XP
 			</h3>
 			<p class="mt-2 max-w-[46ch] text-[13px] text-text-muted">
-				Confirm, or raise. It settles at the <strong class="text-text">lower</strong> of the two
-				commits — so raising can never cost you more than you choose here.
+				Confirm, or raise. It settles at the <strong class="text-text">lower</strong> of the two commits
+				— so raising can never cost you more than you choose here.
 			</p>
 
 			<div class="mt-5 flex items-center gap-3">

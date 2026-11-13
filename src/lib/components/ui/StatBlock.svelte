@@ -18,5 +18,7 @@
 	<div class="{sizeClass} font-mono leading-none font-bold tracking-tight" style="color:{color}">
 		{value}
 	</div>
-	<div class="mt-2 text-[11px] font-extrabold tracking-[0.1em] text-text-muted uppercase">{label}</div>
+	<div class="mt-2 text-[11px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
+		{label}
+	</div>
 </div>

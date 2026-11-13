@@ -156,7 +156,7 @@
 								<div class="flex flex-1 items-center gap-4">
 									<div class="relative">
 										<div
-											class="bg-primary text-on-primary border-primary-fixed flex size-12 items-center justify-center rounded-full border-2 text-lg font-medium"
+											class="text-on-primary border-primary-fixed flex size-12 items-center justify-center rounded-full border-2 bg-primary text-lg font-medium"
 										>
 											JD
 										</div>
@@ -209,11 +209,11 @@
 							<div class="mb-3 grid grid-cols-2 gap-3">
 								<!-- Slot 1: L1 (Filled) -->
 								<div
-									class="bg-surface-card border-0.5 border-border-default hover:border-primary/30 flex h-32 cursor-pointer flex-col gap-3 rounded-xl p-3 transition-all"
+									class="bg-surface-card border-0.5 border-border-default flex h-32 cursor-pointer flex-col gap-3 rounded-xl p-3 transition-all hover:border-primary/30"
 								>
 									<div class="flex items-start justify-between">
 										<span
-											class="bg-positive-light text-sector-l1 text-micro-label rounded-full px-2 py-0.5 font-bold uppercase"
+											class="bg-positive-light text-micro-label rounded-full px-2 py-0.5 font-bold text-sector-l1 uppercase"
 											>L1 Sector</span
 										>
 										<span
@@ -239,7 +239,7 @@
 									class="bg-surface-container-low border-0.5 border-outline-variant hover:bg-surface-container group flex h-32 flex-col items-center justify-center rounded-xl border-dashed p-3 transition-all"
 								>
 									<span
-										class="bg-sector-l2/10 text-sector-l2 text-micro-label mb-2 rounded-full px-2 py-0.5 font-bold uppercase"
+										class="text-micro-label mb-2 rounded-full bg-sector-l2/10 px-2 py-0.5 font-bold text-sector-l2 uppercase"
 										>L2 Sector</span
 									>
 									<div
@@ -251,11 +251,11 @@
 								</div>
 								<!-- Slot 3: Meme (Filled) -->
 								<div
-									class="bg-surface-card border-0.5 border-border-default hover:border-primary/30 flex h-32 cursor-pointer flex-col gap-3 rounded-xl p-3 transition-all"
+									class="bg-surface-card border-0.5 border-border-default flex h-32 cursor-pointer flex-col gap-3 rounded-xl p-3 transition-all hover:border-primary/30"
 								>
 									<div class="flex items-start justify-between">
 										<span
-											class="bg-negative-light text-sector-meme text-micro-label rounded-full px-2 py-0.5 font-bold uppercase"
+											class="bg-negative-light text-micro-label rounded-full px-2 py-0.5 font-bold text-sector-meme uppercase"
 											>Meme Sector</span
 										>
 										<span
@@ -278,17 +278,17 @@
 								</div>
 								<!-- Slot 4: DeFi (Empty - Boosted) -->
 								<div
-									class="bg-primary-fixed border-primary relative flex h-32 flex-col items-center justify-center overflow-hidden rounded-xl border-2 p-3"
+									class="bg-primary-fixed relative flex h-32 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-primary p-3"
 								>
 									<div class="absolute top-0 right-0">
 										<div
-											class="bg-primary rounded-bl-lg px-2 py-0.5 text-[9px] font-bold tracking-tighter text-white uppercase"
+											class="rounded-bl-lg bg-primary px-2 py-0.5 text-[9px] font-bold tracking-tighter text-white uppercase"
 										>
 											Boost Active
 										</div>
 									</div>
 									<span
-										class="bg-sector-defi text-on-primary text-micro-label mb-2 rounded-full px-2 py-0.5 font-bold uppercase"
+										class="text-on-primary text-micro-label mb-2 rounded-full bg-sector-defi px-2 py-0.5 font-bold uppercase"
 										>DeFi Sector</span
 									>
 									<div class="flex flex-col items-center gap-1">
@@ -297,7 +297,7 @@
 											style="font-variation-settings: 'FILL' 1"
 											>bolt</span
 										>
-										<p class="text-primary text-secondary-info font-bold tracking-tight uppercase">
+										<p class="text-secondary-info font-bold tracking-tight text-primary uppercase">
 											Draft +20% XP
 										</p>
 									</div>
@@ -305,12 +305,12 @@
 							</div>
 							<!-- Slot 5: Wildcard (Full Width) -->
 							<div
-								class="bg-surface-card border-0.5 border-border-default hover:border-primary/30 flex cursor-pointer items-center gap-4 rounded-xl p-4 transition-all"
+								class="bg-surface-card border-0.5 border-border-default flex cursor-pointer items-center gap-4 rounded-xl p-4 transition-all hover:border-primary/30"
 							>
 								<div class="flex-1">
 									<div class="mb-2 flex items-center gap-2">
 										<span
-											class="bg-sector-wildcard/10 text-sector-wildcard text-micro-label rounded-full px-2 py-0.5 font-bold uppercase"
+											class="text-micro-label rounded-full bg-sector-wildcard/10 px-2 py-0.5 font-bold text-sector-wildcard uppercase"
 											>Wildcard Sector</span
 										>
 										<span class="text-neutral-muted text-micro-label">• Any Token Allowed</span>
@@ -350,7 +350,7 @@
 									<!-- Filter Pills -->
 									<div class="scrollbar-hide no-scrollbar flex gap-2 overflow-x-auto pb-1">
 										<button
-											class="bg-primary text-on-primary text-secondary-info rounded-full px-4 py-1.5 font-medium whitespace-nowrap"
+											class="text-on-primary text-secondary-info rounded-full bg-primary px-4 py-1.5 font-medium whitespace-nowrap"
 										>
 											All
 										</button>
@@ -473,7 +473,7 @@
 							<!-- Enabled version for visual context (hidden by default in code but designed for state) -->
 							<div class="hidden">
 								<button
-									class="bg-primary text-on-primary hover:bg-primary-container flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl text-base leading-normal font-bold tracking-wide shadow-lg transition-all active:scale-[0.98]"
+									class="text-on-primary hover:bg-primary-container flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary text-base leading-normal font-bold tracking-wide shadow-lg transition-all active:scale-[0.98]"
 								>
 									<span class="truncate">Lock Lineup</span>
 									<span class="material-symbols-outlined ml-2">lock</span>

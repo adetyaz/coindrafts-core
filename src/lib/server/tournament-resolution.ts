@@ -144,10 +144,7 @@ async function startTournament(tournamentId: string) {
  * where a start locks them.
  */
 async function cancelTournament(tournamentId: string) {
-	const groups = await db
-		.select()
-		.from(lobbies)
-		.where(eq(lobbies.tournamentId, tournamentId));
+	const groups = await db.select().from(lobbies).where(eq(lobbies.tournamentId, tournamentId));
 
 	for (const g of groups) {
 		await db.delete(lobbyParticipants).where(eq(lobbyParticipants.lobbyId, g.id));
@@ -248,7 +245,10 @@ async function applyPayoutStructure(lobbyId: string, payoutStructure: string) {
 		const newXp = newAmounts.get(p.userId as string);
 		if (newXp === undefined || newXp === oldXp) continue;
 		const delta = newXp - oldXp;
-		await db.update(lobbyParticipants).set({ xpEarned: newXp }).where(eq(lobbyParticipants.id, p.id));
+		await db
+			.update(lobbyParticipants)
+			.set({ xpEarned: newXp })
+			.where(eq(lobbyParticipants.id, p.id));
 		const user = await db
 			.select()
 			.from(users)
@@ -281,14 +281,19 @@ export async function onLobbyResolved(lobby: {
 
 	if (lobby.tournamentStage === FINAL_STAGE) {
 		await applyPayoutStructure(lobby.id, tournament.payoutStructure ?? 'winner_take_all');
-		await db.update(tournaments).set({ status: 'resolved' }).where(eq(tournaments.id, tournament.id));
+		await db
+			.update(tournaments)
+			.set({ status: 'resolved' })
+			.where(eq(tournaments.id, tournament.id));
 		return;
 	}
 
 	const allQualifiers = await db
 		.select()
 		.from(lobbies)
-		.where(and(eq(lobbies.tournamentId, tournament.id), eq(lobbies.tournamentStage, QUALIFIER_STAGE)));
+		.where(
+			and(eq(lobbies.tournamentId, tournament.id), eq(lobbies.tournamentStage, QUALIFIER_STAGE))
+		);
 
 	if (allQualifiers.some((l) => l.status !== 'resolved')) return; // other groups still running
 
@@ -297,8 +302,14 @@ export async function onLobbyResolved(lobby: {
 
 	if (winners.length === 1) {
 		// Only one qualifier group ever formed — its winner is the tournament winner, no final needed.
-		await applyPayoutStructure(allQualifiers[0].id, tournament.payoutStructure ?? 'winner_take_all');
-		await db.update(tournaments).set({ status: 'resolved' }).where(eq(tournaments.id, tournament.id));
+		await applyPayoutStructure(
+			allQualifiers[0].id,
+			tournament.payoutStructure ?? 'winner_take_all'
+		);
+		await db
+			.update(tournaments)
+			.set({ status: 'resolved' })
+			.where(eq(tournaments.id, tournament.id));
 		return;
 	}
 
@@ -315,5 +326,7 @@ export async function onLobbyResolved(lobby: {
 		})
 		.returning();
 
-	await db.insert(lobbyParticipants).values(winners.map((userId) => ({ lobbyId: final.id, userId })));
+	await db
+		.insert(lobbyParticipants)
+		.values(winners.map((userId) => ({ lobbyId: final.id, userId })));
 }

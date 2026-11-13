@@ -44,7 +44,10 @@ export async function resolveLobby(
 
 			const score = lineup ? await scoreLineupPicks(lineup.id) : 0;
 			if (lineup) {
-				await db.update(lineups).set({ finalScore: String(score) }).where(eq(lineups.id, lineup.id));
+				await db
+					.update(lineups)
+					.set({ finalScore: String(score) })
+					.where(eq(lineups.id, lineup.id));
 			}
 			return { userId, score };
 		})
@@ -63,7 +66,9 @@ export async function resolveLobby(
 		await db
 			.update(lobbyParticipants)
 			.set({ rank, xpEarned })
-			.where(and(eq(lobbyParticipants.lobbyId, lobbyId), eq(lobbyParticipants.userId, scored[i].userId)));
+			.where(
+				and(eq(lobbyParticipants.lobbyId, lobbyId), eq(lobbyParticipants.userId, scored[i].userId))
+			);
 
 		const user = await db
 			.select()

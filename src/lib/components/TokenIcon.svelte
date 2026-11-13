@@ -41,7 +41,9 @@
 {:else}
 	<div
 		class="grid shrink-0 place-items-center rounded-full font-black"
-		style="width:{size}px;height:{size}px;background:{bg};color:{fg};font-size:{Math.round(size * 0.42)}px"
+		style="width:{size}px;height:{size}px;background:{bg};color:{fg};font-size:{Math.round(
+			size * 0.42
+		)}px"
 		aria-hidden="true"
 	>
 		{letter}

@@ -58,7 +58,9 @@ export async function GET({ params, cookies }) {
 	// a rate-limited fetch used to silently fall back to "0% move" for that
 	// tick, and under sustained rate-limiting that's every tick, every pick —
 	// a real, drawn line that just never moves.
-	const priceByCurrency = new Map((await getTokensWithPrices()).map((t) => [t.currency_id, t.price]));
+	const priceByCurrency = new Map(
+		(await getTokensWithPrices()).map((t) => [t.currency_id, t.price])
+	);
 	async function currentPriceFor(currencyId: string, fallback: number): Promise<number> {
 		const cached = priceByCurrency.get(currencyId);
 		if (cached != null && cached > 0) return cached;

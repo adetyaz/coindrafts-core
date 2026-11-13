@@ -104,10 +104,7 @@
 	// overlay reads as one object following the cursor, not a new panel each
 	// time. Tuned soft enough to feel alive, stiff enough not to lag behind a
 	// quick sweep across the grid.
-	const motion = new Spring(
-		{ x: 0, y: 0 },
-		{ stiffness: 0.18, damping: 0.72 }
-	);
+	const motion = new Spring({ x: 0, y: 0 }, { stiffness: 0.18, damping: 0.72 });
 
 	// Which side it sits on drives the entry direction, so it appears to emerge
 	// from the card rather than arriving from nowhere.
@@ -137,7 +134,8 @@
 		if (n == null) return '—';
 		if (Math.abs(n) >= 1e9) return `${prefix}${(n / 1e9).toFixed(2)}B`;
 		if (Math.abs(n) >= 1e6) return `${prefix}${(n / 1e6).toFixed(1)}M`;
-		if (Math.abs(n) >= 1000) return `${prefix}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+		if (Math.abs(n) >= 1000)
+			return `${prefix}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 		if (Math.abs(n) >= 1) return `${prefix}${n.toFixed(2)}`;
 		return `${prefix}${n.toPrecision(3)}`;
 	};
@@ -213,7 +211,9 @@
 					<div class="grid grid-cols-2 gap-x-3 gap-y-2.5 px-4 py-3.5">
 						{#each [{ k: 'Price', v: fmtNum(detail.price, '$') }, { k: '24h volume', v: fmtNum(detail.volume24h, '$') }, { k: '24h high', v: fmtNum(detail.high24h, '$') }, { k: '24h low', v: fmtNum(detail.low24h, '$') }, { k: 'Market cap', v: fmtNum(detail.marketcap, '$') }, { k: 'From ATH', v: detail.downFromAth != null ? `-${(detail.downFromAth * 100).toFixed(0)}%` : '—' }] as row (row.k)}
 							<div>
-								<div class="text-[9.5px] font-extrabold tracking-[0.08em] text-text-muted uppercase">
+								<div
+									class="text-[9.5px] font-extrabold tracking-[0.08em] text-text-muted uppercase"
+								>
 									{row.k}
 								</div>
 								<div class="mt-0.5 font-mono text-[12.5px] font-bold text-text">{row.v}</div>
@@ -229,7 +229,9 @@
 						</div>
 					</div>
 				{:else}
-					<p class="px-4 py-6 text-center text-[11.5px] text-text-muted">No recent news for this token.</p>
+					<p class="px-4 py-6 text-center text-[11.5px] text-text-muted">
+						No recent news for this token.
+					</p>
 				{/if}
 			{/if}
 		</div>

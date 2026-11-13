@@ -52,14 +52,18 @@ export async function GET({ params, url }) {
 	const pageUrl = `${url.origin}/share/${contestId}?u=${userId}`;
 	const title = `${didWin ? 'I won' : 'I played'} a ${contestType} contest on CoinDraft — ${yourScore} pts`;
 	const description = picks
-		.map((p) => `${p.tokenSymbol} ${Number(p.pctChange ?? 0) >= 0 ? '+' : ''}${Number(p.pctChange ?? 0).toFixed(1)}%`)
+		.map(
+			(p) =>
+				`${p.tokenSymbol} ${Number(p.pctChange ?? 0) >= 0 ? '+' : ''}${Number(p.pctChange ?? 0).toFixed(1)}%`
+		)
 		.join(' · ');
 	const tweetText = encodeURIComponent(
 		`${didWin ? '🏆 I just won' : 'Just played'} a ${contestType} contest on CoinDraft — ${yourScore} pts`
 	);
 	const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(pageUrl)}`;
 
-	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+	const esc = (s: string) =>
+		s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 	// Mirrors src/lib/server/resultCard.ts and src/routes/layout.css's design
 	// tokens — this is a standalone HTML document (see the file header), so it

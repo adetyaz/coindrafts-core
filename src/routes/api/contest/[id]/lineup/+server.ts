@@ -37,7 +37,10 @@ export async function POST({ params, request, cookies }) {
 	// off. Re-locking while still 'open' (contest not started yet, or waiting
 	// on the opponent) is fine — nothing has been scored against it yet.
 	if (existingContest.status === 'live') {
-		return json({ error: 'This contest is already live — your lineup is locked in.' }, { status: 409 });
+		return json(
+			{ error: 'This contest is already live — your lineup is locked in.' },
+			{ status: 409 }
+		);
 	}
 
 	const existingLineup = await db
@@ -65,7 +68,9 @@ export async function POST({ params, request, cookies }) {
 	// prices silently landing on $0 under any rate-limit blip: extractPrice()
 	// treats a failed fetch as "$0", not "unknown", and a $0 entry gets
 	// filtered out of the race chart client-side, making it read as blank.
-	const priceByCurrency = new Map((await getTokensWithPrices()).map((t) => [t.currency_id, t.price]));
+	const priceByCurrency = new Map(
+		(await getTokensWithPrices()).map((t) => [t.currency_id, t.price])
+	);
 	async function priceFor(currencyId: string): Promise<number> {
 		const cached = priceByCurrency.get(currencyId);
 		if (cached != null && cached > 0) return cached;
@@ -176,7 +181,9 @@ export async function POST({ params, request, cookies }) {
 			// retrying this same request will find it and just re-lock picks,
 			// so nothing is lost by bailing out here.
 			return json(
-				{ error: "Couldn't set up your Scrimmage opponent — please try locking your lineup again." },
+				{
+					error: "Couldn't set up your Scrimmage opponent — please try locking your lineup again."
+				},
 				{ status: 503 }
 			);
 		}

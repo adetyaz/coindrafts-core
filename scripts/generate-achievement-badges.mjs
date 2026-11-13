@@ -139,15 +139,57 @@ const emblems = {
 // tier: 1 = a first step, 2 = sustained, 3 = elite. League Founder is a role
 // rather than a difficulty, but it's a permanent founder marker — gold.
 const BADGES = [
-	{ typeId: 0, slug: 'first-blood', name: 'First Blood', emblem: 'droplet', accent: '#F78E79', tier: 1 },
-	{ typeId: 1, slug: 'scrimmage-starter', name: 'Scrimmage Starter', emblem: 'robot', accent: '#81BBE3', tier: 1 },
-	{ typeId: 2, slug: 'sharp-shooter', name: 'Sharp Shooter', emblem: 'target', accent: '#F7C978', tier: 1 },
-	{ typeId: 3, slug: 'know-it-all', name: 'Know-It-All', emblem: 'bulb', accent: '#5FA8D8', tier: 2 },
+	{
+		typeId: 0,
+		slug: 'first-blood',
+		name: 'First Blood',
+		emblem: 'droplet',
+		accent: '#F78E79',
+		tier: 1
+	},
+	{
+		typeId: 1,
+		slug: 'scrimmage-starter',
+		name: 'Scrimmage Starter',
+		emblem: 'robot',
+		accent: '#81BBE3',
+		tier: 1
+	},
+	{
+		typeId: 2,
+		slug: 'sharp-shooter',
+		name: 'Sharp Shooter',
+		emblem: 'target',
+		accent: '#F7C978',
+		tier: 1
+	},
+	{
+		typeId: 3,
+		slug: 'know-it-all',
+		name: 'Know-It-All',
+		emblem: 'bulb',
+		accent: '#5FA8D8',
+		tier: 2
+	},
 	{ typeId: 4, slug: 'on-fire', name: 'On Fire', emblem: 'flame', accent: '#F78E79', tier: 2 },
-	{ typeId: 5, slug: 'unstoppable', name: 'Unstoppable', emblem: 'bolt', accent: '#FFB27A', tier: 3 },
+	{
+		typeId: 5,
+		slug: 'unstoppable',
+		name: 'Unstoppable',
+		emblem: 'bolt',
+		accent: '#FFB27A',
+		tier: 3
+	},
 	{ typeId: 6, slug: 'veteran', name: 'Veteran', emblem: 'chevrons', accent: '#68C2A8', tier: 2 },
 	{ typeId: 7, slug: 'champion', name: 'Champion', emblem: 'trophy', accent: '#8FE0C6', tier: 3 },
-	{ typeId: 8, slug: 'league-founder', name: 'League Founder', emblem: 'crown', accent: '#F7C978', tier: 3 }
+	{
+		typeId: 8,
+		slug: 'league-founder',
+		name: 'League Founder',
+		emblem: 'crown',
+		accent: '#F7C978',
+		tier: 3
+	}
 ];
 
 function esc(s) {
@@ -246,6 +288,8 @@ function renderBadge({ name, emblem, accent, tier }) {
 mkdirSync(OUT_DIR, { recursive: true });
 for (const badge of BADGES) {
 	writeFileSync(join(OUT_DIR, `${badge.slug}.svg`), renderBadge(badge), 'utf-8');
-	console.log(`Wrote static/badges/${badge.slug}.svg  (tier ${badge.tier} ${METALS[badge.tier].label})`);
+	console.log(
+		`Wrote static/badges/${badge.slug}.svg  (tier ${badge.tier} ${METALS[badge.tier].label})`
+	);
 }
 console.log(`\nDone — ${BADGES.length} badges.`);
