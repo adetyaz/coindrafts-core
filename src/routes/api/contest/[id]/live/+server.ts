@@ -123,7 +123,8 @@ export async function GET({ params, cookies }) {
 					currencyId: p.currencyId,
 					entryPrice: entry,
 					currentPrice: current,
-					pct: Number(pct.toFixed(3))
+					pct: Number(pct.toFixed(3)),
+					call: p.call ?? null
 				};
 			})
 		);
@@ -235,6 +236,7 @@ export async function GET({ params, cookies }) {
 		me,
 		opponent,
 		rival,
-		circuit: contest.circuit
+		circuit: contest.circuit,
+		mode: contest.mode ?? null
 	});
 }

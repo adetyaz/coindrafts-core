@@ -10,6 +10,10 @@
 	// A bot opponent's reaction to the result, in its own voice.
 	let botReaction = $state<{ name: string; line: string } | null>(null);
 	let item = $state<LineupItem | null>(null);
+	// Binary mode (F9): each call, entry → exit, ✓ or ✗.
+	let calls = $state<
+		{ symbol: string; call: string | null; entry: number; exit: number; right: boolean }[] | null
+	>(null);
 	let carRace = $state<{ won: boolean; car: { model: string; rarity: string } } | null>(null);
 
 	// Starts empty on purpose. This page previously initialised with a realistic
@@ -97,6 +101,7 @@
 			opponentName = data.opponentName ?? null;
 			carRace = data.carRace ?? null;
 			item = data.item ?? null;
+			calls = data.calls ?? null;
 			const rival = data.rival as { username: string; mood: Mood; record: HeadToHead } | null;
 			if (rival) {
 				const botWon = data.status !== 'YOU WON';
@@ -332,6 +337,29 @@
 
 		<div class="mt-4.5 flex flex-wrap gap-4.5">
 			<div class="min-w-0 flex-[1_1_520px]">
+				{#if calls}
+					<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
+						Your calls · {calls.filter((c) => c.right).length} of {calls.length} right
+					</div>
+					<ul class="mb-6 flex flex-col gap-2">
+						{#each calls as c (c.symbol)}
+							<li
+								class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm"
+							>
+								<span class="font-black"
+									>{c.right ? '✓' : '✗'}
+									{c.symbol}
+									{c.call === 'up' ? '▲ up' : '▼ down'}</span
+								>
+								<span class="font-mono text-xs"
+									>${c.entry.toPrecision(6)} → ${c.exit.toPrecision(6)}{c.entry === c.exit
+										? ' · flat counts as wrong'
+										: ''}</span
+								>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
 					Pick breakdown
 				</div>

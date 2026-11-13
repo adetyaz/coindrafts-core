@@ -22,7 +22,8 @@
 		finished = false,
 		holding = false,
 		onOvertake,
-		onUnsupported
+		onUnsupported,
+		checkpoints
 	}: {
 		cars: RaceCar[];
 		/** Circuit id from $lib/race/circuits (real layouts). Fixed for the life of the component. */
@@ -32,6 +33,12 @@
 		holding?: boolean;
 		onOvertake?: (passer: RaceCar, passed: RaceCar) => void;
 		onUnsupported?: () => void;
+		/**
+		 * Binary mode (GAMEPLAY_FLOWS.md, F9): one gate per call, spaced around the
+		 * lap. true = that call is right now (green), false = wrong (red), null = no
+		 * move yet. Read every frame, so gates flip as prices do.
+		 */
+		checkpoints?: (boolean | null)[];
 	} = $props();
 
 	// ── Tuning ───────────────────────────────────────────────────────────────
@@ -226,6 +233,48 @@
 		startLine.position.copy(start.pos).setY(start.pos.y + 0.04);
 		scene.add(startLine);
 
+		// Binary-mode checkpoints: a gate over the road for each call.
+		const gates: THREE.MeshStandardMaterial[] = [];
+		const gateCount = checkpoints?.length ?? 0;
+		for (let i = 0; i < gateCount; i++) {
+			const { pos, dir } = trackAt((i + 0.5) / gateCount);
+			const material = new THREE.MeshStandardMaterial({
+				color: token('race-line'),
+				emissiveIntensity: 0.9,
+				flatShading: true
+			});
+			keep(material);
+			gates.push(material);
+			const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+			const postGeo = keep(new THREE.BoxGeometry(0.35, 3.2, 0.35));
+			for (const k of [-1, 1]) {
+				const post = new THREE.Mesh(postGeo, material);
+				post.position
+					.copy(pos)
+					.addScaledVector(side, (k * ROAD_WIDTH) / 2)
+					.setY(pos.y + 1.6);
+				scene.add(post);
+			}
+			const bar = new THREE.Mesh(
+				keep(new THREE.BoxGeometry(ROAD_WIDTH + 0.4, 0.35, 0.35)),
+				material
+			);
+			bar.position.copy(pos).setY(pos.y + 3.2);
+			bar.rotation.y = Math.atan2(-dir.z, dir.x) + Math.PI / 2;
+			scene.add(bar);
+		}
+		const gateOn = token('positive');
+		const gateOff = token('negative');
+		const gateIdle = token('race-line');
+		function paintGates() {
+			gates.forEach((m, i) => {
+				const v = checkpoints?.[i] ?? null;
+				const c = v === true ? gateOn : v === false ? gateOff : gateIdle;
+				m.color.copy(c);
+				m.emissive.copy(v === null ? new THREE.Color(0) : c);
+			});
+		}
+
 		// Low-poly trees scattered off the circuit. Seeded by the circuit, so a
 		// track always looks the same.
 		const trunkGeo = keep(new THREE.CylinderGeometry(0.3, 0.4, 1.6, 6));
@@ -400,6 +449,7 @@
 			const dt = Math.min(0.05, (now - last) / 1000);
 			last = now;
 			syncCars();
+			if (gates.length) paintGates();
 			if (state.size === 0) {
 				renderer.render(scene, iso);
 				return;

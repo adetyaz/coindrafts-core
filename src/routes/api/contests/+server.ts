@@ -4,6 +4,7 @@ import { contests, lineups } from '$lib/server/schema';
 import { and, eq, or } from 'drizzle-orm';
 import { parseSessionToken } from '$lib/server/auth';
 import { DEFAULT_DURATION_MINUTES, normalizeDuration } from '$lib/constants';
+import { BINARY_LENGTHS, BINARY_SOLO, BINARY_VERSUS } from '$lib/race/binary';
 
 export async function GET({ cookies }) {
 	const token = cookies.get('session');
@@ -38,8 +39,13 @@ export async function POST({ request, cookies }) {
 
 	const body = await request.json();
 	const type = body.type === 'weekly' ? 'weekly' : 'daily';
-	const isPaper = body.mode === 'paper';
-	const durationMinutes = normalizeDuration(body.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+	// Binary mode (F9): solo against the market, or Versus a bot. Solo plays like
+	// a Scrimmage (practice XP, Scrimmage Gears), so it can't be farmed.
+	const binary = body.mode === 'binary';
+	const mode = binary ? (body.opponent === 'bot' ? BINARY_VERSUS : BINARY_SOLO) : null;
+	const isPaper = body.mode === 'paper' || mode === BINARY_SOLO;
+	let durationMinutes = normalizeDuration(body.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+	if (binary && !BINARY_LENGTHS.some((l) => l.minutes === durationMinutes)) durationMinutes = 5;
 
 	// Reuse any open or live contest the user already has of the same
 	// type/mode/duration. Duration is part of the identity here: a 20-minute game
@@ -56,6 +62,7 @@ export async function POST({ request, cookies }) {
 						(c.status === 'open' || c.status === 'live') &&
 						c.type === type &&
 						Boolean(c.isPaper) === isPaper &&
+						(c.mode ?? null) === mode &&
 						(c.durationMinutes ?? DEFAULT_DURATION_MINUTES) === durationMinutes
 				) ?? null
 		);
@@ -73,6 +80,7 @@ export async function POST({ request, cookies }) {
 			type,
 			isPaper,
 			durationMinutes,
+			mode,
 			status: 'open'
 		})
 		.returning();

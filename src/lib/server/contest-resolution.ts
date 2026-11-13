@@ -9,6 +9,7 @@ import { flushOutbox, grantGears, settleCarRace } from '$lib/server/cars';
 import { stakedCars } from '$lib/server/carRace';
 import { runBotMarket } from '$lib/server/market';
 import { itemFactors } from '$lib/race/items';
+import { BINARY_SOLO, SOLO_TO_WIN, callRight, isBinaryMode, tallyCalls } from '$lib/race/binary';
 
 /** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
 const GEARS_REAL = [150, 40] as const;
@@ -105,6 +106,38 @@ export async function scoreLineupPicks(
 }
 
 /**
+ * Binary mode (F9): marks each call right or wrong at the exit price (a flat
+ * price is wrong) and returns the correct count and margin. Same batch prices
+ * and same refusal on a missing price as draft scoring.
+ */
+export async function scoreBinaryLineup(lineupId: string) {
+	const picks = await db.select().from(lineupPicks).where(eq(lineupPicks.lineupId, lineupId));
+	const quotes = await getAllPrices().catch(() => null);
+	const unpriced = picks
+		.filter((p) => !(quotes?.get(p.tokenSymbol.toUpperCase())?.price ?? 0))
+		.map((p) => p.tokenSymbol);
+	if (unpriced.length) throw new PriceUnavailableError(unpriced);
+	const tallied = [];
+	for (const p of picks) {
+		const exit = quotes!.get(p.tokenSymbol.toUpperCase())!.price;
+		const entry = Number(p.entryPrice ?? 0);
+		const pct = entry > 0 ? ((exit - entry) / entry) * 100 : 0;
+		const right = callRight(p.call, entry, exit);
+		await db
+			.update(lineupPicks)
+			.set({ exitPrice: String(exit), pctChange: String(pct), score: right ? '1' : '0' })
+			.where(eq(lineupPicks.id, p.id));
+		tallied.push({ call: p.call, entryPrice: entry, currentPrice: exit });
+	}
+	const t = tallyCalls(tallied);
+	await db
+		.update(lineups)
+		.set({ finalScore: String(t.correct) })
+		.where(eq(lineups.id, lineupId));
+	return t;
+}
+
+/**
  * Resolves a live contest: scores both lineups, picks a winner, awards XP,
  * updates league standings, and marks the contest resolved. Idempotent —
  * no-ops if the contest isn't live or the userB lineup hasn't been submitted yet.
@@ -143,6 +176,39 @@ export async function resolveContest(
 
 	if (!lineupA) return { resolved: false, reason: 'missing_lineup_a' };
 
+	// Binary mode scores calls, not moves; everything after the winner (claim,
+	// XP, Gears, leagues) is shared with draft races.
+	let binaryOutcome: { didAWin: boolean } | null = null;
+	if (isBinaryMode(contest.mode)) {
+		try {
+			const a = await scoreBinaryLineup(lineupA.id);
+			if (contest.mode === BINARY_SOLO || !contest.userBId) {
+				binaryOutcome = { didAWin: a.correct >= SOLO_TO_WIN };
+			} else {
+				const [lineupB] = await db
+					.select()
+					.from(lineups)
+					.where(and(eq(lineups.contestId, contestId), eq(lineups.userId, contest.userBId)));
+				if (!lineupB) return { resolved: false, reason: 'missing_lineup_b' };
+				const b = await scoreBinaryLineup(lineupB.id);
+				// Most correct; then right by more; then a coin flip.
+				const didAWin =
+					a.correct !== b.correct
+						? a.correct > b.correct
+						: a.margin !== b.margin
+							? a.margin > b.margin
+							: Math.random() < 0.5;
+				binaryOutcome = { didAWin };
+			}
+		} catch (e) {
+			if (e instanceof PriceUnavailableError) {
+				console.warn(`[resolveContest] ${contestId} deferred — ${e.message}`);
+				return { resolved: false, reason: 'prices_unavailable' };
+			}
+			throw e;
+		}
+	}
+
 	// Price failures abort resolution rather than producing a wrong result. The
 	// contest stays `live` and will resolve on a later attempt — lazily when
 	// someone opens it, or on the cron sweep — once prices are back.
@@ -157,51 +223,14 @@ export async function resolveContest(
 		.limit(1)
 		.then((r) => r[0] ?? null);
 
-	let scoreA: number;
-	try {
-		scoreA = await scoreLineupPicks(
-			lineupA.id,
-			contest.durationMinutes,
-			userA?.activeBoosts as ActiveBoost[] | null,
-			scoredAt
-		);
-	} catch (e) {
-		if (e instanceof PriceUnavailableError) {
-			console.warn(`[resolveContest] ${contestId} deferred — ${e.message}`);
-			return { resolved: false, reason: 'prices_unavailable' };
-		}
-		throw e;
-	}
-	await db
-		.update(lineups)
-		.set({ finalScore: String(scoreA) })
-		.where(eq(lineups.id, lineupA.id));
-
-	let scoreB = 0;
-	let didAWin = false;
-
-	if (contest.userBId) {
-		const lineupB = await db
-			.select()
-			.from(lineups)
-			.where(and(eq(lineups.contestId, contestId), eq(lineups.userId, contest.userBId)))
-			.limit(1)
-			.then((rows) => rows[0] ?? null);
-
-		if (!lineupB) return { resolved: false, reason: 'missing_lineup_b' };
-
-		const userB = await db
-			.select({ activeBoosts: users.activeBoosts })
-			.from(users)
-			.where(eq(users.id, contest.userBId))
-			.limit(1)
-			.then((r) => r[0] ?? null);
-
+	let didAWin = binaryOutcome?.didAWin ?? false;
+	if (!binaryOutcome) {
+		let scoreA = 0;
 		try {
-			scoreB = await scoreLineupPicks(
-				lineupB.id,
+			scoreA = await scoreLineupPicks(
+				lineupA.id,
 				contest.durationMinutes,
-				userB?.activeBoosts as ActiveBoost[] | null,
+				userA?.activeBoosts as ActiveBoost[] | null,
 				scoredAt
 			);
 		} catch (e) {
@@ -213,14 +242,53 @@ export async function resolveContest(
 		}
 		await db
 			.update(lineups)
-			.set({ finalScore: String(scoreB) })
-			.where(eq(lineups.id, lineupB.id));
+			.set({ finalScore: String(scoreA) })
+			.where(eq(lineups.id, lineupA.id));
 
-		didAWin = scoreA >= scoreB;
-	} else {
-		// Bot opponent
-		scoreB = Math.max(0, scoreA - 120 + Math.random() * 220);
-		didAWin = scoreA >= scoreB;
+		let scoreB = 0;
+
+		if (contest.userBId) {
+			const lineupB = await db
+				.select()
+				.from(lineups)
+				.where(and(eq(lineups.contestId, contestId), eq(lineups.userId, contest.userBId)))
+				.limit(1)
+				.then((rows) => rows[0] ?? null);
+
+			if (!lineupB) return { resolved: false, reason: 'missing_lineup_b' };
+
+			const userB = await db
+				.select({ activeBoosts: users.activeBoosts })
+				.from(users)
+				.where(eq(users.id, contest.userBId))
+				.limit(1)
+				.then((r) => r[0] ?? null);
+
+			try {
+				scoreB = await scoreLineupPicks(
+					lineupB.id,
+					contest.durationMinutes,
+					userB?.activeBoosts as ActiveBoost[] | null,
+					scoredAt
+				);
+			} catch (e) {
+				if (e instanceof PriceUnavailableError) {
+					console.warn(`[resolveContest] ${contestId} deferred — ${e.message}`);
+					return { resolved: false, reason: 'prices_unavailable' };
+				}
+				throw e;
+			}
+			await db
+				.update(lineups)
+				.set({ finalScore: String(scoreB) })
+				.where(eq(lineups.id, lineupB.id));
+
+			didAWin = scoreA >= scoreB;
+		} else {
+			// Bot opponent
+			scoreB = Math.max(0, scoreA - 120 + Math.random() * 220);
+			didAWin = scoreA >= scoreB;
+		}
 	}
 
 	const winnerId = didAWin ? contest.userAId : contest.userBId || null;

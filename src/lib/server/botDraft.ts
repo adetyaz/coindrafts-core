@@ -98,3 +98,42 @@ export async function draftBotLineup(style: DraftStyle = 'chaos'): Promise<BotPi
 	}
 	return picks;
 }
+
+/**
+ * Binary mode (GAMEPLAY_FLOWS.md, F9): a bot picks 5 coins and calls them in
+ * its own style. Momentum rides the biggest movers; contrarian bets they turn;
+ * steady calls the calm ones to keep going; volatile and chaos pick wild coins
+ * and call them on a hunch.
+ */
+export async function binaryBotCalls(style: DraftStyle = 'chaos') {
+	const tokens = (await getTokensWithPrices()).filter(
+		(t) => t.symbol && t.price != null && t.price > 0 && t.change24h != null
+	);
+	const by = (f: (t: TokenWithPrice) => number) => [...tokens].sort((a, b) => f(b) - f(a));
+	const pool =
+		style === 'steady'
+			? by((t) => -Math.abs(t.change24h!))
+			: style === 'chaos'
+				? [...tokens].sort(() => Math.random() - 0.5)
+				: by((t) => Math.abs(t.change24h!));
+	return pool.slice(0, 5).map((t) => {
+		const trend = t.change24h! >= 0 ? 'up' : 'down';
+		const flip = trend === 'up' ? 'down' : 'up';
+		const call =
+			style === 'contrarian'
+				? flip
+				: style === 'momentum' || style === 'steady'
+					? trend
+					: Math.random() < 0.5
+						? 'up'
+						: 'down';
+		return {
+			symbol: t.symbol!,
+			name: t.name ?? t.symbol!,
+			currencyId: t.currency_id,
+			sector: classifySector([t.symbol!]),
+			price: t.price,
+			call: call as 'up' | 'down'
+		};
+	});
+}

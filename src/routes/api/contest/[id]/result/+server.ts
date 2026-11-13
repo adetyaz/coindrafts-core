@@ -15,6 +15,7 @@ import { awardWinBadges } from '$lib/server/badges';
 import { headToHead } from '$lib/server/wager';
 import { botRival } from '$lib/server/rivalry';
 import { carRaceOutcome } from '$lib/server/carRace';
+import { callRight, isBinaryMode } from '$lib/race/binary';
 
 export async function GET({ params, cookies }) {
 	const token = cookies.get('session');
@@ -217,6 +218,17 @@ export async function GET({ params, cookies }) {
 			};
 		})(),
 		breakdown: scoredPicks,
+		// Binary mode (F9): each call, entry → exit, right or wrong.
+		mode: contest.mode ?? null,
+		calls: isBinaryMode(contest.mode)
+			? myPicks.map((p) => ({
+					symbol: p.tokenSymbol,
+					call: p.call,
+					entry: Number(p.entryPrice ?? 0),
+					exit: Number(p.exitPrice ?? 0),
+					right: callRight(p.call, Number(p.entryPrice ?? 0), Number(p.exitPrice ?? 0))
+				}))
+			: null,
 		// The nitro or pit-stop item you raced with (F8: shown on the result).
 		item: myLineup.item ?? null,
 		newBadges

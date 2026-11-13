@@ -10,6 +10,8 @@ import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
 import { stakedCars } from '$lib/server/carRace';
+import { binaryBotCalls } from '$lib/server/botDraft';
+import { BINARY_SOLO, BINARY_VERSUS, isBinaryMode, isCall } from '$lib/race/binary';
 import { ItemError, getInventory, lockItem } from '$lib/server/items';
 import { ITEMS, isItemKind, type LineupItem } from '$lib/race/items';
 
@@ -105,6 +107,17 @@ export async function POST({ params, request, cookies }) {
 		);
 	}
 
+	// Binary mode (F9): any 5 different coins, each called up or down. No items.
+	const binary = isBinaryMode(existingContest.mode);
+	if (binary) {
+		const ids = picks.map((p: { currencyId?: unknown }) => String(p.currencyId));
+		if (new Set(ids).size !== ids.length)
+			return json({ error: 'Pick 5 different coins' }, { status: 400 });
+		if (!picks.every((p: { call?: unknown }) => isCall(p.call)))
+			return json({ error: 'Call every coin up or down' }, { status: 400 });
+		item = null;
+	}
+
 	const existingLineup = await db
 		.select()
 		.from(lineups)
@@ -162,6 +175,7 @@ export async function POST({ params, request, cookies }) {
 		exitPrice: string;
 		pctChange: string;
 		score: string;
+		call: string | null;
 	}[] = [];
 	for (const pick of picks) {
 		const entryPrice = await priceFor(String(pick.currencyId), String(pick.symbol ?? ''));
@@ -173,7 +187,8 @@ export async function POST({ params, request, cookies }) {
 			entryPrice: String(entryPrice),
 			exitPrice: String(entryPrice),
 			pctChange: '0',
-			score: '0'
+			score: '0',
+			call: binary ? String(pick.call) : null
 		});
 	}
 
@@ -246,12 +261,25 @@ export async function POST({ params, request, cookies }) {
 				.where(and(eq(lineups.contestId, contestId), eq(lineups.userId, carRaceBot.id)))
 				.then((r) => r.length > 0)
 		: true;
-	if ((existingContest.isPaper && !existingContest.userBId) || !botHasLineup) {
+	// Solo binary races the market, not a bot. Binary Versus gets a bot that
+	// makes its own calls.
+	const needsBot =
+		existingContest.mode === BINARY_SOLO
+			? false
+			: (existingContest.isPaper && !existingContest.userBId) ||
+				(existingContest.mode === BINARY_VERSUS && !existingContest.userBId) ||
+				!botHasLineup;
+	if (needsBot) {
 		let botReady = false;
 		for (let attempt = 0; attempt < 2 && !botReady; attempt++) {
 			try {
 				const bot = carRaceBot ?? pickScrimmageBot();
-				const botPicks = await draftBotLineup(personalityOf(bot.username).draft);
+				const style = personalityOf(bot.username).draft;
+				const botPicks:
+					| Awaited<ReturnType<typeof binaryBotCalls>>
+					| Awaited<ReturnType<typeof draftBotLineup>> = binary
+					? await binaryBotCalls(style)
+					: await draftBotLineup(style);
 				if (botPicks.length !== 5) throw new Error('Bot draft returned an incomplete lineup');
 
 				const [botLineup] = await db
@@ -287,7 +315,8 @@ export async function POST({ params, request, cookies }) {
 						entryPrice: String(entryPrice),
 						exitPrice: String(entryPrice),
 						pctChange: '0',
-						score: '0'
+						score: '0',
+						call: 'call' in p ? String(p.call) : null
 					});
 				}
 
@@ -343,7 +372,8 @@ export async function POST({ params, request, cookies }) {
 					.then((rows) => rows.length > 0)
 			: false;
 
-		if (otherLineupReady) {
+		// Solo binary: there's no one else to wait for.
+		if (otherLineupReady || (contestNow.mode === BINARY_SOLO && !contestNow.userBId)) {
 			const durationMinutes = contestNow.durationMinutes ?? DEFAULT_DURATION_MINUTES;
 			const startAt = new Date(Date.now() + PRE_RACE_MS);
 			const endAt = new Date(startAt.getTime() + durationMinutes * 60 * 1000);

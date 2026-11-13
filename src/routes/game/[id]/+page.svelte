@@ -10,6 +10,7 @@
 	import { streamPrices } from '$lib/race/priceStream';
 	import { paintColor } from '$lib/economy/rules';
 	import { ITEMS, SPARE_WINDOW, itemFactors, type LineupItem } from '$lib/race/items';
+	import { binaryPace, callRight, isBinaryMode } from '$lib/race/binary';
 	import { circuitById, circuitForRace } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
@@ -28,6 +29,7 @@
 		entryPrice: number;
 		currentPrice: number;
 		pct: number;
+		call?: 'up' | 'down' | null;
 	};
 	type Side = {
 		userId: string;
@@ -49,6 +51,7 @@
 		opponent: Side;
 		stakeId?: string | null;
 		circuit?: string | null;
+		mode?: string | null;
 		rival?: {
 			username: string;
 			tagline: string;
@@ -263,8 +266,29 @@
 		});
 	});
 
+	const binary = $derived(isBinaryMode(live?.mode));
+	const priceNow = (p: Pick) => livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
+	// Binary mode (F9): one gate per call, green while it's right.
+	const myCalls = $derived(
+		binary
+			? (live?.me?.picks ?? []).map((p) =>
+					priceNow(p) === p.entryPrice ? null : callRight(p.call, p.entryPrice, priceNow(p))
+				)
+			: undefined
+	);
+
 	function liveTotal(side: Side): number {
 		if (!side) return 0;
+		// Binary: pace follows how many calls are right right now.
+		if (binary) {
+			return binaryPace(
+				side.picks.map((p) => ({
+					call: p.call ?? null,
+					entryPrice: p.entryPrice,
+					currentPrice: priceNow(p)
+				}))
+			);
+		}
 		const moves = side.picks.map((p) => {
 			const now = livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
 			return {
@@ -277,7 +301,6 @@
 		const factors = itemFactors(moves, side.item);
 		return moves.reduce((sum, m, i) => sum + m.pct * factors[i], 0);
 	}
-
 
 	/** The pick pushing a side forward the most right now. */
 	function topPick(side: Side): Pick | null {
@@ -617,8 +640,22 @@
 						finished={msRemaining <= 0}
 						{onOvertake}
 						onUnsupported={() => (view = 'chart')}
+						checkpoints={myCalls}
 					/>
 				{/key}
+				{#if binary && live?.me}
+					<div class="mt-2 flex flex-wrap gap-1.5">
+						{#each live.me.picks as p (p.symbol)}
+							{@const right = callRight(p.call, p.entryPrice, priceNow(p))}
+							<span
+								class="rounded-full px-3 py-1 font-mono text-xs font-bold {right
+									? 'bg-positive text-text'
+									: 'bg-negative text-text'}"
+								>{p.symbol.toUpperCase()} {p.call === 'up' ? '▲' : '▼'} {right ? '✓' : '✗'}</span
+							>
+						{/each}
+					</div>
+				{/if}
 
 				{#if showPreRace}
 					<!-- Pre-race: the grid before lights out -->

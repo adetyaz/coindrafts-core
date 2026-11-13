@@ -41,7 +41,8 @@
 			items: [
 				{ href: '/scrimmage', label: 'scrimmage' },
 				{ href: '/matchmaking', label: 'versus' },
-				{ href: '/tournament', label: 'tournament' }
+				{ href: '/tournament', label: 'tournament' },
+				{ href: '/binary', label: 'binary' }
 			]
 		},
 		{

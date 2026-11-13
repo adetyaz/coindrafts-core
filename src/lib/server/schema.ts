@@ -184,7 +184,10 @@ export const contests = pgTable('contests', {
 	winnerId: uuid('winner_id').references(() => users.id),
 	// Real circuit id from $lib/race/circuits. Cosmetic only. Null on races from
 	// before circuits existed (they fall back to a circuit picked from the id).
-	circuit: text('circuit')
+	circuit: text('circuit'),
+	// Race mode: null = a normal draft race; 'binary' / 'binary_solo' = call coins
+	// up or down (GAMEPLAY_FLOWS.md, F9, $lib/race/binary).
+	mode: text('mode')
 });
 
 // ─── Lineups ──────────────────────────────────────────────────────────────────
@@ -260,7 +263,9 @@ export const lineupPicks = pgTable('lineup_picks', {
 	entryPrice: numeric('entry_price'), // price at lineup lock time
 	exitPrice: numeric('exit_price'), // price at contest resolution
 	pctChange: numeric('pct_change'), // ((exit - entry) / entry) * 100
-	score: numeric('score').default('0') // weighted score for this pick
+	score: numeric('score').default('0'), // weighted score for this pick
+	// Binary mode: the call on this coin, 'up' or 'down'. Null in a draft race.
+	call: text('call')
 });
 
 // ─── Lobbies ──────────────────────────────────────────────────────────────────
