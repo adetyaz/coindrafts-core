@@ -68,10 +68,15 @@ export type BotWallet = {
 /** Below this, a bot is broke and sells to get back in the game. */
 export const BROKE_BELOW = 150;
 
+/** Below this, a bot with 3+ cars sells a duplicate to save up. */
+export const SAVING_BELOW = 1000;
+
 /**
  * Whether a bot lists one of its cars, which one, and at what price.
  * - Broke: fire sale, its cheapest car at 70% of fair price
  * - More than 2 cars of one tier: sells a spare at fair price
+ * - Saving up (3+ cars, under SAVING_BELOW Gears): sells a duplicate at 10% over
+ *   fair price, holding out for a good offer
  * - Otherwise it keeps its garage
  */
 export function botListing(
@@ -98,6 +103,18 @@ export function botListing(
 				value: { carId: ofTier[0].id, price: fair.value },
 				reason: `Owns ${ofTier.length} ${rarity}s and only needs 2 (${fair.reason})`
 			};
+		}
+	}
+	if (bot.cars.length >= 3 && bot.gears < SAVING_BELOW) {
+		for (const rarity of RARITIES) {
+			const ofTier = bot.cars.filter((c) => c.rarity === rarity);
+			if (ofTier.length >= 2) {
+				const fair = fairPrice(rarity, markets[rarity]);
+				return {
+					value: { carId: ofTier[0].id, price: roundPrice(fair.value * 1.1) },
+					reason: `Has ${ofTier.length} ${rarity}s and is saving up for something better`
+				};
+			}
 		}
 	}
 	return { value: null, reason: 'Happy with its garage' };
