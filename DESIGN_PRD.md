@@ -5,7 +5,7 @@
 data and flows are built and agreed; this doc tells you what each screen must show,
 in which states, and what each control does, so you can redesign freely without
 breaking the game.
-**Updated:** 2026-11-13, after the build of `ROADMAP.md` step 16 (items 1–13).
+**Updated:** 2026-11-13, after the build of `ROADMAP.md` step 16 (items 1–14).
 **Sources of truth:** gameplay rules → `GAMEPLAY_FLOWS.md` (F1–F12). Scope and
 status → `ROADMAP.md`. Where this doc and those disagree, they win.
 
@@ -598,13 +598,18 @@ new brand.
 - Phone (<640px) first, tablet, desktop (≥1024px).
 - The 3D race must work on a phone: full-bleed track, overlays as bottom sheets,
   standings collapsible.
-- **Coming next (ROADMAP step 14):** install as a PWA (prompt after the first
-  finished race; iPhone shows Share → Add to Home Screen steps) and notifications
-  (match found / result in, trivia live / streak at risk, tournament closing /
-  starting, league night tonight, a bot with a grudge challenges you, your car
-  sold), with quiet hours (22:00–08:00 local). Design: install prompt, iOS steps
-  sheet, notification settings list with quiet hours. Installed mode has no browser
-  chrome: every screen needs its own back affordance; respect safe areas.
+- **Installable (built):** manifest, icons in `static/icons` (rendered from the
+  app-icon logo by `scripts/make-icons.mjs`; re-run it if the logo changes), service
+  worker `src/service-worker.ts`. **Install prompt** (`lib/components/InstallPrompt.svelte`)
+  shows on the result screen after a finished race: Chrome's install button, or the
+  iPhone steps (Share → Add to Home Screen). Restyle it.
+- **Notifications (built):** Me → Settings → `NotificationSettings.svelte`: turn on
+  for this device (states: on, off, blocked, unsupported, iPhone needs install
+  first), one toggle per kind (match/result, trivia, tournament, league night,
+  challenges, car sold), quiet hours (local, default 22:00–08:00). The OS shows the
+  notification itself (title, body, app icon); tapping opens the right screen.
+- Installed mode has no browser chrome: every screen needs its own back affordance;
+  respect safe areas (`viewport-fit=cover` is set).
 - App icon and splash: logo assets in `src/lib/assets/images`.
 
 ---
@@ -630,7 +635,6 @@ new brand.
 - Items in multi-car races (tournaments, leagues).
 - Matching car races against waiting humans (car races are vs bots).
 - RPS wired into Versus.
-- Notifications and PWA (step 14; design them, see §10).
 - Real payments for sponsors (invoice flow only).
 - Names on the 1v1 result and pre-race grid aren't links to cards yet (add when you
   restyle; use `PlayerLink`).
