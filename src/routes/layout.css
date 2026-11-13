@@ -49,6 +49,18 @@
 	--color-rps-lizard-shade: #5f37a8;
 	--color-rps-spock: #52bed1;
 	--color-rps-spock-shade: #2d8da0;
+
+	/* 3D race track. Read at runtime by RaceTrack3D (Three.js needs real colour
+	   values), so the scene follows the palette like every other screen. */
+	--color-race-grass: #9fd3a8;
+	--color-race-grass-dark: #7fbf8c;
+	--color-race-road: #3d4a46;
+	--color-race-line: #f5fafa;
+	--color-race-kerb: #e87070;
+	--color-race-tree: #4f9a6e;
+	--color-race-trunk: #8a6a4f;
+	--color-race-flame: #f7c978;
+	--color-race-wheel: #1a2421;
 }
 
 @theme {

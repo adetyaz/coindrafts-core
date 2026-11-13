@@ -7,6 +7,8 @@
 	import RaceChart from '$lib/components/RaceChart.svelte';
 	import StakeCommit from '$lib/components/StakeCommit.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
+	import { streamPrices } from '$lib/race/priceStream';
 
 	type Pick = {
 		sector: string;
@@ -200,6 +202,74 @@
 		if (racers.length === 0) return null;
 		return racers.reduce((a, b) => (lastVal(a.key) >= lastVal(b.key) ? a : b));
 	});
+
+	// ── 3D race ─────────────────────────────────────────────────────────────
+	// The server poll stays the source of truth for scoring; per-second prices
+	// from the browser stream only drive how the cars move between polls.
+	let view = $state<'race' | 'chart'>('race');
+	let livePrices = $state<Record<string, number>>({});
+	let commentary = $state<string[]>([]);
+
+	const streamSymbols = $derived(
+		[...(live?.me?.picks ?? []), ...(live?.opponent?.picks ?? [])]
+			.map((p) => p.symbol.toUpperCase())
+			.sort()
+			.join(',')
+	);
+
+	$effect(() => {
+		if (phase !== 'racing' || !streamSymbols) return;
+		return streamPrices(streamSymbols.split(','), (symbol, price) => {
+			livePrices[symbol] = price;
+		});
+	});
+
+	function liveTotal(side: Side): number {
+		if (!side) return 0;
+		return side.picks.reduce((sum, p) => {
+			const now = livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
+			return sum + (p.entryPrice > 0 ? ((now - p.entryPrice) / p.entryPrice) * 100 : 0);
+		}, 0);
+	}
+
+	/** The pick pushing a side forward the most right now. */
+	function topPick(side: Side): Pick | null {
+		if (!side || side.picks.length === 0) return null;
+		const move = (p: Pick) => {
+			const now = livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
+			return p.entryPrice > 0 ? (now - p.entryPrice) / p.entryPrice : 0;
+		};
+		return side.picks.reduce((a, b) => (move(a) >= move(b) ? a : b));
+	}
+
+	const raceCars = $derived<RaceCar[]>(
+		[
+			live?.me && {
+				id: live.me.userId,
+				name: live.me.name ?? 'You',
+				color: 'var(--color-primary)',
+				pct: liveTotal(live.me),
+				isMe: true
+			},
+			live?.opponent && {
+				id: live.opponent.userId,
+				name: live.opponent.name ?? 'Opponent',
+				color: 'var(--color-blue)',
+				pct: liveTotal(live.opponent),
+				isMe: false
+			}
+		].filter((c): c is RaceCar => Boolean(c))
+	);
+
+	function onOvertake(passer: RaceCar, passed: RaceCar) {
+		const side = passer.isMe ? live?.me : live?.opponent;
+		const pick = topPick(side ?? null)?.symbol.toUpperCase();
+		const who = passer.isMe ? 'you' : passer.name;
+		const line = pick
+			? `${pick} pulls ${who} past ${passed.isMe ? 'you' : passed.name}!`
+			: `${passer.isMe ? 'You overtake' : `${passer.name} overtakes`} ${passed.isMe ? 'you' : passed.name}!`;
+		commentary = [line, ...commentary].slice(0, 3);
+	}
 </script>
 
 <div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18">
@@ -368,7 +438,34 @@
 			</div>
 		</div>
 
-		{#if series.length < 2}
+		<div class="mb-3 flex w-fit gap-1 self-start rounded-full border border-border bg-surface p-1">
+			{#each [['race', 'Race'], ['chart', 'Chart']] as [mode, label] (mode)}
+				<button
+					type="button"
+					onclick={() => (view = mode as 'race' | 'chart')}
+					class="cursor-pointer rounded-full border-none px-4 py-1.5 text-xs font-extrabold transition {view ===
+					mode
+						? 'bg-text text-surface'
+						: 'bg-transparent text-text-muted'}">{label}</button
+				>
+			{/each}
+		</div>
+
+		{#if view === 'race'}
+			<RaceTrack3D
+				cars={raceCars}
+				finished={msRemaining <= 0}
+				{onOvertake}
+				onUnsupported={() => (view = 'chart')}
+			/>
+			{#if commentary.length > 0}
+				<div class="mt-3 flex flex-col gap-1 px-1">
+					{#each commentary as line, i (line + i)}
+						<p class="text-sm font-extrabold" style="opacity:{1 - i * 0.3}">📣 {line}</p>
+					{/each}
+				</div>
+			{/if}
+		{:else if series.length < 2}
 			<div
 				class="grid h-[380px] place-items-center rounded-[24px] border border-border bg-surface text-center"
 			>
