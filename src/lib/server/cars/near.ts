@@ -72,20 +72,38 @@ function client(cfg: NearConfig) {
 	return cached;
 }
 
-/** Signs one contract call as the operator. Returns the transaction hash. */
-export async function callContract(method: string, args: Record<string, unknown>): Promise<string> {
+// A mint or trade measures ~3–5 Tgas; 25 leaves headroom. Ten calls per
+// transaction stays under the 300 Tgas per-transaction cap.
+const GAS_PER_CALL = 25_000_000_000_000n;
+export const MAX_CALLS_PER_TX = 10;
+
+/**
+ * Signs one transaction as the operator carrying one or more contract calls.
+ * The calls run in order and all-or-nothing: if any one panics, none of their
+ * changes stick. Returns the transaction hash.
+ *
+ * Batching exists because one transaction per write measured ~20–30s each on
+ * testnet (three RPC round-trips plus finality per write), far too slow to pay
+ * out a 5-player race.
+ */
+export async function callContract(
+	calls: { method: string; args: Record<string, unknown> }[]
+): Promise<string> {
 	const cfg = nearConfig();
 	if (!cfg) throw new Error('NEAR is not configured');
+	if (calls.length === 0 || calls.length > MAX_CALLS_PER_TX) {
+		throw new Error(`Between 1 and ${MAX_CALLS_PER_TX} calls per transaction`);
+	}
 	const { operator } = client(cfg);
 
-	// Two writes in flight from the same key can collide on the nonce (two
-	// serverless instances flushing at once). The loser fails before anything
-	// executes, so a short retry is safe.
+	// Two writes in flight from the same key can collide on the nonce. The loser
+	// fails before anything executes, so a short retry is safe.
 	for (let attempt = 1; ; attempt++) {
 		try {
 			const outcome = await operator.signAndSendTransaction({
 				receiverId: cfg.contractId,
-				actions: [transactions.functionCall(method, args, 60_000_000_000_000n, 0n)],
+				actions: calls.map((c) => transactions.functionCall(c.method, c.args, GAS_PER_CALL, 0n)),
+				waitUntil: 'EXECUTED_OPTIMISTIC',
 				throwOnFailure: true
 			});
 			return outcome.transaction_outcome.id;

@@ -12,6 +12,7 @@ import { and, asc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { cars, nearOutbox, users } from '$lib/server/schema';
 import {
+	MAX_CALLS_PER_TX,
 	botAccountId,
 	callContract,
 	createBotAccount,
@@ -27,6 +28,8 @@ const STARTER_MODELS = ['Viper', 'Comet', 'Bolt', 'Drift', 'Nova', 'Rally'];
 const PLAYER_STARTER_GEARS = 500;
 const BOT_STARTER_GEARS = 800;
 const MAX_ATTEMPTS = 5;
+/** Advisory-lock key for the outbox flusher (any constant unique to this app). */
+const OUTBOX_LOCK = 734_221;
 
 /** Seeded bot accounts are stored with `wallet_address = 'seed:<username>'`. */
 function isBot(user: { walletAddress: string }) {
@@ -326,48 +329,100 @@ export async function getGarage(userId: string) {
  * can't block the queue forever; it stays visible for a manual retry.
  */
 export async function flushOutbox(
-	limit = 25
-): Promise<{ sent: number; failed: number; pending: number }> {
+	limit = 50
+): Promise<{ sent: number; failed: number; pending: number; skipped?: boolean }> {
 	if (!nearConfig()) return { sent: 0, failed: 0, pending: 0 };
-	const queue = await db
-		.select()
-		.from(nearOutbox)
-		.where(
-			and(inArray(nearOutbox.status, ['pending', 'failed']), lt(nearOutbox.attempts, MAX_ATTEMPTS))
-		)
-		.orderBy(asc(nearOutbox.createdAt))
-		.limit(limit);
 
-	let sent = 0;
-	let failed = 0;
-	for (const row of queue) {
-		try {
-			const txHash = await callContract(row.method, row.args as Record<string, unknown>);
-			await db
-				.update(nearOutbox)
-				.set({
-					status: 'done',
-					txHash,
-					doneAt: new Date(),
-					attempts: row.attempts + 1,
-					lastError: null
-				})
-				.where(eq(nearOutbox.id, row.id));
-			sent++;
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			await db
-				.update(nearOutbox)
-				.set({ status: 'failed', attempts: row.attempts + 1, lastError: message.slice(0, 500) })
-				.where(eq(nearOutbox.id, row.id));
-			console.error(`[near] ${row.method} failed (attempt ${row.attempts + 1}):`, message);
-			failed++;
-			break;
+	// One flusher at a time across every server instance. Without this, a
+	// sign-in and the daily sweep flushing together would both send the same
+	// row — harmless for a duplicate mint_car (the contract rejects it), but a
+	// duplicate mint_gears would pay out twice on chain. The lock is
+	// transaction-scoped, so it's released even if this instance dies; the row
+	// updates below go through `db` so each one commits immediately.
+	const result = await db.transaction(async (tx) => {
+		const { rows } = await tx.execute<{ locked: boolean }>(
+			sql`select pg_try_advisory_xact_lock(${OUTBOX_LOCK}) as locked`
+		);
+		if (!rows[0]?.locked) return { sent: 0, failed: 0, skipped: true };
+
+		const queue = await db
+			.select()
+			.from(nearOutbox)
+			.where(
+				and(
+					inArray(nearOutbox.status, ['pending', 'failed']),
+					lt(nearOutbox.attempts, MAX_ATTEMPTS)
+				)
+			)
+			.orderBy(asc(nearOutbox.createdAt))
+			.limit(limit);
+
+		let sent = 0;
+		let failed = 0;
+		for (let i = 0; i < queue.length; i += MAX_CALLS_PER_TX) {
+			const batch = queue.slice(i, i + MAX_CALLS_PER_TX);
+			if (await sendRows(batch)) {
+				sent += batch.length;
+				continue;
+			}
+			// The batch failed as a whole. Retry it row by row so one bad row
+			// can't hold back the others, and stop at the first row that still
+			// fails so nothing later runs ahead of it.
+			if (batch.length === 1) {
+				failed++;
+				break;
+			}
+			let stopped = false;
+			for (const row of batch) {
+				if (await sendRows([row])) {
+					sent++;
+				} else {
+					failed++;
+					stopped = true;
+					break;
+				}
+			}
+			if (stopped) break;
 		}
-	}
+		return { sent, failed };
+	});
+
 	const [{ count }] = await db
 		.select({ count: sql<number>`count(*)::int` })
 		.from(nearOutbox)
 		.where(inArray(nearOutbox.status, ['pending', 'failed']));
-	return { sent, failed, pending: count };
+	return { ...result, pending: count };
+}
+
+/** Sends rows as one transaction and records the outcome on each. */
+async function sendRows(rows: (typeof nearOutbox.$inferSelect)[]): Promise<boolean> {
+	const ids = rows.map((r) => r.id);
+	try {
+		const txHash = await callContract(
+			rows.map((r) => ({ method: r.method, args: r.args as Record<string, unknown> }))
+		);
+		await db
+			.update(nearOutbox)
+			.set({
+				status: 'done',
+				txHash,
+				doneAt: new Date(),
+				attempts: sql`${nearOutbox.attempts} + 1`,
+				lastError: null
+			})
+			.where(inArray(nearOutbox.id, ids));
+		return true;
+	} catch (e) {
+		const message = e instanceof Error ? e.message : String(e);
+		await db
+			.update(nearOutbox)
+			.set({
+				status: 'failed',
+				attempts: sql`${nearOutbox.attempts} + 1`,
+				lastError: message.slice(0, 500)
+			})
+			.where(inArray(nearOutbox.id, ids));
+		console.error(`[near] ${rows.map((r) => r.method).join(', ')} failed:`, message);
+		return false;
+	}
 }
