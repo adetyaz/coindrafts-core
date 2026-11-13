@@ -4,7 +4,8 @@ import { contests, lineups, lineupPicks, users, leagueMembers } from '$lib/serve
 import { getAllPrices } from '$lib/server/prices';
 import { calcPickScore, boostFactor, type ActiveBoost } from '$lib/server/scoring';
 import { settleStakeForContest } from '$lib/server/wager';
-import { flushOutbox, grantGears } from '$lib/server/cars';
+import { flushOutbox, grantGears, settleCarRace } from '$lib/server/cars';
+import { stakedCars } from '$lib/server/carRace';
 import { runBotMarket } from '$lib/server/market';
 
 /** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
@@ -230,6 +231,16 @@ export async function resolveContest(
 		.where(and(eq(contests.id, contestId), eq(contests.status, 'live')))
 		.returning({ id: contests.id });
 	if (!claimed) return { resolved: false, reason: 'already_resolved' };
+
+	// Car race: the winner takes every staked car. After the claim, so it runs
+	// exactly once; settleCarRace moves the cars and records car_events.
+	if (winnerId) {
+		try {
+			if ((await stakedCars(contestId)).length) await settleCarRace(contestId, winnerId);
+		} catch (e) {
+			console.error('[resolveContest] car race settlement failed:', e);
+		}
+	}
 
 	if (winnerId) {
 		const winner = await db

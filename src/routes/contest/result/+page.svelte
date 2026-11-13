@@ -8,6 +8,7 @@
 
 	// A bot opponent's reaction to the result, in its own voice.
 	let botReaction = $state<{ name: string; line: string } | null>(null);
+	let carRace = $state<{ won: boolean; car: { model: string; rarity: string } } | null>(null);
 
 	// Starts empty on purpose. This page previously initialised with a realistic
 	// fabricated result ("YOU WON · 1482 / 1215" over five invented picks), which
@@ -92,6 +93,7 @@
 				breakdown = data.breakdown;
 			}
 			opponentName = data.opponentName ?? null;
+			carRace = data.carRace ?? null;
 			const rival = data.rival as { username: string; mood: Mood; record: HeadToHead } | null;
 			if (rival) {
 				const botWon = data.status !== 'YOU WON';
@@ -272,6 +274,13 @@
 							>
 								{record.wins}–{record.losses} vs {opponentName ?? 'them'}
 							</div>
+						{/if}
+						{#if carRace}
+							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-black">
+								{carRace.won
+									? `🏁 You won their ${carRace.car.rarity} ${carRace.car.model}. It's in your garage.`
+									: `Your ${carRace.car.rarity} ${carRace.car.model} leaves your garage.`}
+							</p>
 						{/if}
 						{#if botReaction}
 							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-bold">

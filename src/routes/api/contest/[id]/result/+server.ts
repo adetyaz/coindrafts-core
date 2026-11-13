@@ -14,6 +14,7 @@ import { resolveContest } from '$lib/server/contest-resolution';
 import { awardWinBadges } from '$lib/server/badges';
 import { headToHead } from '$lib/server/wager';
 import { botRival } from '$lib/server/rivalry';
+import { carRaceOutcome } from '$lib/server/carRace';
 
 export async function GET({ params, cookies }) {
 	const token = cookies.get('session');
@@ -176,6 +177,19 @@ export async function GET({ params, cookies }) {
 		canRematch: Boolean(opponentId) && !contest.isPaper,
 		// A bot opponent reacts to the result in its own voice (mood includes this race).
 		rival: opponentId ? await botRival(opponentId, parsed.userId).catch(() => null) : null,
+		// Car race: the car that changed hands (won, or lost), if this was one.
+		carRace: await carRaceOutcome(contestId)
+			.then((moves) => {
+				const won = moves.find((m) => m.toUserId === parsed.userId);
+				const lost = moves.find((m) => m.fromUserId === parsed.userId);
+				return won || lost
+					? {
+							won: Boolean(won),
+							car: { model: (won ?? lost)!.model, rarity: (won ?? lost)!.rarity }
+						}
+					: null;
+			})
+			.catch(() => null),
 		// What the wager did, so the result screen can state it rather than
 		// leaving the player to infer it from an XP change.
 		stake: await (async () => {

@@ -48,7 +48,8 @@
 			label: 'garage',
 			items: [
 				{ href: '/garage', label: 'my garage' },
-				{ href: '/car-market', label: 'car market' }
+				{ href: '/car-market', label: 'car market' },
+				{ href: '/car-race', label: 'car race' }
 			]
 		},
 		{

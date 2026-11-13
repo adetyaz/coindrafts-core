@@ -9,6 +9,7 @@ import { getAllPrices } from '$lib/server/prices';
 import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
+import { stakedCars } from '$lib/server/carRace';
 
 // The race starts this long after both lineups lock, so the pre-race screen
 // (cars on the grid, driver cards, start lights) has its own time instead of
@@ -40,8 +41,17 @@ export async function POST({ params, request, cookies }) {
 			.select({ id: cars.id, ownerId: cars.ownerId, stakedInRace: cars.stakedInRace })
 			.from(cars)
 			.where(eq(cars.id, body.carId));
-		if (car && car.ownerId === parsed.userId && !car.stakedInRace) carId = car.id;
+		if (
+			car &&
+			car.ownerId === parsed.userId &&
+			(!car.stakedInRace || car.stakedInRace === contestId)
+		)
+			carId = car.id;
 	}
+	// Car race: you race the car you staked, whatever the car step said.
+	const staked = await stakedCars(contestId);
+	const myStake = staked.find((c) => c.ownerId === parsed.userId);
+	if (myStake) carId = myStake.id;
 
 	const existingContest = await db
 		.select()
@@ -181,11 +191,28 @@ export async function POST({ params, request, cookies }) {
 	// this now retries once, and refuses to start the game at all rather than
 	// start it broken. Priced from `botPicks[i].price`, carried straight from
 	// draftBotLineup's own batch fetch — no separate per-token price burst here.
-	if (existingContest.isPaper && !existingContest.userBId) {
+	// Car races against a bot work the same way, except the bot was chosen
+	// (and its car staked) when the race was set up.
+	const carRaceBot =
+		staked.length > 0 && existingContest.userBId && existingContest.userBId !== parsed.userId
+			? await db
+					.select({ id: users.id, username: users.username, wallet: users.walletAddress })
+					.from(users)
+					.where(eq(users.id, existingContest.userBId))
+					.then((r) => (r[0]?.wallet.startsWith('seed:') ? r[0] : null))
+			: null;
+	const botHasLineup = carRaceBot
+		? await db
+				.select({ id: lineups.id })
+				.from(lineups)
+				.where(and(eq(lineups.contestId, contestId), eq(lineups.userId, carRaceBot.id)))
+				.then((r) => r.length > 0)
+		: true;
+	if ((existingContest.isPaper && !existingContest.userBId) || !botHasLineup) {
 		let botReady = false;
 		for (let attempt = 0; attempt < 2 && !botReady; attempt++) {
 			try {
-				const bot = pickScrimmageBot();
+				const bot = carRaceBot ?? pickScrimmageBot();
 				const botPicks = await draftBotLineup(personalityOf(bot.username).draft);
 				if (botPicks.length !== 5) throw new Error('Bot draft returned an incomplete lineup');
 
@@ -196,14 +223,16 @@ export async function POST({ params, request, cookies }) {
 						userId: bot.id,
 						locked: true,
 						finalScore: '0',
-						// The bot races one of its own cars.
-						carId: await db
-							.select({ id: cars.id })
-							.from(cars)
-							.where(and(eq(cars.ownerId, bot.id), isNull(cars.stakedInRace)))
-							.orderBy(sql`random()`)
-							.limit(1)
-							.then((r) => r[0]?.id ?? null)
+						// The bot races its staked car, or one of its own cars.
+						carId:
+							staked.find((c) => c.ownerId === bot.id)?.id ??
+							(await db
+								.select({ id: cars.id })
+								.from(cars)
+								.where(and(eq(cars.ownerId, bot.id), isNull(cars.stakedInRace)))
+								.orderBy(sql`random()`)
+								.limit(1)
+								.then((r) => r[0]?.id ?? null))
 					})
 					.returning({ id: lineups.id });
 
@@ -237,7 +266,7 @@ export async function POST({ params, request, cookies }) {
 			// so nothing is lost by bailing out here.
 			return json(
 				{
-					error: "Couldn't set up your Scrimmage opponent — please try locking your lineup again."
+					error: "Couldn't set up your opponent — please try locking your lineup again."
 				},
 				{ status: 503 }
 			);

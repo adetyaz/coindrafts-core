@@ -17,14 +17,21 @@
 
 	let {
 		chooseTrack = true,
+		chooseCar = true,
 		onDone
 	}: {
 		/** Off when the track is set elsewhere (a tournament's group-stage track). */
 		chooseTrack?: boolean;
+		/** Off for a car race: the staked car is the car you race. */
+		chooseCar?: boolean;
 		onDone: (choice: { carId: string | null; circuit: string | null }) => void;
 	} = $props();
 
 	let step = $state<'car' | 'track'>('car');
+	// The page may only learn it's a car race after this mounts (URL read in onMount).
+	$effect(() => {
+		if (!chooseCar && step === 'car') step = 'track';
+	});
 	let cars = $state<Car[]>([]);
 	let carId = $state<string | null>(null);
 	let circuit = $state<string>(CIRCUITS[0].id);

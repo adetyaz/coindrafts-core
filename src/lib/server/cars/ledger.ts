@@ -37,7 +37,7 @@ const STARTER_MODELS = SHOWROOM_MODELS.Common;
 /** Advisory-lock base for Showroom stock, one key per tier (so two buyers can't take the last car). */
 const SHOWROOM_LOCK = 734_300;
 
-export type CarEventKind = 'starter' | 'showroom' | 'market' | 'sell_now' | 'race_won';
+export type CarEventKind = 'starter' | 'showroom' | 'market' | 'sell_now' | 'staked' | 'race_won';
 const PLAYER_STARTER_GEARS = 500;
 const BOT_STARTER_GEARS = 800;
 const MAX_ATTEMPTS = 5;
@@ -262,6 +262,10 @@ export async function openCarRace(raceId: string, entries: { userId: string; car
 					entries.map((e) => e.carId)
 				)
 			);
+		// Dates the race for car history and for calling off abandoned races.
+		await tx
+			.insert(carEvents)
+			.values(entries.map((e) => ({ carId: e.carId, kind: 'staked', toUserId: e.userId, raceId })));
 		if (nearEntries.length === entries.length) {
 			await enqueue(tx, 'open_car_race', { race_id: raceId, entries: nearEntries });
 		}

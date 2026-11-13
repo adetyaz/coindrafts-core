@@ -36,6 +36,8 @@
 	let contestId = $state('');
 	// Race flow: car and track come before the draft (GAMEPLAY_FLOWS.md, F2).
 	let setup = $state<{ carId: string | null; circuit: string | null } | null>(null);
+	// Car race: the staked car is fixed, so the setup skips straight to the track.
+	let isCarRace = $state(false);
 	let lobbyId = $state('');
 
 	// Token hover overlay (G-07). Anchored to the hovered card's rect so the
@@ -108,6 +110,7 @@
 		highlightId = p.get('highlight') ?? '';
 		contestType = p.get('type') === 'weekly' ? 'weekly' : 'daily';
 		isPaper = p.get('mode') === 'paper';
+		isCarRace = p.get('carRace') === '1';
 		loadData();
 		timer = setInterval(() => {
 			timeLeft = Math.max(0, timeLeft - 1);
@@ -386,7 +389,11 @@
 <div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
 	{#if !setup}
 		<!-- Lobby drafts take the tournament's track; head-to-head races choose one. -->
-		<RaceSetup chooseTrack={!lobbyId} onDone={(choice) => (setup = choice)} />
+		<RaceSetup
+			chooseTrack={!lobbyId}
+			chooseCar={!isCarRace}
+			onDone={(choice) => (setup = choice)}
+		/>
 	{:else}
 		<!-- ── Header ──────────────────────────────────────────────────── -->
 		<div class="mb-6 flex flex-wrap items-end justify-between gap-6">

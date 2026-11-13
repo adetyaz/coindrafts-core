@@ -6,6 +6,7 @@ import { contests, lobbies } from '$lib/server/schema';
 import { resolveContest } from '$lib/server/contest-resolution';
 import { resolveLobby } from '$lib/server/lobby-resolution';
 import { flushOutbox } from '$lib/server/cars';
+import { cancelAbandonedCarRaces } from '$lib/server/carRace';
 
 // Merges the contest and lobby resolution sweeps into a single cron job.
 // Vercel's Hobby plan caps cron jobs at once/day and limits how many a
@@ -37,12 +38,19 @@ async function sweep(authHeader: string | null) {
 		dueLobbies.map(async (l) => ({ lobbyId: l.id, ...(await resolveLobby(l.id)) }))
 	);
 
+	// Car races nobody started within the hour: cars go back to their garages.
+	const carRacesCancelled = await cancelAbandonedCarRaces().catch((e) => {
+		console.error('[cron/resolve-all] car race cleanup failed:', e);
+		return 0;
+	});
+
 	// Catch-all for on-chain car/Gears writes that a sign-in or garage view
 	// didn't get to (see near_outbox in schema.ts).
 	const near = await flushOutbox(100).catch((e) => ({ error: String(e) }));
 
 	return json({
 		near,
+		carRacesCancelled,
 		contests: {
 			checked: dueContests.length,
 			resolved: contestResults.filter((r) => r.resolved).length,
