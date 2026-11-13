@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ITEMS, type LineupItem } from '$lib/race/items';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { toast } from '$lib/toast';
@@ -8,6 +9,7 @@
 
 	// A bot opponent's reaction to the result, in its own voice.
 	let botReaction = $state<{ name: string; line: string } | null>(null);
+	let item = $state<LineupItem | null>(null);
 	let carRace = $state<{ won: boolean; car: { model: string; rarity: string } } | null>(null);
 
 	// Starts empty on purpose. This page previously initialised with a realistic
@@ -94,6 +96,7 @@
 			}
 			opponentName = data.opponentName ?? null;
 			carRace = data.carRace ?? null;
+			item = data.item ?? null;
 			const rival = data.rival as { username: string; mood: Mood; record: HeadToHead } | null;
 			if (rival) {
 				const botWon = data.status !== 'YOU WON';
@@ -274,6 +277,16 @@
 							>
 								{record.wins}–{record.losses} vs {opponentName ?? 'them'}
 							</div>
+						{/if}
+						{#if item}
+							<p class="w-fit rounded-full bg-black/10 px-3.5 py-1.5 text-sm font-bold">
+								{ITEMS[item.kind].icon}
+								{ITEMS[item.kind].label}{item.sector
+									? ` on ${item.sector.toUpperCase()}`
+									: item.symbol
+										? ` on ${item.symbol}`
+										: ''}{item.swap ? ` · swapped ${item.swap.from} for ${item.swap.to}` : ''}
+							</p>
 						{/if}
 						{#if carRace}
 							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-black">

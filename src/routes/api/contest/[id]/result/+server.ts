@@ -217,6 +217,8 @@ export async function GET({ params, cookies }) {
 			};
 		})(),
 		breakdown: scoredPicks,
+		// The nitro or pit-stop item you raced with (F8: shown on the result).
+		item: myLineup.item ?? null,
 		newBadges
 	});
 }

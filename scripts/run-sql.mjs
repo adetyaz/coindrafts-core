@@ -21,10 +21,7 @@ try {
 	await client.query('BEGIN');
 	await client.query(readFileSync(file, 'utf8'));
 	await client.query('COMMIT');
-	const { rows } = await client.query(
-		'SELECT kind, count(*)::int AS n FROM car_events GROUP BY kind'
-	);
-	console.log('applied', file, rows);
+	console.log('applied', file);
 } catch (e) {
 	await client.query('ROLLBACK');
 	throw e;

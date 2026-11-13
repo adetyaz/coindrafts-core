@@ -65,7 +65,7 @@ const SEED_QUESTIONS = [
 // Vocab fallback bank — moved from the old term-of-day.ts, which this
 // replaces. Only reached if the vocab pool is empty AND the AI can't
 // generate a batch to fill it (see ensureVocabPool below).
-const TERM_BANK: { term: string; definition: string; distractors: string[] }[] = [
+export const TERM_BANK: { term: string; definition: string; distractors: string[] }[] = [
 	{
 		term: 'TVL',
 		definition: 'Total Value Locked — the total value of assets deposited in a protocol.',

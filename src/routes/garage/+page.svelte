@@ -7,6 +7,7 @@
 	import { toast } from '$lib/toast';
 	import Toast from '$lib/components/Toast.svelte';
 	import CarPreview from '$lib/components/garage/CarPreview.svelte';
+	import ItemShop from '$lib/components/garage/ItemShop.svelte';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
 		CUSTOMISE_PRICE,
@@ -501,6 +502,8 @@
 				{/each}
 			</div>
 		</section>
+
+		<ItemShop gears={garage.gears} onBought={load} />
 
 		{#if garage.near}
 			<div

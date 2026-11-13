@@ -7,6 +7,7 @@ import { settleStakeForContest } from '$lib/server/wager';
 import { flushOutbox, grantGears, settleCarRace } from '$lib/server/cars';
 import { stakedCars } from '$lib/server/carRace';
 import { runBotMarket } from '$lib/server/market';
+import { itemFactors } from '$lib/race/items';
 
 /** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
 const GEARS_REAL = [150, 40] as const;
@@ -63,16 +64,33 @@ export async function scoreLineupPicks(
 		throw new PriceUnavailableError(unpriced);
 	}
 
+	// The lineup's nitro or pit-stop item, applied as a per-pick multiplier
+	// ($lib/race/items) — the same numbers the race screen moves the cars with.
+	const [owner] = await db
+		.select({ item: lineups.item })
+		.from(lineups)
+		.where(eq(lineups.id, lineupId));
+	const moves = picks.map((p) => {
+		const exit = quotes!.get(p.tokenSymbol.toUpperCase())!.price;
+		const entry = Number(p.entryPrice ?? 0);
+		return {
+			symbol: p.tokenSymbol,
+			sector: p.sector,
+			pct: entry > 0 ? ((exit - entry) / entry) * 100 : 0
+		};
+	});
+	const factors = itemFactors(moves, owner?.item);
+
 	let total = 0;
 	for (let i = 0; i < picks.length; i++) {
 		const pick = picks[i];
 		const exitPrice = quotes!.get(pick.tokenSymbol.toUpperCase())!.price;
 		const entry = Number(pick.entryPrice ?? 0);
-		const pct = entry > 0 ? ((exitPrice - entry) / entry) * 100 : 0;
+		const pct = moves[i].pct;
 		// Boosts finally apply. They were earned, stored, counted down and
 		// advertised as ×1.25 in three places while having no effect on any
 		// outcome — the largest promise/behaviour gap in the product.
-		const boost = boostFactor(pick.sector, boosts, scoredAt);
+		const boost = boostFactor(pick.sector, boosts, scoredAt) * factors[i];
 		const score = calcPickScore(entry || 1, exitPrice || entry || 1, durationMinutes, boost);
 
 		await db

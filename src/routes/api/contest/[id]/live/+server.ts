@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { itemFactors } from '$lib/race/items';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import {
@@ -127,7 +128,9 @@ export async function GET({ params, cookies }) {
 			})
 		);
 
-		const total = enriched.reduce((sum, p) => sum + p.pct, 0);
+		// Item multipliers, same as scoring (so the order on track matches the result).
+		const factors = itemFactors(enriched, lineup.item);
+		const total = enriched.reduce((sum, p, i) => sum + p.pct * factors[i], 0);
 		const car = lineup.carId
 			? await db
 					.select({ model: cars.model, rarity: cars.rarity, look: cars.look })
@@ -135,7 +138,14 @@ export async function GET({ params, cookies }) {
 					.where(eq(cars.id, lineup.carId))
 					.then((rows) => rows[0] ?? null)
 			: null;
-		return { userId, name, car, picks: enriched, totalPct: Number(total.toFixed(3)) };
+		return {
+			userId,
+			name,
+			car,
+			item: lineup.item ?? null,
+			picks: enriched,
+			totalPct: Number(total.toFixed(3))
+		};
 	}
 
 	const opponentId = contest.userAId === parsed.userId ? contest.userBId : contest.userAId;

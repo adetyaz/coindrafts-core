@@ -9,6 +9,7 @@
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
 	import { streamPrices } from '$lib/race/priceStream';
 	import { paintColor } from '$lib/economy/rules';
+	import { ITEMS, SPARE_WINDOW, itemFactors, type LineupItem } from '$lib/race/items';
 	import { circuitById, circuitForRace } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
@@ -32,6 +33,7 @@
 		userId: string;
 		name: string | null;
 		car: { model: string; rarity: string; look?: { paint?: string } | null } | null;
+		item?: LineupItem | null;
 		picks: Pick[];
 		totalPct: number;
 	} | null;
@@ -263,11 +265,19 @@
 
 	function liveTotal(side: Side): number {
 		if (!side) return 0;
-		return side.picks.reduce((sum, p) => {
+		const moves = side.picks.map((p) => {
 			const now = livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
-			return sum + (p.entryPrice > 0 ? ((now - p.entryPrice) / p.entryPrice) * 100 : 0);
-		}, 0);
+			return {
+				symbol: p.symbol,
+				sector: p.sector,
+				pct: p.entryPrice > 0 ? ((now - p.entryPrice) / p.entryPrice) * 100 : 0
+			};
+		});
+		// Same item multipliers the server scores with ($lib/race/items).
+		const factors = itemFactors(moves, side.item);
+		return moves.reduce((sum, m, i) => sum + m.pct * factors[i], 0);
 	}
+
 
 	/** The pick pushing a side forward the most right now. */
 	function topPick(side: Side): Pick | null {
@@ -373,6 +383,58 @@
 	const showPreRace = $derived(holding && !preRaceSkipped);
 	const lightsOn = $derived(msToStart > 3000 ? 0 : Math.min(3, 3 - Math.floor(msToStart / 1000)));
 	const justStarted = $derived(startMs > 0 && now >= startMs && now - startMs < 1200);
+
+	// ── Spare Tyre (F8): swap one coin in the first 10% of the race ─────────
+	let swapFrom = $state<string | null>(null);
+	let swapOptions = $state<{ symbol: string; name: string; currencyId: string }[]>([]);
+	let swapping = $state(false);
+	const spareOpenUntil = $derived(
+		live?.startAt && live.durationMinutes
+			? new Date(live.startAt).getTime() + live.durationMinutes * 60_000 * SPARE_WINDOW
+			: 0
+	);
+	const canSwap = $derived(
+		live?.me?.item?.kind === 'spare' && !live.me.item.used && now >= startMs && now < spareOpenUntil
+	);
+
+	async function openSwap(symbol: string, sector: string) {
+		swapFrom = symbol;
+		swapOptions = [];
+		const res = await fetch(`/api/tokens?sector=${encodeURIComponent(sector)}`).catch(() => null);
+		if (!res?.ok) return;
+		const all: { symbol?: string; name?: string; currency_id?: string; currencyId?: string }[] =
+			await res.json();
+		const inLineup = new Set((live?.me?.picks ?? []).map((p) => p.symbol.toUpperCase()));
+		swapOptions = all
+			.filter((t) => t.symbol && !inLineup.has(t.symbol.toUpperCase()))
+			.slice(0, 8)
+			.map((t) => ({
+				symbol: t.symbol!.toUpperCase(),
+				name: t.name ?? t.symbol!,
+				currencyId: String(t.currency_id ?? t.currencyId)
+			}));
+	}
+
+	async function doSwap(to: { symbol: string; name: string; currencyId: string }) {
+		if (!swapFrom) return;
+		swapping = true;
+		try {
+			const res = await fetch(`/api/contest/${contestId}/swap`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ from: swapFrom, to })
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(data.error ?? 'Swap failed');
+			commentary = [`🛞 Pit stop: ${swapFrom} out, ${to.symbol} in.`, ...commentary].slice(0, 6);
+			swapFrom = null;
+			await poll();
+		} catch (e) {
+			commentary = [e instanceof Error ? e.message : 'Swap failed', ...commentary].slice(0, 6);
+		} finally {
+			swapping = false;
+		}
+	}
 	const TIPS = [
 		"Every second, your coins' move speeds your car up or slows it down.",
 		'The car in front is always the lineup up the most. Cars and tracks never change that.',
@@ -509,6 +571,43 @@
 			{#if live?.stakeId}
 				<div class="mb-3"><StakeCommit stakeId={live.stakeId} /></div>
 			{/if}
+			{#if canSwap}
+				<div class="mb-3 rounded-2xl border border-border bg-surface p-3 text-sm">
+					<div class="flex flex-wrap items-center justify-between gap-2">
+						<span class="font-black">🛞 Pit lane open</span>
+						<span class="font-mono text-xs text-text-muted"
+							>{Math.ceil((spareOpenUntil - now) / 1000)}s left to swap a coin</span
+						>
+					</div>
+					<div class="mt-2 flex flex-wrap gap-1.5">
+						{#each live?.me?.picks ?? [] as p (p.symbol)}
+							<button
+								type="button"
+								onclick={() => openSwap(p.symbol.toUpperCase(), p.sector)}
+								class="h-8 cursor-pointer rounded-full border px-3 text-xs font-bold {swapFrom ===
+								p.symbol.toUpperCase()
+									? 'border-text bg-text text-surface'
+									: 'border-border bg-bg'}">{p.symbol.toUpperCase()} out</button
+							>
+						{/each}
+					</div>
+					{#if swapFrom}
+						<div class="mt-2 flex flex-wrap gap-1.5">
+							{#each swapOptions as o (o.symbol)}
+								<button
+									type="button"
+									disabled={swapping}
+									onclick={() => doSwap(o)}
+									class="h-8 cursor-pointer rounded-full border border-border bg-bg px-3 text-xs font-bold disabled:opacity-50"
+									>{o.symbol} in</button
+								>
+							{:else}
+								<span class="text-xs text-text-muted">Finding coins in that sector…</span>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
 			<div class="relative">
 				{#key circuit.id}
 					<RaceTrack3D
@@ -565,6 +664,17 @@
 												style="background:{rarityColor(d.side.car.rarity)}"
 												>{d.side.car.rarity}</span
 											>
+										</div>
+									{/if}
+									{#if d.side?.item}
+										{@const it = d.side.item}
+										<div class="mt-1 text-xs font-bold">
+											{ITEMS[it.kind].icon}
+											{ITEMS[it.kind].label}{it.sector
+												? ` · ${it.sector.toUpperCase()}`
+												: it.symbol
+													? ` · ${it.symbol}`
+													: ''}
 										</div>
 									{/if}
 									<div class="mt-2 flex flex-wrap gap-1.5 font-mono text-[11px]">

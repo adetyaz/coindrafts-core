@@ -347,7 +347,7 @@ time, plain functional layouts until the new design system lands.
 - [x] 4. Landing: live race hero, "Run your game", "Back your takes" — F1
 - [x] 5. Showroom, customising, Sell now, car history (Gears sinks) — F3
 - [x] 6. Car races for players (stake a car, same rarity) — F3 _(bot opponents; player-vs-player matching later)_
-- [ ] 7. Daily trivia (8 questions) and nitro / pit-stop items in the pre-race tray — F7, F8
+- [x] 7. Daily trivia (8 questions) and nitro / pit-stop items in the pre-race tray — F7, F8 _(needs scripts/migrate-step7.sql)_
 - [ ] 8. Tournaments: pots and draw, groups of 5 with bots, Gears prizes, marquee finals, auto cups — F4
 - [ ] 9. Leagues: league night, home track, monthly seasons — F5
 - [ ] 10. Profile, player cards, bot cards — F6

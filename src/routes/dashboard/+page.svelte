@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import Gauntlet from '$lib/components/Gauntlet.svelte';
+	import Trivia from '$lib/components/Trivia.svelte';
 	import TokenIcon from '$lib/components/TokenIcon.svelte';
 	import StatBlock from '$lib/components/ui/StatBlock.svelte';
 	import Bar from '$lib/components/ui/Bar.svelte';
@@ -245,7 +245,7 @@
 
 	<div class="mb-4.5 flex flex-wrap gap-4.5">
 		<div class="min-w-0 flex-[1_1_340px]">
-			<Gauntlet />
+			<Trivia />
 		</div>
 		<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-[22px]">
 			<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">

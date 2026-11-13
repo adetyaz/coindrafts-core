@@ -11,6 +11,8 @@ import {
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+// Relative, type-only: drizzle-kit loads this file without SvelteKit's aliases.
+import type { LineupItem } from '../race/items';
 
 // ─── Users (Wallet-based) ────────────────────────────────────────────────────
 
@@ -46,7 +48,12 @@ export const users = pgTable('users', {
 	gears: integer('gears').default(0).notNull(),
 	starterKitAt: timestamp('starter_kit_at'),
 	// The car the race flow pre-selects (the one you raced last).
-	lastCarId: uuid('last_car_id')
+	lastCarId: uuid('last_car_id'),
+	// Nitro and pit-stop items owned: { nitro, turbo, spare, shield } counts.
+	items: jsonb('items').$type<Partial<Record<string, number>>>(),
+	// Daily trivia: consecutive days passed, and the last day passed (UTC).
+	triviaStreak: integer('trivia_streak').default(0).notNull(),
+	triviaLastPass: date('trivia_last_pass')
 });
 
 // ─── Cars ─────────────────────────────────────────────────────────────────────
@@ -166,8 +173,53 @@ export const lineups = pgTable('lineups', {
 	finalScore: numeric('final_score').default('0'),
 	breakdown: text('breakdown'), // pre-generated AI text (for seeded contests)
 	// The car this player raced with. Cosmetic only.
-	carId: uuid('car_id')
+	carId: uuid('car_id'),
+	// The nitro or pit-stop item locked in for this race ($lib/race/items).
+	item: jsonb('item').$type<LineupItem>()
 });
+
+// One row per race an item was used in: the weekly cap counts these.
+export const itemUses = pgTable('item_uses', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+		.references(() => users.id)
+		.notNull(),
+	kind: text('kind').notNull(),
+	contestId: uuid('contest_id')
+		.references(() => contests.id)
+		.notNull(),
+	at: timestamp('at').defaultNow().notNull()
+});
+
+// Daily trivia (GAMEPLAY_FLOWS.md, F7): one set of 8 questions per UTC day,
+// answers included, so every player gets the same set and scoring is stable.
+export const triviaDays = pgTable('trivia_days', {
+	day: date('day').primaryKey(),
+	// [{ question, options: [{ label, value }], answer, kind }]
+	questions: jsonb('questions').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// One run per player per day. Answers are taken one at a time, in order.
+export const triviaRuns = pgTable(
+	'trivia_runs',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		userId: uuid('user_id')
+			.references(() => users.id)
+			.notNull(),
+		day: date('day').notNull(),
+		// [{ answer, correct }] in question order
+		answers: jsonb('answers').$type<{ answer: string | null; correct: boolean }[]>(),
+		score: integer('score'),
+		passed: boolean('passed'),
+		// What the run paid out, for the result screen.
+		rewards: jsonb('rewards').$type<{ xp: number; items: string[]; streak: number }>(),
+		startedAt: timestamp('started_at').defaultNow().notNull(),
+		finishedAt: timestamp('finished_at')
+	},
+	(t) => [uniqueIndex('trivia_runs_user_day_idx').on(t.userId, t.day)]
+);
 
 // ─── Lineup Picks ─────────────────────────────────────────────────────────────
 // 5 rows per lineup — one per draft slot

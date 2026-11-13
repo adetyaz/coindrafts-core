@@ -10,6 +10,8 @@ import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
 import { stakedCars } from '$lib/server/carRace';
+import { ItemError, getInventory, lockItem } from '$lib/server/items';
+import { ITEMS, isItemKind, type LineupItem } from '$lib/race/items';
 
 // The race starts this long after both lineups lock, so the pre-race screen
 // (cars on the grid, driver cards, start lights) has its own time instead of
@@ -52,6 +54,34 @@ export async function POST({ params, request, cookies }) {
 	const staked = await stakedCars(contestId);
 	const myStake = staked.find((c) => c.ownerId === parsed.userId);
 	if (myStake) carId = myStake.id;
+
+	// Nitro or pit-stop item (GAMEPLAY_FLOWS.md, F8): one per race, aimed at a
+	// sector or coin in this lineup. Checked before anything is written, so a
+	// bad item never leaves a half-locked lineup.
+	let item: LineupItem | null = null;
+	const rawKind: unknown = body?.item?.kind;
+	if (isItemKind(rawKind)) {
+		const kind = rawKind;
+		const target = ITEMS[kind].target;
+		item = { kind };
+		if (target === 'sector') {
+			const sector = String(body.item.sector ?? '');
+			if (!picks.some((p: { sector?: string }) => p.sector === sector))
+				return json({ error: 'Pick a sector from your lineup for the Nitro' }, { status: 400 });
+			item.sector = sector;
+		}
+		if (target === 'coin') {
+			const symbol = String(body.item.symbol ?? '').toUpperCase();
+			if (!picks.some((p: { symbol?: string }) => String(p.symbol).toUpperCase() === symbol))
+				return json({ error: 'Pick a coin from your lineup for the Turbo' }, { status: 400 });
+			item.symbol = symbol;
+		}
+		const inv = await getInventory(parsed.userId);
+		if (!inv.owned[kind])
+			return json({ error: `You don't have a ${ITEMS[kind].label}` }, { status: 409 });
+		if (inv.usedThisWeek >= inv.weeklyCap)
+			return json({ error: `You've used ${inv.weeklyCap} items this week.` }, { status: 409 });
+	}
 
 	const existingContest = await db
 		.select()
@@ -178,6 +208,14 @@ export async function POST({ params, request, cookies }) {
 		}
 	});
 	lineupId = lineupId!;
+
+	try {
+		await lockItem(parsed.userId, contestId, lineupId, item);
+	} catch (e) {
+		// The lineup itself is saved; only the item didn't go on.
+		if (e instanceof ItemError) return json({ error: e.message, lineupId }, { status: 409 });
+		throw e;
+	}
 
 	// Scrimmage contests are created directly (never via matchmaking_queue), so
 	// bots-service never sees them. Assign a real bot opponent right here, the

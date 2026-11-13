@@ -9,6 +9,8 @@
 	import TokenHover from '$lib/components/TokenHover.svelte';
 	import { toast } from '$lib/toast';
 	import RaceSetup from '$lib/components/race/RaceSetup.svelte';
+	import ItemTray from '$lib/components/race/ItemTray.svelte';
+	import type { LineupItem } from '$lib/race/items';
 
 	type Token = {
 		currency_id: string;
@@ -89,6 +91,13 @@
 	let tokens = $state<Token[]>([]);
 	let sectorChanges = $state<Map<string, number | null>>(new Map());
 	let lineup = $state<Pick[]>([]);
+	// The nitro or pit-stop item for this race, locked in with the lineup.
+	let item = $state<LineupItem | null>(null);
+	// A changed lineup can leave the item aimed at a coin that's gone: clear it.
+	$effect(() => {
+		void lineup.map((p) => p.symbol).join();
+		item = null;
+	});
 	let loading = $state(true);
 	let loadError = $state('');
 	let submitting = $state(false);
@@ -366,7 +375,8 @@
 				body: JSON.stringify({
 					picks: lineup,
 					carId: setup?.carId ?? null,
-					circuit: setup?.circuit ?? null
+					circuit: setup?.circuit ?? null,
+					item
 				})
 			});
 			if (!r2.ok) {
@@ -734,6 +744,10 @@
 								{/each}
 							</div>
 						</div>
+					{/if}
+
+					{#if !lobbyId && lineup.length === 5}
+						<ItemTray picks={lineup} bind:value={item} />
 					{/if}
 
 					<button
