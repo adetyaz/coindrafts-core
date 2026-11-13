@@ -1,7 +1,15 @@
 import { json } from '@sveltejs/kit';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { cars, lineupPicks, lineups, lobbies, lobbyParticipants, users } from '$lib/server/schema';
+import {
+	cars,
+	leagueNights,
+	lineupPicks,
+	lineups,
+	lobbies,
+	lobbyParticipants,
+	users
+} from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getAllPrices } from '$lib/server/prices';
 import { kickOffIfReady } from '$lib/server/tournament-resolution';
@@ -94,8 +102,18 @@ export async function GET({ params, cookies }) {
 		};
 	});
 
+	const leagueId = lobby.leagueNightId
+		? ((
+				await db
+					.select({ leagueId: leagueNights.leagueId })
+					.from(leagueNights)
+					.where(eq(leagueNights.id, lobby.leagueNightId))
+			)[0]?.leagueId ?? null)
+		: null;
+
 	return json({
 		id: lobby.id,
+		leagueId,
 		status: lobby.status,
 		tournamentId: lobby.tournamentId,
 		isFinal: lobby.tournamentStage === 1,

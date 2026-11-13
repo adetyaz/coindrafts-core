@@ -5,6 +5,8 @@ import { eq, sql } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
 import { parseSessionToken } from '$lib/server/auth';
 import { awardLeagueFounderBadge } from '$lib/server/badges';
+import { CIRCUITS } from '$lib/race/circuits';
+import { monthKey } from '$lib/server/leagues';
 
 function generateInviteCode(): string {
 	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -94,6 +96,17 @@ export async function POST({ request, cookies }) {
 
 	const body = await request.json();
 	const { name, type } = body;
+	// League night (GAMEPLAY_FLOWS.md, F5): home track, weekday and hour (UTC), race length.
+	const homeTrack = CIRCUITS.some((c) => c.id === body.homeTrack) ? body.homeTrack : CIRCUITS[0].id;
+	const nightDay =
+		Number.isInteger(body.nightDay) && body.nightDay >= 0 && body.nightDay <= 6 ? body.nightDay : 5;
+	const nightHour =
+		Number.isInteger(body.nightHour) && body.nightHour >= 0 && body.nightHour <= 23
+			? body.nightHour
+			: 19;
+	const nightMinutes = [5, 10, 15, 30, 60].includes(Number(body.nightMinutes))
+		? Number(body.nightMinutes)
+		: 15;
 	if (!name || !type) return json({ error: 'Name and type required' }, { status: 400 });
 	if (type !== 'public' && type !== 'private') {
 		return json({ error: 'Type must be public or private' }, { status: 400 });
@@ -109,6 +122,11 @@ export async function POST({ request, cookies }) {
 					type,
 					inviteCode: type === 'private' ? generateInviteCode() : null,
 					createdBy: parsed.userId,
+					homeTrack,
+					nightDay,
+					nightHour,
+					nightMinutes,
+					seasonMonth: monthKey(),
 					seasonStart: new Date(),
 					seasonEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
 				})

@@ -58,6 +58,11 @@ export async function awardWinBadges(userId: string): Promise<string[]> {
 	return grantIfMissing(userId, candidates);
 }
 
+/** The season trophy (GAMEPLAY_FLOWS.md, F5). */
+export async function awardLeagueChampionBadge(userId: string): Promise<string[]> {
+	return grantIfMissing(userId, ['league_champion']);
+}
+
 export async function awardLeagueFounderBadge(userId: string): Promise<string[]> {
 	return grantIfMissing(userId, ['league_founder']);
 }

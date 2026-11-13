@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { contests, lineups, lineupPicks, users, leagueMembers } from '$lib/server/schema';
+import { contests, lineups, lineupPicks, users } from '$lib/server/schema';
+import { recordVersus } from '$lib/server/leagues';
 import { getAllPrices } from '$lib/server/prices';
 import { calcPickScore, boostFactor, type ActiveBoost } from '$lib/server/scoring';
 import { settleStakeForContest } from '$lib/server/wager';
@@ -322,43 +323,12 @@ export async function resolveContest(
 		await db.update(users).set({ matchmakingStatus: 'idle' }).where(eq(users.id, contest.userAId));
 		await db.update(users).set({ matchmakingStatus: 'idle' }).where(eq(users.id, contest.userBId));
 
-		if (loserId) {
-			const winnerLeagues = await db
-				.select({ leagueId: leagueMembers.leagueId })
-				.from(leagueMembers)
-				.where(eq(leagueMembers.userId, winnerId!));
-
-			for (const { leagueId } of winnerLeagues) {
-				if (!leagueId) continue;
-
-				const winnerMember = await db
-					.select()
-					.from(leagueMembers)
-					.where(and(eq(leagueMembers.leagueId, leagueId), eq(leagueMembers.userId, winnerId!)))
-					.limit(1)
-					.then((rows) => rows[0] ?? null);
-
-				if (winnerMember) {
-					await db
-						.update(leagueMembers)
-						.set({ wins: (winnerMember.wins ?? 0) + 1, points: (winnerMember.points ?? 0) + 3 })
-						.where(eq(leagueMembers.id, winnerMember.id));
-				}
-
-				const loserMember = await db
-					.select()
-					.from(leagueMembers)
-					.where(and(eq(leagueMembers.leagueId, leagueId), eq(leagueMembers.userId, loserId)))
-					.limit(1)
-					.then((rows) => rows[0] ?? null);
-
-				if (loserMember) {
-					await db
-						.update(leagueMembers)
-						.set({ losses: (loserMember.losses ?? 0) + 1 })
-						.where(eq(leagueMembers.id, loserMember.id));
-				}
-			}
+		// League tables count Versus races only between two members of the same
+		// league (GAMEPLAY_FLOWS.md, F5); a win over anyone else doesn't.
+		if (loserId && winnerId && !contest.isPaper) {
+			await recordVersus(winnerId, loserId).catch((e) =>
+				console.error('[resolveContest] league standings failed:', e)
+			);
 		}
 	}
 

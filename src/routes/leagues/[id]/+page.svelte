@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, type ComponentProps } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Toast from '$lib/components/Toast.svelte';
 	import { toast } from '$lib/toast';
+	import LeagueNight from '$lib/components/LeagueNight.svelte';
 
 	type Member = {
 		id: string;
@@ -32,6 +33,8 @@
 		isCreator: false
 	});
 	let loading = $state(true);
+	let night = $state<ComponentProps<typeof LeagueNight>['night'] | null>(null);
+	let homeTrack = $state<string | null>(null);
 	let confirmingDelete = $state(false);
 	let busy = $state(false);
 
@@ -62,6 +65,8 @@
 				league = data.league;
 				members = data.members;
 				viewer = data.viewer ?? viewer;
+				night = data.night ?? null;
+				homeTrack = data.homeTrack ?? null;
 			} else {
 				toast('League not found', 'error');
 				goto(resolve('/leagues'));
@@ -89,9 +94,9 @@
 			<div>
 				<h1 class="text-[40px] leading-none font-black tracking-[-0.04em]">{league.name}</h1>
 				<p class="mt-2 text-sm text-text-muted">
-					{league.type} &middot; {members.length} members &middot; Season ends {new Date(
-						league.seasonEnd
-					).toLocaleDateString()}
+					{league.type} &middot; {members.length} members{homeTrack
+						? ` · home track ${homeTrack}`
+						: ''}
 				</p>
 			</div>
 		</div>
@@ -144,6 +149,9 @@
 			</div>
 
 			<div class="flex min-w-0 flex-[1_1_280px] flex-col gap-3.5">
+				{#if night && viewer.isMember}
+					<LeagueNight {night} {homeTrack} />
+				{/if}
 				{#if league.inviteCode}
 					<div class="hero-coral dot-grid rounded-[20px] p-6">
 						<div class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] uppercase opacity-75">

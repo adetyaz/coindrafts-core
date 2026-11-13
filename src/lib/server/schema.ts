@@ -260,7 +260,9 @@ export const lobbies = pgTable('lobbies', {
 	// A player who hasn't drafted by draftClosesAt races an auto-drafted lineup.
 	durationMinutes: integer('duration_minutes'),
 	circuit: text('circuit'),
-	draftClosesAt: timestamp('draft_closes_at')
+	draftClosesAt: timestamp('draft_closes_at'),
+	// Set when this lobby is one grid of a league night.
+	leagueNightId: uuid('league_night_id')
 });
 
 // ─── Tournaments ──────────────────────────────────────────────────────────────
@@ -395,8 +397,49 @@ export const leagues = pgTable('leagues', {
 	createdBy: uuid('created_by').references(() => users.id),
 	seasonStart: timestamp('season_start'),
 	seasonEnd: timestamp('season_end'),
-	createdAt: timestamp('created_at').defaultNow()
+	createdAt: timestamp('created_at').defaultNow(),
+	// GAMEPLAY_FLOWS.md, F5. League night: weekly, on the home track.
+	homeTrack: text('home_track'),
+	nightDay: integer('night_day').default(5).notNull(), // 0 = Sunday … 6 = Saturday (UTC)
+	nightHour: integer('night_hour').default(19).notNull(), // lights out, UTC
+	nightMinutes: integer('night_minutes').default(15).notNull(), // race length
+	// The month (YYYY-MM, UTC) the current standings belong to; rolls monthly.
+	seasonMonth: text('season_month'),
+	seasonPrize: integer('season_prize').default(1000).notNull()
 });
+
+// One row per league per week: the night ran, or was skipped (with why).
+export const leagueNights = pgTable(
+	'league_nights',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		leagueId: uuid('league_id')
+			.references(() => leagues.id)
+			.notNull(),
+		night: date('night').notNull(),
+		status: text('status').notNull(), // 'racing' | 'done' | 'skipped'
+		note: text('note'),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(t) => [uniqueIndex('league_nights_unique_idx').on(t.leagueId, t.night)]
+);
+
+// Past seasons: who won, and what they got.
+export const leagueSeasons = pgTable(
+	'league_seasons',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		leagueId: uuid('league_id')
+			.references(() => leagues.id)
+			.notNull(),
+		month: text('month').notNull(),
+		winnerId: uuid('winner_id').references(() => users.id),
+		points: integer('points').default(0).notNull(),
+		prize: integer('prize').default(0).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(t) => [uniqueIndex('league_seasons_unique_idx').on(t.leagueId, t.month)]
+);
 
 // ─── League Members ───────────────────────────────────────────────────────────
 

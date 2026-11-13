@@ -39,6 +39,12 @@ export const BADGES: BadgeDef[] = [
 		emoji: '🏆'
 	},
 	{
+		code: 'league_champion',
+		name: 'Season Champion',
+		description: 'Win a monthly league season',
+		emoji: '🏆'
+	},
+	{
 		code: 'league_founder',
 		name: 'League Founder',
 		description: 'Create your first league',

@@ -36,6 +36,7 @@
 		id: string;
 		status: 'drafting' | 'live' | 'resolved' | string;
 		tournamentId: string | null;
+		leagueId: string | null;
 		isFinal: boolean;
 		durationMinutes: number | null;
 		circuit: string | null;
@@ -152,7 +153,7 @@
 		<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
 			<div>
 				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-					{race.isFinal ? 'Final' : 'Group race'} · {circuit.name}
+					{race.leagueId ? 'League night' : race.isFinal ? 'Final' : 'Group race'} · {circuit.name}
 				</div>
 				<h1 class="mt-1 text-[32px] leading-none font-black tracking-[-0.04em]">
 					{race.status === 'drafting'
@@ -301,6 +302,13 @@
 			</ol>
 		{/if}
 
+		{#if race.leagueId}
+			<a
+				href={resolve('/leagues/[id]', { id: race.leagueId })}
+				class="mt-6 inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-bold text-text no-underline"
+				>&larr; League</a
+			>
+		{/if}
 		{#if race.tournamentId}
 			<a
 				href={resolve('/tournament/[id]', { id: race.tournamentId })}

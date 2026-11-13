@@ -1,6 +1,15 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { leagues, leagueMembers, users } from '$lib/server/schema';
+import {
+	leagueNights,
+	leagueSeasons,
+	leagues,
+	leagueMembers,
+	lobbies,
+	users
+} from '$lib/server/schema';
+import { leagueNightView, sweepLeagues } from '$lib/server/leagues';
+import { circuitById } from '$lib/race/circuits';
 import { eq, desc } from 'drizzle-orm';
 import { parseSessionToken } from '$lib/server/auth';
 
@@ -11,6 +20,9 @@ export async function GET({ params, cookies }) {
 
 	const leagueId = params.id;
 	if (!leagueId) return json({ error: 'League id required' }, { status: 400 });
+
+	// Seasons, league nights and results that are due happen here (no timers).
+	await sweepLeagues().catch((e) => console.error('[api/leagues/:id] sweep failed:', e));
 
 	const league = await db
 		.select()
@@ -44,7 +56,9 @@ export async function GET({ params, cookies }) {
 	return json({
 		league: isMember ? league : { ...league, inviteCode: null },
 		members,
-		viewer: { isMember, isCreator: league.createdBy === parsed.userId }
+		viewer: { isMember, isCreator: league.createdBy === parsed.userId },
+		homeTrack: league.homeTrack ? circuitById(league.homeTrack).name : null,
+		night: await leagueNightView(league, parsed.userId)
 	});
 }
 
@@ -64,6 +78,16 @@ export async function DELETE({ params, cookies }) {
 	// league still listed.
 	await db.transaction(async (tx) => {
 		await tx.delete(leagueMembers).where(eq(leagueMembers.leagueId, league.id));
+		// League-night grids stay as race history, detached from the league.
+		const nights = await tx
+			.select({ id: leagueNights.id })
+			.from(leagueNights)
+			.where(eq(leagueNights.leagueId, league.id));
+		for (const n of nights) {
+			await tx.update(lobbies).set({ leagueNightId: null }).where(eq(lobbies.leagueNightId, n.id));
+		}
+		await tx.delete(leagueNights).where(eq(leagueNights.leagueId, league.id));
+		await tx.delete(leagueSeasons).where(eq(leagueSeasons.leagueId, league.id));
 		await tx.delete(leagues).where(eq(leagues.id, league.id));
 	});
 	return json({ ok: true });

@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { lobbies, lobbyParticipants, lineups, users } from '$lib/server/schema';
 import { scoreLineupPicks } from '$lib/server/contest-resolution';
 import { onLobbyResolved } from '$lib/server/tournament-resolution';
+import { onLeagueGridResolved } from '$lib/server/leagues';
 
 /**
  * Resolves a live lobby: scores every participant's lineup, ranks them,
@@ -107,6 +108,10 @@ export async function resolveLobby(
 			tournamentId: lobby.tournamentId,
 			tournamentStage: lobby.tournamentStage
 		});
+	}
+
+	if (lobby.leagueNightId) {
+		await onLeagueGridResolved({ id: lobby.id, leagueNightId: lobby.leagueNightId });
 	}
 
 	return { resolved: true };

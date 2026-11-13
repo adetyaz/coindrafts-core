@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CIRCUITS } from '$lib/race/circuits';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Toast from '$lib/components/Toast.svelte';
@@ -41,13 +42,34 @@
 		}
 	}
 
+	// League night (GAMEPLAY_FLOWS.md, F5): picked in your local time, stored in UTC.
+	const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	let newHomeTrack = $state(CIRCUITS[0].id);
+	let newNightDay = $state(5);
+	let newNightHour = $state(20);
+	function nightUtc(day: number, hour: number) {
+		const n = new Date();
+		const d = new Date(
+			n.getFullYear(),
+			n.getMonth(),
+			n.getDate() + ((day - n.getDay() + 7) % 7),
+			hour
+		);
+		return { nightDay: d.getUTCDay(), nightHour: d.getUTCHours() };
+	}
+
 	async function createLeague() {
 		if (!newLeagueName.trim()) return;
 		try {
 			const res = await fetch('/api/leagues', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: newLeagueName.trim(), type: newLeagueType })
+				body: JSON.stringify({
+					name: newLeagueName.trim(),
+					type: newLeagueType,
+					homeTrack: newHomeTrack,
+					...nightUtc(newNightDay, newNightHour)
+				})
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -217,6 +239,37 @@
 						Private
 					</button>
 				</div>
+			</div>
+			<div class="mb-6 grid grid-cols-2 gap-2">
+				<label class="col-span-2 text-xs font-bold text-text-muted"
+					>Home track (league night)
+					<select
+						bind:value={newHomeTrack}
+						class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm text-text"
+					>
+						{#each CIRCUITS as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
+					</select>
+				</label>
+				<label class="text-xs font-bold text-text-muted"
+					>Night
+					<select
+						bind:value={newNightDay}
+						class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm text-text"
+					>
+						{#each DAYS as d, i (d)}<option value={i}>{d}</option>{/each}
+					</select>
+				</label>
+				<label class="text-xs font-bold text-text-muted"
+					>Lights out
+					<select
+						bind:value={newNightHour}
+						class="mt-1.5 w-full rounded-xl border border-border px-3 py-2.5 text-sm text-text"
+					>
+						{#each Array.from({ length: 24 }, (_v, h) => h) as h (h)}<option value={h}
+								>{String(h).padStart(2, '0')}:00</option
+							>{/each}
+					</select>
+				</label>
 			</div>
 			<div class="flex gap-2.5">
 				<button

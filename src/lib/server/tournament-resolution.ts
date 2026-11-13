@@ -228,7 +228,7 @@ async function createStage(
  * time (F4: "races with an auto-drafted lineup"). Priced from the same batch
  * the human lineups use.
  */
-async function autoDraft(lobbyId: string, userId: string, style: DraftStyle) {
+export async function autoDraft(lobbyId: string, userId: string, style: DraftStyle) {
 	const picks = await draftBotLineup(style);
 	if (picks.length !== 5) throw new Error('Auto-draft returned an incomplete lineup');
 	const fresh = await getAllPrices().catch(() => null);
