@@ -342,6 +342,52 @@ each call ✓ or ✗ with entry → exit.
 
 ---
 
-## Still to discuss ⏳
+## F10 — Simulate a week, and the bots' daily life ✅
 
-Simulate a week · PWA & notifications · Sponsors & track ads.
+Built today: a **Simulate a week** button on the Car Market page (signed-in players; one new week
+every 3 minutes across everyone). It replays the last 7 real market days: each day the bots race in
+pairs (half car-for-car), get paid Gears, then trade; the page fills in day by day.
+
+- **Keep the button** for demos and for anyone curious.
+- **New: the daily job plays one bot day on its own**, so the bots race, win and lose cars and trade
+  every day even when no players are around. The economy moves without anyone touching it.
+- Players' own cars and Gears are never touched by either.
+
+---
+
+## F11 — Install (PWA) and notifications ✅
+
+Not built yet.
+
+### Install
+
+After your first finished race: **"Add CoinDraft to your home screen."** On iPhone it shows the
+steps (Share → Add to Home Screen), because push notifications only work after that.
+
+### Notifications
+
+Each one is a toggle in Me → Settings, with **quiet hours** (default 22:00–08:00, local time):
+
+- Match found · result is in
+- Trivia is live · streak at risk
+- Tournament closing / starting · league night tonight
+- **A bot with a grudge has challenged you**
+- Your car sold in the Car Market
+
+---
+
+## F12 — Sponsors and track ads ✅ (after launch)
+
+Not built yet; comes after launch, once there are players. Payment method is a separate decision.
+
+1. **Sponsor portal** → **Sponsor a tournament** or **Book trackside ads**.
+2. **Tournament:** name, dates, prize, branding (logo, livery on the cars) → preview → pay → your
+   approval → live.
+3. **Ads:** pick a **real circuit** and a slot (billboard, trackside banner, start/finish arch) on a
+   map of the track, pick dates (booked dates unavailable), upload artwork → 3D preview → pay → your
+   approval → live.
+4. **Sponsor dashboard:** active and upcoming bookings, views, invoices.
+
+---
+
+All flows are agreed. Next: turn them into build tasks in `ROADMAP.md`.
