@@ -4,6 +4,11 @@ import { contests, lineups, lineupPicks, users, leagueMembers } from '$lib/serve
 import { getAllPrices } from '$lib/server/prices';
 import { calcPickScore, boostFactor, type ActiveBoost } from '$lib/server/scoring';
 import { settleStakeForContest } from '$lib/server/wager';
+import { flushOutbox, grantGears } from '$lib/server/cars';
+
+/** Gears per race: [winner, loser]. Doubled for weekly races, like XP. */
+const GEARS_REAL = [150, 40] as const;
+const GEARS_SCRIMMAGE = [50, 10] as const;
 
 /** Raised when a contest cannot be scored because prices are unavailable. */
 export class PriceUnavailableError extends Error {
@@ -211,13 +216,19 @@ export async function resolveContest(
 	const loserId = didAWin ? contest.userBId : contest.userAId;
 	const xpMultiplier = contest.type === 'weekly' ? 2 : 1;
 
-	await db
+	// Claim the resolution. Only the request that flips live → resolved goes on
+	// to pay out: the result page and the cron can resolve the same contest at
+	// the same moment, and without this both would award XP (and Gears, which
+	// replay on chain) twice.
+	const [claimed] = await db
 		.update(contests)
 		// endAt is deliberately left alone — it's the scheduled end of the game,
 		// not the moment resolution happened. Overwriting it destroyed the record
 		// of how long the contest was actually meant to run.
 		.set({ status: 'resolved', winnerId })
-		.where(eq(contests.id, contestId));
+		.where(and(eq(contests.id, contestId), eq(contests.status, 'live')))
+		.returning({ id: contests.id });
+	if (!claimed) return { resolved: false, reason: 'already_resolved' };
 
 	if (winnerId) {
 		const winner = await db
@@ -259,6 +270,20 @@ export async function resolveContest(
 				)
 				.where(eq(users.id, loserId));
 		}
+	}
+
+	// Gears: the race economy. Recorded in Postgres and, with CAR_LEDGER=near,
+	// replayed on the NEP-245 garage contract. Scrimmage pays less but still
+	// pays, so bots and new players keep the Car Market moving. Never allowed to
+	// fail the result; the on-chain copy gets a few seconds here and the rest
+	// waits in near_outbox.
+	try {
+		const [win, lose] = contest.isPaper ? GEARS_SCRIMMAGE : GEARS_REAL;
+		if (winnerId) await grantGears(winnerId, win * xpMultiplier, `won ${contestId}`);
+		if (loserId) await grantGears(loserId, lose * xpMultiplier, `raced ${contestId}`);
+		await Promise.race([flushOutbox(10), new Promise((r) => setTimeout(r, 4000))]);
+	} catch (e) {
+		console.error('[resolveContest] gears payout failed:', e);
 	}
 
 	if (contest.userBId) {

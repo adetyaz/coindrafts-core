@@ -36,7 +36,9 @@ export async function GET({ params, cookies }) {
 
 	if (contest.status === 'live') {
 		const result = await resolveContest(contestId);
-		if (!result.resolved) {
+		// `already_resolved`: another request (the other player, the cron) resolved
+		// it a moment ago. Nothing to wait for; read the result below.
+		if (!result.resolved && result.reason !== 'already_resolved') {
 			// Still running is a normal state now that duration is enforced, not an
 			// error — the caller should be watching the game, not reading a result.
 			if (result.reason === 'not_ended') {
