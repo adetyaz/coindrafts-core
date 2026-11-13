@@ -224,7 +224,54 @@ finish.
 
 ---
 
+## F5 — Leagues ✅
+
+Built today: create (public, or private with an invite code), join by code, standings W / L / points
+(3 per win), leave, delete. Today a member's win counts against **anyone**, so the table is really
+members' overall records — this changes.
+
+### How a league competes
+
+1. **League night, weekly:** all members race on one grid (groups of 5 if the league is big) on the
+   league's **home track**, chosen when the league is created.
+2. **Standings** come from league-night results **plus any Versus race between two members**.
+   Races against non-members don't count.
+3. **Monthly seasons:** the season winner gets a **trophy badge and a Gears prize**, then the
+   standings reset.
+
+States: fewer than 2 members at league night → skipped that week, with a note · a member who doesn't
+draft races with an auto-drafted lineup.
+
+---
+
+## F6 — Profile (Me), player cards and bot cards ✅
+
+Built today: name, XP, rank, races resolved, badge cabinet, your leagues. No editing, settings,
+rivals or public view.
+
+### Me
+
+- **Display name** (editable) and a **showcased car**
+- **Stats:** races, wins, podiums, best sector
+- **Badges:** pick up to 3 to show
+- **Rivals:** each bot's mood towards you and your record, plus humans you race often
+- Links to the **Garage** and your **NEAR account**
+- **Settings:** name, bot chat (On / Quiet / Off), notifications, reduced motion, sign out
+
+### Another player's card
+
+Opened by tapping any name — leaderboard, race card, pre-race screen, result, league table. Shows
+their name, showcased car, record, badges and **your head-to-head with them**. **Challenge** sends
+them a Versus invite with your terms.
+
+### A bot's card
+
+Opened by tapping a bot anywhere. Shows its personality and racing style, its garage and Gears, **its
+mood towards you** and your record, and its recent Car Market moves with their reasons.
+
+---
+
 ## Still to discuss ⏳
 
-Simulate a week · Leagues · Profile & settings · Daily trivia · Binary race mode · Nitro & pit-stop ·
-PWA & notifications · Sponsors & track ads.
+Simulate a week · Daily trivia · Binary race mode · Nitro & pit-stop · PWA & notifications ·
+Sponsors & track ads.
