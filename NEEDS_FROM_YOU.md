@@ -8,7 +8,7 @@ into `.env` yourself. I only ever need account names, links and yes/no answers.
 
 ## 1. Needed to submit (the entry doesn't count without these)
 
-### 1.1 A mainnet NEAR account for the prize payout
+### 1.1 A mainnet NEAR account for the prize payout — ✅ `adetayo4422.near` (checked: exists on mainnet)
 The rules say you create it yourself and give the organisers its name. Testnet won't do for this.
 
 1. Install a NEAR wallet: [Meteor](https://meteorwallet.app), [HOT](https://hot-labs.org) or
@@ -19,10 +19,8 @@ The rules say you create it yourself and give the organisers its name. Testnet w
 3. Write down the seed phrase somewhere safe, offline.
 4. **Send me only the account name** (e.g. `adetayo.near`).
 
-### 1.2 Make the repository public
+### 1.2 Make the repository public — ✅ pushed (`hackathon/near` + `pre-hackathon` tag); ⬜ still private
 Judges and their AI screening can't open a private repo.
-1. Tell me when you're ready and I'll push the `hackathon/near` branch and the `pre-hackathon` tag
-   (I won't push without your OK).
 2. GitHub → `adetyaz/coindrafts-core` → Settings → General → Danger Zone → **Change visibility → Public**.
 
 ### 1.3 Record the demo and post it on X
@@ -48,7 +46,7 @@ are fixed through their change-request page, not by submitting again.
 
 ## 2. Needed to finish and test the build
 
-### 2.1 Reown dashboard: email + social login
+### 2.1 Reown dashboard: email + social login — ✅ socials already on
 1. [cloud.reown.com](https://cloud.reown.com) → the project whose ID is `PUBLIC_REOWN_PROJECT_ID`.
 2. Make sure **Email** and **Socials** (Google, X, Discord, Apple) are switched **on** — dashboard
    settings can override the code.
