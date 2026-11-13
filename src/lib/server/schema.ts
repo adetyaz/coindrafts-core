@@ -65,7 +65,27 @@ export const cars = pgTable('cars', {
 	wins: integer('wins').default(0).notNull(),
 	// Set while the car is staked in an open car-for-car race.
 	stakedInRace: text('staked_in_race'),
+	// Paint, decal, number plate (Garage → Customise). Cosmetic only.
+	look: jsonb('look').$type<{ paint?: string; decal?: string; plate?: string }>(),
 	createdAt: timestamp('created_at').defaultNow()
+});
+
+// Every way a car changes hands, for Garage → car history (GAMEPLAY_FLOWS.md,
+// F3). Written in the same transaction as the move itself.
+export const carEvents = pgTable('car_events', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	carId: uuid('car_id')
+		.references(() => cars.id)
+		.notNull(),
+	// 'starter' | 'showroom' | 'market' | 'sell_now' | 'race_won'
+	kind: text('kind').notNull(),
+	fromUserId: uuid('from_user_id').references(() => users.id),
+	toUserId: uuid('to_user_id')
+		.references(() => users.id)
+		.notNull(),
+	price: integer('price'), // Gears, for sales
+	raceId: text('race_id'),
+	at: timestamp('at').defaultNow().notNull()
 });
 
 // ─── Car Market ───────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@
 	import Toast from '$lib/components/Toast.svelte';
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
 	import { streamPrices } from '$lib/race/priceStream';
+	import { paintColor } from '$lib/economy/rules';
 	import { circuitById, circuitForRace } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
@@ -30,7 +31,7 @@
 	type Side = {
 		userId: string;
 		name: string | null;
-		car: { model: string; rarity: string } | null;
+		car: { model: string; rarity: string; look?: { paint?: string } | null } | null;
 		picks: Pick[];
 		totalPct: number;
 	} | null;
@@ -283,14 +284,14 @@
 			live?.me && {
 				id: live.me.userId,
 				name: live.me.name ?? 'You',
-				color: 'var(--color-primary)',
+				color: paintColor(live.me.car?.look) ?? 'var(--color-primary)',
 				pct: liveTotal(live.me),
 				isMe: true
 			},
 			live?.opponent && {
 				id: live.opponent.userId,
 				name: live.opponent.name ?? 'Opponent',
-				color: 'var(--color-blue)',
+				color: paintColor(live.opponent.car?.look) ?? 'var(--color-blue)',
 				pct: liveTotal(live.opponent),
 				isMe: false
 			}

@@ -9,8 +9,17 @@
 // leaves rows pending in the outbox, and the next flush (sign-in, garage view,
 // the daily cron) picks them up in order.
 import { and, asc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '$lib/server/db';
-import { carListings, cars, nearOutbox, users } from '$lib/server/schema';
+import { carEvents, carListings, cars, nearOutbox, users } from '$lib/server/schema';
+import {
+	RARITIES,
+	SHOWROOM_MODELS,
+	WEEKLY_STOCK,
+	customiseCost,
+	stockWeekStart,
+	type CarLook
+} from '$lib/economy/rules';
 import {
 	MAX_CALLS_PER_TX,
 	botAccountId,
@@ -24,7 +33,11 @@ import {
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const STARTER_MODELS = ['Viper', 'Comet', 'Bolt', 'Drift', 'Nova', 'Rally'];
+const STARTER_MODELS = SHOWROOM_MODELS.Common;
+/** Advisory-lock base for Showroom stock, one key per tier (so two buyers can't take the last car). */
+const SHOWROOM_LOCK = 734_300;
+
+export type CarEventKind = 'starter' | 'showroom' | 'market' | 'sell_now' | 'race_won';
 const PLAYER_STARTER_GEARS = 500;
 const BOT_STARTER_GEARS = 800;
 const MAX_ATTEMPTS = 5;
@@ -104,11 +117,18 @@ async function nearIdOf(tx: Tx, userId: string): Promise<string | null> {
 
 // ── Cars and Gears ───────────────────────────────────────────────────────────
 
-async function mintCarIn(tx: Tx, ownerId: string, model: string, rarity: Rarity) {
+async function mintCarIn(
+	tx: Tx,
+	ownerId: string,
+	model: string,
+	rarity: Rarity,
+	kind: CarEventKind = 'starter'
+) {
 	const [car] = await tx
 		.insert(cars)
 		.values({ tokenId: `car:${crypto.randomUUID()}`, ownerId, model, rarity })
 		.returning();
+	await tx.insert(carEvents).values({ carId: car.id, kind, toUserId: ownerId });
 	const owner = await nearIdOf(tx, ownerId);
 	if (owner) {
 		await enqueue(tx, 'mint_car', {
@@ -131,9 +151,14 @@ async function grantGearsIn(tx: Tx, userId: string, amount: number, memo: string
 	if (owner) await enqueue(tx, 'mint_gears', { owner_id: owner, amount: String(amount), memo });
 }
 
-export async function mintCar(ownerId: string, model: string, rarity: Rarity) {
+export async function mintCar(
+	ownerId: string,
+	model: string,
+	rarity: Rarity,
+	kind: CarEventKind = 'starter'
+) {
 	await ensureNearAccount(ownerId);
-	return db.transaction((tx) => mintCarIn(tx, ownerId, model, rarity));
+	return db.transaction((tx) => mintCarIn(tx, ownerId, model, rarity, kind));
 }
 
 /** Race winnings and other rewards. */
@@ -144,7 +169,11 @@ export async function grantGears(userId: string, amount: number, memo: string) {
 
 /** Paint, decals, garage space. Throws if the user can't afford it. */
 export async function spendGears(userId: string, amount: number, memo: string) {
-	await db.transaction(async (tx) => {
+	await db.transaction((tx) => spendGearsIn(tx, userId, amount, memo));
+}
+
+async function spendGearsIn(tx: Tx, userId: string, amount: number, memo: string) {
+	{
 		const [row] = await tx
 			.update(users)
 			.set({ gears: sql`${users.gears} - ${amount}` })
@@ -153,11 +182,16 @@ export async function spendGears(userId: string, amount: number, memo: string) {
 		if (!row) throw new Error('Not enough Gears');
 		const owner = await nearIdOf(tx, userId);
 		if (owner) await enqueue(tx, 'burn_gears', { owner_id: owner, amount: String(amount), memo });
-	});
+	}
 }
 
 /** One Car Market sale: Gears buyer → seller, car seller → buyer, all or nothing. */
-export async function tradeCar(carId: string, buyerId: string, price: number) {
+export async function tradeCar(
+	carId: string,
+	buyerId: string,
+	price: number,
+	kind: 'market' | 'sell_now' = 'market'
+) {
 	await ensureNearAccount(buyerId);
 	return db.transaction(async (tx) => {
 		const [car] = await tx.select().from(cars).where(eq(cars.id, carId)).for('update');
@@ -175,6 +209,9 @@ export async function tradeCar(carId: string, buyerId: string, price: number) {
 			.set({ gears: sql`${users.gears} + ${price}` })
 			.where(eq(users.id, car.ownerId));
 		await tx.update(cars).set({ ownerId: buyerId }).where(eq(cars.id, carId));
+		await tx
+			.insert(carEvents)
+			.values({ carId, kind, fromUserId: car.ownerId, toUserId: buyerId, price });
 		const [seller, buyer] = [await nearIdOf(tx, car.ownerId), await nearIdOf(tx, buyerId)];
 		if (seller && buyer) {
 			await enqueue(tx, 'trade_car', {
@@ -239,6 +276,15 @@ export async function settleCarRace(raceId: string, winnerId: string) {
 		const winnersCar = staked.find((c) => c.ownerId === winnerId);
 		if (!winnersCar) throw new Error('Winner did not enter this race');
 		for (const car of staked) {
+			if (car.ownerId !== winnerId) {
+				await tx.insert(carEvents).values({
+					carId: car.id,
+					kind: 'race_won',
+					fromUserId: car.ownerId,
+					toUserId: winnerId,
+					raceId
+				});
+			}
 			await tx
 				.update(cars)
 				.set({
@@ -295,6 +341,99 @@ export async function grantStarterKit(userId: string): Promise<boolean> {
 	});
 }
 
+// ── Showroom and customising ─────────────────────────────────────────────────
+
+export class GarageError extends Error {}
+
+/** New cars left this week per tier (null = unlimited). */
+export async function showroomStock(): Promise<Record<Rarity, number | null>> {
+	const rows = await db
+		.select({ rarity: cars.rarity, sold: sql<number>`count(*)::int` })
+		.from(carEvents)
+		.innerJoin(cars, eq(cars.id, carEvents.carId))
+		.where(and(eq(carEvents.kind, 'showroom'), gte(carEvents.at, stockWeekStart())))
+		.groupBy(cars.rarity);
+	const out = {} as Record<Rarity, number | null>;
+	for (const r of RARITIES) {
+		const cap = WEEKLY_STOCK[r];
+		const sold = rows.find((x) => x.rarity === r)?.sold ?? 0;
+		out[r] = cap == null ? null : Math.max(0, cap - sold);
+	}
+	return out;
+}
+
+/**
+ * Buys a brand-new car from the game at `price` Gears, which are burned. The
+ * tier's lock is held for the whole transaction, so the stock count and the
+ * sale can't interleave with another buyer's.
+ */
+export async function buyShowroomCar(userId: string, rarity: Rarity, model: string, price: number) {
+	if (!SHOWROOM_MODELS[rarity]?.includes(model)) throw new GarageError('Unknown model');
+	await ensureNearAccount(userId);
+	return db.transaction(async (tx) => {
+		await tx.execute(
+			sql`select pg_advisory_xact_lock(${SHOWROOM_LOCK + RARITIES.indexOf(rarity)})`
+		);
+		const cap = WEEKLY_STOCK[rarity];
+		if (cap != null) {
+			const [row] = await tx
+				.select({ sold: sql<number>`count(*)::int` })
+				.from(carEvents)
+				.innerJoin(cars, eq(cars.id, carEvents.carId))
+				.where(
+					and(
+						eq(carEvents.kind, 'showroom'),
+						eq(cars.rarity, rarity),
+						gte(carEvents.at, stockWeekStart())
+					)
+				);
+			if ((row?.sold ?? 0) >= cap) {
+				throw new GarageError(`This week's ${rarity} cars are sold out. New stock on Monday.`);
+			}
+		}
+		const [paid] = await tx.select({ gears: users.gears }).from(users).where(eq(users.id, userId));
+		if (!paid || paid.gears < price) throw new GarageError('Not enough Gears');
+		await spendGearsIn(tx, userId, price, `showroom: ${rarity} ${model}`);
+		return mintCarIn(tx, userId, model, rarity, 'showroom');
+	});
+}
+
+/** Paint, decal, number plate. Charges only for what changes; the Gears are burned. */
+export async function customiseCar(userId: string, carId: string, look: CarLook) {
+	return db.transaction(async (tx) => {
+		const [car] = await tx.select().from(cars).where(eq(cars.id, carId)).for('update');
+		if (!car || car.ownerId !== userId) throw new GarageError("That isn't your car");
+		const current = (car.look ?? {}) as CarLook;
+		const cost = customiseCost(current, look);
+		if (cost === 0) return { cost, look: current };
+		const [user] = await tx.select({ gears: users.gears }).from(users).where(eq(users.id, userId));
+		if (!user || user.gears < cost) throw new GarageError('Not enough Gears');
+		await spendGearsIn(tx, userId, cost, `customise ${car.model}`);
+		const next: CarLook = { ...current, ...look };
+		await tx.update(cars).set({ look: next }).where(eq(cars.id, carId));
+		return { cost, look: next };
+	});
+}
+
+/** Every owner a car has had and how it moved, oldest first. */
+export async function getCarHistory(carId: string) {
+	const from = alias(users, 'from_user');
+	const to = alias(users, 'to_user');
+	return db
+		.select({
+			kind: carEvents.kind,
+			price: carEvents.price,
+			at: carEvents.at,
+			from: from.username,
+			to: to.username
+		})
+		.from(carEvents)
+		.leftJoin(from, eq(from.id, carEvents.fromUserId))
+		.innerJoin(to, eq(to.id, carEvents.toUserId))
+		.where(eq(carEvents.carId, carId))
+		.orderBy(asc(carEvents.at));
+}
+
 // ── Reads ────────────────────────────────────────────────────────────────────
 
 export async function getGarage(userId: string) {
@@ -335,6 +474,7 @@ export async function getGarage(userId: string) {
 			races: c.races,
 			wins: c.wins,
 			stakedInRace: c.stakedInRace,
+			look: (c.look ?? {}) as CarLook,
 			listing: listings.find((l) => l.carId === c.id) ?? null
 		})),
 		near: cfg

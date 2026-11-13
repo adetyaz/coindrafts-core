@@ -1,5 +1,11 @@
 export {
+	GarageError,
+	buyShowroomCar,
 	cancelCarRace,
+	customiseCar,
+	getCarHistory,
+	showroomStock,
+	type CarEventKind,
 	ensureNearAccount,
 	flushOutbox,
 	getGarage,

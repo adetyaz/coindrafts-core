@@ -13,6 +13,7 @@ import {
 	botWouldBuy,
 	fairPrice,
 	isStale,
+	sellNowPrice,
 	trendPct,
 	type BotWallet,
 	type Rarity,
@@ -22,6 +23,38 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class MarketError extends Error {}
+
+/**
+ * Sell now (GAMEPLAY_FLOWS.md, F3): an instant sale to a bot at about 80% of
+ * the going rate. The buyer is one of the richest bots that can afford it, so
+ * it relists the car on the market later at its own price, like any trade.
+ */
+export async function sellNow(sellerId: string, carId: string) {
+	const [car] = await db.select().from(cars).where(eq(cars.id, carId));
+	if (!car || car.ownerId !== sellerId) throw new MarketError("That isn't your car");
+	if (car.stakedInRace) throw new MarketError('That car is staked in a race');
+	const rarity = car.rarity as Rarity;
+	const offer = sellNowPrice(rarity, (await tierMarkets())[rarity]);
+	const buyers = await db
+		.select({ id: users.id, username: users.username })
+		.from(users)
+		.where(and(like(users.walletAddress, 'seed:%'), gte(users.gears, offer.value)))
+		.orderBy(desc(users.gears))
+		.limit(3);
+	if (!buyers.length)
+		throw new MarketError('No bot can afford this car right now. Try listing it.');
+	const buyer = buyers[Math.floor(Math.random() * buyers.length)];
+	await db
+		.update(carListings)
+		.set({ status: 'cancelled', closedAt: new Date() })
+		.where(and(eq(carListings.carId, carId), eq(carListings.status, 'open')));
+	try {
+		await tradeCar(carId, buyer.id, offer.value, 'sell_now');
+	} catch (e) {
+		throw new MarketError(e instanceof Error ? e.message : 'Sale failed');
+	}
+	return { price: offer.value, buyer: buyer.username, reason: offer.reason };
+}
 
 /** For-sale and sold-today counts per tier: the inputs every price is made from. */
 export async function tierMarkets(): Promise<Record<Rarity, TierMarket>> {

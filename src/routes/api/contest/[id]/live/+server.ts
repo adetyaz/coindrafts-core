@@ -130,7 +130,7 @@ export async function GET({ params, cookies }) {
 		const total = enriched.reduce((sum, p) => sum + p.pct, 0);
 		const car = lineup.carId
 			? await db
-					.select({ model: cars.model, rarity: cars.rarity })
+					.select({ model: cars.model, rarity: cars.rarity, look: cars.look })
 					.from(cars)
 					.where(eq(cars.id, lineup.carId))
 					.then((rows) => rows[0] ?? null)

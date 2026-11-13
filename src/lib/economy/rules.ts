@@ -199,3 +199,89 @@ export function isStale(price: number, fair: number): boolean {
 function roundPrice(n: number) {
 	return Math.max(10, Math.round(n / 10) * 10);
 }
+
+// ── Showroom ─────────────────────────────────────────────────────────────────
+// Brand-new cars from the game itself, at base price. The Gears are destroyed
+// (burned on chain): the simulation had bots sitting on 3,000–6,000 Gears with
+// nothing to spend them on, which stalls the Car Market.
+
+export const SHOWROOM_MODELS: Record<Rarity, string[]> = {
+	Common: ['Viper', 'Comet', 'Bolt', 'Drift', 'Nova', 'Rally'],
+	Rare: ['Falcon', 'Raptor', 'Mirage', 'Cobra'],
+	Epic: ['Phantom', 'Tempest', 'Vortex'],
+	Legendary: ['Apex', 'Eclipse']
+};
+
+/**
+ * New cars per tier per week (Monday 00:00 UTC). Null is unlimited. Scarce
+ * enough that Rare and up keep their Car Market value; Commons never run out
+ * so a new player always has something to buy.
+ */
+export const WEEKLY_STOCK: Record<Rarity, number | null> = {
+	Common: null,
+	Rare: 6,
+	Epic: 3,
+	Legendary: 1
+};
+
+/** Start of the current stock week: Monday 00:00 UTC. */
+export function stockWeekStart(now = new Date()): Date {
+	const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+	d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+	return d;
+}
+
+// ── Sell now ─────────────────────────────────────────────────────────────────
+
+/** An instant sale to a bot pays this share of the going rate. */
+export const SELL_NOW_SHARE = 0.8;
+
+export function sellNowPrice(rarity: Rarity, market: TierMarket): Decision<number> {
+	const fair = fairPrice(rarity, market);
+	return {
+		value: roundPrice(fair.value * SELL_NOW_SHARE),
+		reason: `${Math.round(SELL_NOW_SHARE * 100)}% of the going rate (${fair.value}), paid right away`
+	};
+}
+
+// ── Customising ──────────────────────────────────────────────────────────────
+// Cosmetic only. Gears spent here are destroyed, like the Showroom.
+
+export type CarLook = { paint?: string; decal?: string; plate?: string };
+
+/** Paints are design tokens so the new design system can restyle them in one place. */
+export const PAINTS = [
+	{ id: 'coral', label: 'Coral', color: 'var(--color-coral)' },
+	{ id: 'mint', label: 'Mint', color: 'var(--color-mint)' },
+	{ id: 'blue', label: 'Blue', color: 'var(--color-blue)' },
+	{ id: 'amber', label: 'Amber', color: 'var(--color-amber)' },
+	{ id: 'sky', label: 'Sky', color: 'var(--color-sky)' },
+	{ id: 'red', label: 'Red', color: 'var(--color-red)' },
+	{ id: 'ink', label: 'Ink', color: 'var(--color-ink)' }
+] as const;
+
+export const DECALS = [
+	{ id: 'none', label: 'None' },
+	{ id: 'stripe', label: 'Racing stripe' },
+	{ id: 'twin', label: 'Twin stripes' },
+	{ id: 'checker', label: 'Checker' },
+	{ id: 'bolt', label: 'Lightning' }
+] as const;
+
+export const CUSTOMISE_PRICE = { paint: 120, decal: 180, plate: 250 } as const;
+
+/** Number plates: 2–7 letters or digits, shown on the car and the grid. */
+export const PLATE = /^[A-Z0-9]{2,7}$/;
+
+export function paintColor(look: CarLook | null | undefined): string | null {
+	return PAINTS.find((p) => p.id === look?.paint)?.color ?? null;
+}
+
+/** What a set of changes costs: only the parts that actually change are charged. */
+export function customiseCost(from: CarLook, to: CarLook): number {
+	let cost = 0;
+	if (to.paint !== undefined && to.paint !== from.paint) cost += CUSTOMISE_PRICE.paint;
+	if (to.decal !== undefined && to.decal !== (from.decal ?? 'none')) cost += CUSTOMISE_PRICE.decal;
+	if (to.plate !== undefined && to.plate !== from.plate) cost += CUSTOMISE_PRICE.plate;
+	return cost;
+}
