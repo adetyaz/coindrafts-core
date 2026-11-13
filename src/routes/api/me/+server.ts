@@ -28,11 +28,13 @@ export async function GET({ cookies }) {
 		researchStreak: user.researchStreak,
 		freeHitsAvailable: user.freeHitsAvailable,
 		matchmakingStatus: user.matchmakingStatus,
-		activeBoosts: user.activeBoosts || []
+		activeBoosts: user.activeBoosts || [],
+		settings: user.settings ?? {},
+		email: user.email ?? null
 	});
 }
 
-// PATCH: any of { username, showcaseCarId, showcaseBadges, settings }.
+// PATCH: any of { username, email, showcaseCarId, showcaseBadges, settings }.
 // Username: bots and opponents say it out loud, so it has to read like a name.
 const NAME = /^[A-Za-z0-9_]{3,20}$/;
 const BOT_CHAT = ['on', 'quiet', 'off'];
@@ -61,6 +63,16 @@ export async function PATCH({ request, cookies }) {
 			.limit(1);
 		if (taken) return json({ error: 'That name is taken — try another.' }, { status: 409 });
 		set.username = username;
+	}
+
+	if (body.email !== undefined) {
+		const email = String(body.email ?? '')
+			.trim()
+			.toLowerCase();
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 160) {
+			return json({ error: 'That email address does not look right' }, { status: 400 });
+		}
+		set.email = email;
 	}
 
 	if (body.showcaseCarId !== undefined) {

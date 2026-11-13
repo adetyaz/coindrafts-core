@@ -66,12 +66,14 @@
 		settings: Settings;
 		nearAccountId: string | null;
 		nearAccountUrl: string | null;
+		email: string | null;
 	};
 
 	let p = $state<Profile | null>(null);
 	let earned = $state<string[]>([]);
 	let phase = $state<'loading' | 'ready' | 'signed-out' | 'error'>('loading');
 	let name = $state('');
+	let email = $state('');
 	let busy = $state(false);
 
 	async function load() {
@@ -84,6 +86,7 @@
 			if (!res.ok) throw new Error();
 			p = await res.json();
 			name = p!.card.username;
+			email = p!.email ?? '';
 			if (badgesRes.ok) {
 				const list: { code: string; earned: boolean }[] = await badgesRes.json();
 				earned = list.filter((b) => b.earned).map((b) => b.code);
@@ -404,6 +407,29 @@
 									: 'border-border bg-bg'}">{v}</button
 							>
 						{/each}
+					</div>
+				</div>
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<label for="me-email" class="font-bold">Email</label>
+					<div class="flex gap-2">
+						<input
+							id="me-email"
+							type="email"
+							bind:value={email}
+							autocomplete="email"
+							class="h-9 w-56 rounded-xl border border-border bg-bg px-3 text-sm"
+						/>
+						{#if email.trim() !== (p.email ?? '')}
+							<button
+								type="button"
+								disabled={busy}
+								onclick={async () => {
+									if (await save({ email: email.trim() }, 'Email saved')) await load();
+								}}
+								class="h-9 cursor-pointer rounded-full border-none bg-primary px-4 text-xs font-extrabold text-text"
+								>Save</button
+							>
+						{/if}
 					</div>
 				</div>
 				<label class="flex items-center justify-between gap-2">

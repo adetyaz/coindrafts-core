@@ -57,6 +57,10 @@ export const users = pgTable('users', {
 	// Me (GAMEPLAY_FLOWS.md, F6): the car and up to 3 badges shown on your card,
 	// and your settings.
 	showcaseCarId: uuid('showcase_car_id'),
+	// Contact email, asked for at onboarding (pre-filled from the email/Google
+	// login when Reown shares it). Self-reported, never verified by us: it's for
+	// contact and notifications, and must never grant access to anything.
+	email: text('email'),
 	showcaseBadges: jsonb('showcase_badges').$type<string[]>(),
 	settings: jsonb('settings').$type<{
 		botChat?: 'on' | 'quiet' | 'off';

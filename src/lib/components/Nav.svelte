@@ -205,6 +205,8 @@
 	}
 
 	let welcomeNext = false;
+	// Signed in but no contact email yet: onboarding's details step.
+	let detailsNext = false;
 
 	async function signAndVerifyEvm(address: string, provider: MaybeEthereum): Promise<boolean> {
 		const nonceRes = await fetch('/api/auth/nonce');
@@ -241,6 +243,7 @@
 		if (!verifyRes.ok) signErrorMessage = payload?.error ?? '';
 		// First sign-in: the first-car reveal, not a reload in place.
 		if (verifyRes.ok && payload?.welcome) welcomeNext = true;
+		if (verifyRes.ok && payload?.needsDetails) detailsNext = true;
 		return verifyRes.ok;
 	}
 
@@ -299,7 +302,8 @@
 				console.log('[Auth] Success! Reloading page');
 				signError = false;
 				await invalidateAll();
-				if (welcomeNext) window.location.href = '/welcome';
+				if (welcomeNext) window.location.href = '/welcome?first=1';
+				else if (detailsNext) window.location.href = '/welcome';
 				else window.location.reload();
 			} else {
 				signError = true;

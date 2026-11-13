@@ -20,6 +20,7 @@ export async function GET({ cookies }) {
 		db
 			.select({
 				nearAccountId: users.nearAccountId,
+				email: users.email,
 				showcaseCarId: users.showcaseCarId,
 				showcaseBadges: users.showcaseBadges,
 				settings: users.settings
@@ -46,6 +47,7 @@ export async function GET({ cookies }) {
 			...(user?.settings ?? {})
 		},
 		nearAccountId: user?.nearAccountId ?? null,
+		email: user?.email ?? null,
 		nearAccountUrl: user?.nearAccountId ? explorerUrl(user.nearAccountId) : null
 	});
 }

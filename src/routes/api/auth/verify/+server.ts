@@ -132,6 +132,9 @@ export async function POST({ request, cookies }) {
 	return json({
 		ok: true,
 		welcome,
+		// Onboarding asks for a few details (email) the first time, and again
+		// for older accounts that never gave them.
+		needsDetails: !user.email,
 		user: { id: user.id, username: user.username, walletAddress: user.walletAddress }
 	});
 }
