@@ -63,6 +63,12 @@
 			draftClosesAt: string | null;
 		} | null;
 		results: { username: string; place: number; gears: number; car?: string }[] | null;
+		sponsor: {
+			name: string;
+			logo: string | null;
+			livery: string | null;
+			prize: string | null;
+		} | null;
 	};
 
 	const id = page.params.id ?? '';
@@ -204,11 +210,22 @@
 					Groups at {t.groupTrack} · final at {t.finalTrack} · {t.durationMinutes} min races
 					{#if t.sectorRestriction}· {t.sectorRestriction.toUpperCase()} only{/if}
 				</p>
+				{#if t.sponsor}
+					<div class="mt-3 flex items-center gap-2 text-sm">
+						{#if t.sponsor.logo}<img
+								src={t.sponsor.logo}
+								alt="{t.sponsor.name} logo"
+								class="h-8 w-auto rounded"
+							/>{/if}
+						<span>Presented by <span class="font-bold">{t.sponsor.name}</span></span>
+					</div>
+				{/if}
 			</div>
 			<div class="text-right">
 				<div class="text-sm font-bold">
 					🏆 ⚙️ {t.prizes.map((p) => p.toLocaleString()).join(' / ')}
 				</div>
+				{#if t.sponsor?.prize}<div class="text-sm font-bold">+ {t.sponsor.prize}</div>{/if}
 				{#if t.carPrize}<div class="text-sm font-bold">
 						+ a {t.carPrize} car for the winner
 					</div>{/if}

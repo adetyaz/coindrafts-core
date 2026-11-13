@@ -10,6 +10,8 @@ import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
 import { stakedCars } from '$lib/server/carRace';
+import { countAdViews } from '$lib/server/sponsors';
+import { circuitForRace } from '$lib/race/circuits';
 import { binaryBotCalls } from '$lib/server/botDraft';
 import { BINARY_SOLO, BINARY_VERSUS, isBinaryMode, isCall } from '$lib/race/binary';
 import { ItemError, getInventory, lockItem } from '$lib/server/items';
@@ -381,6 +383,11 @@ export async function POST({ params, request, cookies }) {
 				.update(contests)
 				.set({ status: 'live', startAt, endAt })
 				.where(eq(contests.id, contestId));
+			// Both drivers will see this circuit's trackside ads.
+			await countAdViews(
+				contestNow.circuit ?? circuitForRace(contestId).id,
+				contestNow.userBId ? 2 : 1
+			);
 		}
 	}
 

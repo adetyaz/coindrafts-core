@@ -15,6 +15,7 @@ import { getAllPrices } from '$lib/server/prices';
 import { kickOffIfReady } from '$lib/server/tournament-resolution';
 import { resolveLobby } from '$lib/server/lobby-resolution';
 import { itemFactors } from '$lib/race/items';
+import { activeAds, tournamentSponsor } from '$lib/server/sponsors';
 
 // GET: a multi-car race (tournament group or final) as the race screen needs
 // it: every driver's car, item and picks with live moves. Any signed-in player
@@ -114,6 +115,11 @@ export async function GET({ params, cookies }) {
 	return json({
 		id: lobby.id,
 		leagueId,
+		ads: await activeAds(lobby.circuit),
+		// A sponsored tournament's cars race in the sponsor's livery.
+		livery: lobby.tournamentId
+			? ((await tournamentSponsor(lobby.tournamentId))?.livery ?? null)
+			: null,
 		status: lobby.status,
 		tournamentId: lobby.tournamentId,
 		isFinal: lobby.tournamentStage === 1,

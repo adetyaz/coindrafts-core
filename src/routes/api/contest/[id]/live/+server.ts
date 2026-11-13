@@ -1,5 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { itemFactors } from '$lib/race/items';
+import { activeAds } from '$lib/server/sponsors';
+import { circuitForRace } from '$lib/race/circuits';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import {
@@ -237,6 +239,7 @@ export async function GET({ params, cookies }) {
 		opponent,
 		rival,
 		circuit: contest.circuit,
-		mode: contest.mode ?? null
+		mode: contest.mode ?? null,
+		ads: await activeAds(contest.circuit ?? circuitForRace(contest.id).id)
 	});
 }

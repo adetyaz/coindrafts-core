@@ -12,6 +12,7 @@
 	import { ITEMS, itemFactors, type LineupItem } from '$lib/race/items';
 	import { paintColor } from '$lib/economy/rules';
 	import { rarityColor } from '$lib/economy/rarity';
+	import type { TrackAd } from '$lib/sponsors';
 
 	type Pick = {
 		symbol: string;
@@ -38,6 +39,8 @@
 		status: 'drafting' | 'live' | 'resolved' | string;
 		tournamentId: string | null;
 		leagueId: string | null;
+		ads: TrackAd[];
+		livery: string | null;
 		isFinal: boolean;
 		durationMinutes: number | null;
 		circuit: string | null;
@@ -121,7 +124,7 @@
 		(race?.drivers ?? []).map((d, i) => ({
 			id: d.userId,
 			name: d.isMe ? 'You' : d.name,
-			color: paintColor(d.car?.look) ?? PALETTE[i % PALETTE.length],
+			color: race?.livery ?? paintColor(d.car?.look) ?? PALETTE[i % PALETTE.length],
 			pct: total(d),
 			isMe: d.isMe
 		}))
@@ -222,6 +225,7 @@
 							{holding}
 							finished={race.status === 'resolved' || (endMs > 0 && now >= endMs)}
 							onUnsupported={() => (live3d = false)}
+							ads={race.ads ?? []}
 						/>
 					{/key}
 				{/if}

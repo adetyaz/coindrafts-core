@@ -353,7 +353,7 @@ time, plain functional layouts until the new design system lands.
 - [x] 10. Profile, player cards, bot cards — F6
 - [x] 11. Binary race mode — F9
 - [x] 12. The bots' daily life (one bot day per day, automatically) — F10 _(needs scripts/migrate-step12.sql)_
-- [ ] 13. Sponsors and track ads — F12
+- [x] 13. Sponsors and track ads — F12 _(needs scripts/migrate-step12.sql + migrate-step13.sql; ADMIN_USER_IDS)_
 - [ ] 14. Install (PWA) and notifications — F11
 
 ### ⏭️ After launch

@@ -12,6 +12,7 @@ import {
 import { parseSessionToken } from '$lib/server/auth';
 import { sweepTournaments } from '$lib/server/tournament-resolution';
 import { circuitById } from '$lib/race/circuits';
+import { tournamentSponsor } from '$lib/server/sponsors';
 
 // GET /api/tournament/[id]: everything the tournament page shows, polled.
 // Registration list, the draw (pots and groups), each stage's seats, and the
@@ -147,6 +148,7 @@ export async function GET({ params, cookies }) {
 					draftClosesAt: mine.draftClosesAt
 				}
 			: null,
-		results: t.results ?? null
+		results: t.results ?? null,
+		sponsor: await tournamentSponsor(t.id)
 	});
 }

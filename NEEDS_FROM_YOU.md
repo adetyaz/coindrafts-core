@@ -65,6 +65,13 @@ The live site needs the same NEAR settings as your `.env`.
    `NEAR_OPERATOR_PRIVATE_KEY`.
 3. Tell me when done.
 
+### 2.3b Who approves sponsor bookings — ⬜
+
+Sponsor bookings (tournaments and trackside ads) wait for an operator to mark them paid and
+approve them at `/admin/sponsors`. Put your own user id in `ADMIN_USER_IDS` (in `.env` and in
+Vercel; several ids can be comma-separated). Your user id is shown on your player card's URL:
+open **Me → See your card as others do**, and copy the id at the end of the address.
+
 ### 2.4 Which branch goes live
 The work is on `hackathon/near`. Decide whether Vercel should deploy it (merge into `main`, or set
 the branch as production in Vercel). I'll do the git side once you say which.

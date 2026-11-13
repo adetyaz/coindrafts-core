@@ -29,6 +29,7 @@ import { grantGears, mintCar, spendGears } from '$lib/server/cars';
 import { resolveLobby } from '$lib/server/lobby-resolution';
 import { personalityOf, type DraftStyle } from '$lib/bots/personalities';
 import { SHOWROOM_MODELS, type Rarity } from '$lib/economy/rules';
+import { countAdViews } from '$lib/server/sponsors';
 
 export const QUALIFIER_STAGE = 0;
 export const FINAL_STAGE = 1;
@@ -292,6 +293,8 @@ export async function kickOffIfReady(lobby: Lobby) {
 		.set({ status: 'live', startAt, endAt })
 		.where(and(eq(lobbies.id, lobby.id), eq(lobbies.status, 'drafting')))
 		.returning({ id: lobbies.id });
+	// Every driver on the grid sees the circuit's trackside ads.
+	if (started) await countAdViews(lobby.circuit, seats.length);
 	return Boolean(started);
 }
 

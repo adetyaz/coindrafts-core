@@ -65,6 +65,44 @@ export const users = pgTable('users', {
 	}>()
 });
 
+// Sponsors and track ads (GAMEPLAY_FLOWS.md, F12, $lib/sponsors).
+export const sponsors = pgTable('sponsors', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+		.references(() => users.id)
+		.notNull()
+		.unique(),
+	name: text('name').notNull(),
+	contactEmail: text('contact_email').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const sponsorBookings = pgTable('sponsor_bookings', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	sponsorId: uuid('sponsor_id')
+		.references(() => sponsors.id)
+		.notNull(),
+	kind: text('kind').notNull(), // 'ad' | 'tournament'
+	status: text('status').default('awaiting_payment').notNull(), // see BookingStatus
+	startDate: date('start_date').notNull(),
+	endDate: date('end_date').notNull(),
+	// Ads
+	circuit: text('circuit'),
+	slot: text('slot'), // 'billboard' | 'banner' | 'arch'
+	artwork: text('artwork'), // data: URL, small (MAX_ARTWORK_BYTES)
+	// Tournaments
+	title: text('title'),
+	prize: text('prize'), // what the sponsor puts up, in words
+	livery: text('livery'), // a colour the cars race in
+	tournamentId: uuid('tournament_id').references(() => tournaments.id),
+	priceCents: integer('price_cents').notNull(),
+	views: integer('views').default(0).notNull(),
+	note: text('note'), // the operator's note on approval or rejection
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	paidAt: timestamp('paid_at'),
+	decidedAt: timestamp('decided_at')
+});
+
 // One row per bot day the daily job played (GAMEPLAY_FLOWS.md, F10). The row
 // is also the claim, so a retried cron can't play the same day twice.
 export const botDays = pgTable('bot_days', {

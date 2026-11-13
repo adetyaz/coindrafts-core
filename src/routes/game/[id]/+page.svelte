@@ -11,6 +11,7 @@
 	import { paintColor } from '$lib/economy/rules';
 	import { ITEMS, SPARE_WINDOW, itemFactors, type LineupItem } from '$lib/race/items';
 	import { binaryPace, callRight, isBinaryMode } from '$lib/race/binary';
+	import type { TrackAd } from '$lib/sponsors';
 	import { circuitById, circuitForRace } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
@@ -52,6 +53,7 @@
 		stakeId?: string | null;
 		circuit?: string | null;
 		mode?: string | null;
+		ads?: TrackAd[];
 		rival?: {
 			username: string;
 			tagline: string;
@@ -641,6 +643,7 @@
 						{onOvertake}
 						onUnsupported={() => (view = 'chart')}
 						checkpoints={myCalls}
+						ads={live?.ads ?? []}
 					/>
 				{/key}
 				{#if binary && live?.me}

@@ -15,6 +15,7 @@
 	import * as THREE from 'three';
 	import { circuitById, DEFAULT_CIRCUIT } from '$lib/race/circuits';
 	import { buildTrackPath } from '$lib/race/trackPath';
+	import { AD_SLOTS, type TrackAd } from '$lib/sponsors';
 
 	let {
 		cars,
@@ -23,7 +24,8 @@
 		holding = false,
 		onOvertake,
 		onUnsupported,
-		checkpoints
+		checkpoints,
+		ads = []
 	}: {
 		cars: RaceCar[];
 		/** Circuit id from $lib/race/circuits (real layouts). Fixed for the life of the component. */
@@ -39,6 +41,8 @@
 		 * move yet. Read every frame, so gates flip as prices do.
 		 */
 		checkpoints?: (boolean | null)[];
+		/** Sponsors' trackside ads running today on this circuit (GAMEPLAY_FLOWS.md, F12). */
+		ads?: TrackAd[];
 	} = $props();
 
 	// ── Tuning ───────────────────────────────────────────────────────────────
@@ -232,6 +236,60 @@
 		startLine.rotation.set(-Math.PI / 2, 0, Math.atan2(-start.dir.z, start.dir.x) + Math.PI / 2);
 		startLine.position.copy(start.pos).setY(start.pos.y + 0.04);
 		scene.add(startLine);
+
+		// Sponsors' ads: a billboard, a banner along the barrier, an arch over the line.
+		const loader = new THREE.TextureLoader();
+		const postMat = mat(token('race-wheel'));
+		for (const ad of ads) {
+			const spec = AD_SLOTS[ad.slot];
+			if (!spec) continue;
+			const tex = keep(loader.load(ad.image));
+			tex.colorSpace = THREE.SRGBColorSpace;
+			const face = keep(new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+			const { pos, dir } = trackAt(spec.at);
+			const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+			const heading = Math.atan2(-dir.z, dir.x);
+			if (ad.slot === 'arch') {
+				const w = ROAD_WIDTH + 1.2;
+				const sign = new THREE.Mesh(keep(new THREE.PlaneGeometry(w, w / spec.aspect)), face);
+				sign.position.copy(pos).setY(pos.y + 4.2);
+				sign.rotation.y = heading + Math.PI / 2;
+				scene.add(sign);
+				for (const k of [-1, 1]) {
+					const post = new THREE.Mesh(keep(new THREE.BoxGeometry(0.4, 4.6, 0.4)), postMat);
+					post.position
+						.copy(pos)
+						.addScaledVector(side, (k * w) / 2)
+						.setY(pos.y + 2.3);
+					scene.add(post);
+				}
+			} else if (ad.slot === 'billboard') {
+				const w = 9;
+				const board = new THREE.Mesh(keep(new THREE.PlaneGeometry(w, w / spec.aspect)), face);
+				const spot = pos.clone().addScaledVector(side, ROAD_WIDTH / 2 + 5);
+				board.position.copy(spot).setY(pos.y + 3.6);
+				// Faces the road.
+				board.rotation.y = Math.atan2(-side.z, side.x) - Math.PI / 2 + Math.PI;
+				scene.add(board);
+				for (const k of [-1, 1]) {
+					const post = new THREE.Mesh(keep(new THREE.BoxGeometry(0.3, 3.6, 0.3)), postMat);
+					post.position
+						.copy(spot)
+						.addScaledVector(dir.clone().normalize(), k * (w / 2 - 0.6))
+						.setY(pos.y + 1.4);
+					scene.add(post);
+				}
+			} else {
+				const w = 14;
+				const banner = new THREE.Mesh(keep(new THREE.PlaneGeometry(w, w / spec.aspect)), face);
+				banner.position
+					.copy(pos)
+					.addScaledVector(side, ROAD_WIDTH / 2 + 1.4)
+					.setY(pos.y + 0.9);
+				banner.rotation.y = heading;
+				scene.add(banner);
+			}
+		}
 
 		// Binary-mode checkpoints: a gate over the road for each call.
 		const gates: THREE.MeshStandardMaterial[] = [];

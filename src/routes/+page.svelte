@@ -254,7 +254,8 @@
 			title: 'Learn',
 			links: [
 				{ label: 'How to play', href: '/guide' },
-				{ label: 'Leaderboard', href: '/leaderboard' }
+				{ label: 'Leaderboard', href: '/leaderboard' },
+				{ label: 'For sponsors', href: '/sponsor' }
 			]
 		}
 	] as const;
