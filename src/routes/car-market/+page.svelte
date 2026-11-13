@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import BotDay from '$lib/components/BotDay.svelte';
 	import { resolve } from '$app/paths';
 	import { toast } from '$lib/toast';
 	import Toast from '$lib/components/Toast.svelte';
@@ -192,6 +193,8 @@
 			>
 		</div>
 	</div>
+
+	<BotDay />
 
 	<!-- Simulate a week: the bot economy over 7 real market days, in about a minute -->
 	<div class="mb-7 rounded-[20px] border border-border bg-surface-alt p-5">

@@ -285,3 +285,34 @@ export function customiseCost(from: CarLook, to: CarLook): number {
 	if (to.plate !== undefined && to.plate !== from.plate) cost += CUSTOMISE_PRICE.plate;
 	return cost;
 }
+
+// ── Bots in the Showroom ─────────────────────────────────────────────────────
+
+/**
+ * Whether a bot buys a brand-new car today, and which tier. A bot with Gears to
+ * spare upgrades: the best tier it can afford while keeping a cushion of
+ * SAVING_BELOW, and only a tier it doesn't already own (so it climbs from
+ * Common to Legendary over time instead of hoarding one tier). This is also
+ * what puts Epic and Legendary cars on the road for car races.
+ */
+export function botShowroomPick(
+	bot: { gears: number; rarities: Rarity[] },
+	stockLeft: Record<Rarity, number | null>,
+	temper: Temper = CALM
+): Decision<Rarity | null> {
+	const spare = bot.gears - SAVING_BELOW;
+	for (const rarity of [...RARITIES].reverse()) {
+		if (rarity === 'Common') continue;
+		const price = BASE_PRICE[rarity];
+		if (bot.rarities.includes(rarity)) continue;
+		if (stockLeft[rarity] === 0) continue;
+		// A big spender (payTolerance > 1) buys with a thinner cushion.
+		if (spare * temper.payTolerance >= price) {
+			return {
+				value: rarity,
+				reason: `Had ⚙️ ${bot.gears} and no ${rarity} yet: bought one new from the Showroom`
+			};
+		}
+	}
+	return { value: null, reason: 'Nothing worth upgrading to, or saving up' };
+}

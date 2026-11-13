@@ -9,6 +9,7 @@ import { flushOutbox } from '$lib/server/cars';
 import { cancelAbandonedCarRaces } from '$lib/server/carRace';
 import { sweepTournaments } from '$lib/server/tournament-resolution';
 import { sweepLeagues } from '$lib/server/leagues';
+import { playBotDay } from '$lib/server/botDay';
 
 // Merges the contest and lobby resolution sweeps into a single cron job.
 // Vercel's Hobby plan caps cron jobs at once/day and limits how many a
@@ -16,6 +17,10 @@ import { sweepLeagues } from '$lib/server/leagues';
 // ones. The lazy-resolve-on-view path (hitting a result page) still
 // resolves instantly regardless of this cron's cadence; this is just the
 // catch-all for anyone who never loads their result page.
+// The daily job now also plays a bot day (races, trades, Showroom) and sweeps
+// tournaments and leagues: give it the most a Hobby function gets.
+export const config = { maxDuration: 60 };
+
 async function sweep(authHeader: string | null) {
 	if (env.CRON_SECRET && authHeader !== `Bearer ${env.CRON_SECRET}`) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
@@ -45,6 +50,15 @@ async function sweep(authHeader: string | null) {
 	// Leagues: season roll-over, league nights, their grids.
 	await sweepLeagues().catch((e) => console.error('[cron/resolve-all] leagues failed:', e));
 
+	// The bots' daily life (F10): one bot day, once per UTC date.
+	const botDay = await playBotDay()
+		.then((d) =>
+			d
+				? { races: d.races.length, trades: d.market.length, showroom: d.showroom.length }
+				: 'already played'
+		)
+		.catch((e) => ({ error: String(e) }));
+
 	// Car races nobody started within the hour: cars go back to their garages.
 	const carRacesCancelled = await cancelAbandonedCarRaces().catch((e) => {
 		console.error('[cron/resolve-all] car race cleanup failed:', e);
@@ -59,6 +73,7 @@ async function sweep(authHeader: string | null) {
 		near,
 		carRacesCancelled,
 		tournaments: tournamentSweep,
+		botDay,
 		contests: {
 			checked: dueContests.length,
 			resolved: contestResults.filter((r) => r.resolved).length,

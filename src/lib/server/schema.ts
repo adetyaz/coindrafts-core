@@ -65,6 +65,14 @@ export const users = pgTable('users', {
 	}>()
 });
 
+// One row per bot day the daily job played (GAMEPLAY_FLOWS.md, F10). The row
+// is also the claim, so a retried cron can't play the same day twice.
+export const botDays = pgTable('bot_days', {
+	day: date('day').primaryKey(),
+	summary: jsonb('summary'),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
 // A Versus invite from a player card (F6): race me, on these terms.
 export const challenges = pgTable('challenges', {
 	id: uuid('id').primaryKey().defaultRandom(),
