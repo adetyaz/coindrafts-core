@@ -310,6 +310,38 @@ for 24 hours, and a "Free Hit" that only waives the AI draft agent's cost. Both 
 
 ---
 
+## F9 — Binary race mode ✅
+
+Call coins up or down instead of drafting a lineup. Not built yet.
+
+### Where it sits
+
+The same stages as F2 (mode → car → track → … → pre-race → race → podium); only the draft step
+changes:
+
+1. **Pick any 5 coins** — no sector rule.
+2. **Call each one up or down**, with the current price shown as the line to beat.
+3. Lock → entry prices are taken at the race start.
+
+Nitro and pit-stop items don't apply.
+
+### Rules
+
+- **Solo (vs the market):** get **3 of 5 right** and you win.
+- **Against others** (Versus, tournaments): **most correct calls wins**; a tie goes to whoever was
+  right by more, then rock-paper-scissors.
+- **Lengths:** 5 minutes, 1 hour, 24 hours.
+- **A flat price counts as wrong.** The result shows each coin's exact entry and exit price.
+
+### On the track
+
+**Five checkpoints spaced around the lap, one per call.** Each glows green or red live, by whether
+that coin is on your side right now. The car's pace follows how many calls are right at that moment,
+so it speeds up and slows down as calls flip. At the finish the checkpoints lock and the result shows
+each call ✓ or ✗ with entry → exit.
+
+---
+
 ## Still to discuss ⏳
 
-Simulate a week · Binary race mode · PWA & notifications · Sponsors & track ads.
+Simulate a week · PWA & notifications · Sponsors & track ads.
