@@ -81,8 +81,8 @@ Holders keep the standard NEP-245 transfers, `mt_transfer_call`, views and event
 - **Players** get an _implicit_ NEAR account on first sign-in: no creation transaction, nothing to
   approve. Its key is stored encrypted, so a player can take full custody later.
 - **Bots** get named accounts under the operator, e.g. `chartwizard.coindraft.testnet`.
-- The server pays all gas. Sign-in is email, Google, X, Discord or Apple through Reown AppKit; crypto
-  wallets still work.
+- The server pays all gas. Sign-in is email, Google, X, Discord or Apple through Reown AppKit. No browser
+  wallet is involved.
 
 ### The economy
 
