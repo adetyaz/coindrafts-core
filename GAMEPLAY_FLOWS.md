@@ -183,7 +183,48 @@ Built today: contract escrow and the server side; bots already race for cars in 
 
 ---
 
+## F4 — Tournaments ✅
+
+Built today: create (name, public/private, length, payout, sector restriction, closing time), join
+into groups in join order (groups of 4), groups race at close, group winners race a final. XP prizes
+only.
+
+### Create
+
+Name · public or private (invite link) · race length · **group-stage track** · sector restriction
+(optional) · closing time (= start) · prizes: **Gears from the game** (e.g. 1st 1,000 / 2nd 400 /
+3rd 200), and optionally an **entry fee in Gears**, where the pot goes to the top 3. Gears are in-game
+only.
+
+### Registration → the draw
+
+1. Players join until the closing time.
+2. At close, players are ranked by XP into **pots** (Pot 1 = strongest).
+3. **The draw:** an animated, shareable moment that places one player from each pot into each
+   **group of 5**.
+4. **Empty seats are filled by bots** (BOT tag, personalities, taunts), so every group races full.
+
+### Groups → final
+
+1. Each group runs the normal race flow (F2) on the group-stage track.
+2. **Group winners advance.** With only 1–2 groups, the **top 2** advance, so the final always has at
+   least 4 cars.
+3. **The final runs on a different, marquee track** (e.g. groups at Interlagos, final at Monza).
+4. Bots can win their group and the final, but **prizes skip bots** and go to the best-placed humans.
+
+### Always-on cups
+
+The game creates **scheduled cups** on its own, so there's always something to join: e.g. a **Daily
+Monza Cup** (15-minute races, opens every morning) and a **Weekend Spa Classic** (the winner gets a
+car).
+
+States: humans short at close → still runs, bots fill (cancelled only if no human joined) · a player
+who doesn't draft in time races with an auto-drafted lineup · the final waits for the last group to
+finish.
+
+---
+
 ## Still to discuss ⏳
 
-Simulate a week · Tournaments (pots, groups of 5) · Leagues · Profile & settings · Daily trivia ·
-Binary race mode · Nitro & pit-stop · PWA & notifications · Sponsors & track ads.
+Simulate a week · Leagues · Profile & settings · Daily trivia · Binary race mode · Nitro & pit-stop ·
+PWA & notifications · Sponsors & track ads.
