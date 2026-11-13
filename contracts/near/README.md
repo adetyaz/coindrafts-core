@@ -1,63 +1,52 @@
-# Basic Auction Contract 
+# CoinDraft Garage (NEAR contract)
 
-This directory contains a Rust contract that is used as part of the [Basic Auction Tutorial](https://docs.near.org/tutorials/auction/basic-auction).
+One [NEP-245](https://github.com/near/NEPs/blob/master/neps/nep-0245.md) multi-token contract that holds every car and the in-game currency for CoinDraft.
 
-The contract is a simple auction where you can place bids, view the highest bid, and claim the tokens at the end of the auction.
+- **Testnet:** [`garage.coindraft.testnet`](https://testnet.nearblocks.io/address/garage.coindraft.testnet)
+- **Operator (game server):** `coindraft.testnet`
 
-This repo showcases the basic anatomy of a smart contract application on NEAR Protocol that showcases how to store data in a contract, how to update the state, and then how to read it.
-There are also unit tests, integration tests, and CI/CD pipelines preconfigured for your reference.
+## Tokens
 
----
+| Token id    | What it is                         | Supply              |
+| ----------- | ---------------------------------- | ------------------- |
+| `car:<id>`  | One car (model, rarity, races, wins) | 1                 |
+| `gears`     | Gears, earned by racing, spent in the Car Market | Minted and burned by the game |
 
-## How to Build Locally?
+## Who calls what
 
-Install [`cargo-near`](https://github.com/near/cargo-near) and run:
+**The operator (game server)** runs the game loop, so players never sign a transaction or pay gas:
 
-```bash
-cargo near build
+| Method | Does |
+| --- | --- |
+| `mint_car(car_id, owner_id, model, rarity)` | Creates a car for a player or bot |
+| `mint_gears(owner_id, amount, memo)` / `burn_gears(...)` | Race winnings in, spending out |
+| `trade_car(car_token_id, seller_id, buyer_id, price)` | One atomic Car Market sale: Gears buyer → seller, car seller → buyer |
+| `game_transfer(from_id, to_id, token_ids, amounts, memo)` | Moves tokens on a player's behalf |
+| `open_car_race(race_id, entries)` | Escrows every entrant's car (same rarity only) |
+| `settle_car_race(race_id, winner_id)` | Winner takes every staked car; car stats update |
+| `cancel_car_race(race_id)` | Returns every staked car |
+
+**Token holders** keep the standard NEP-245 methods: `mt_transfer`, `mt_batch_transfer`, `mt_transfer_call`, `mt_batch_transfer_call` (1 yoctoNEAR deposit).
+
+**Views:** `mt_token`, `mt_balance_of`, `mt_batch_balance_of`, `mt_supply`, `mt_batch_supply`, plus `garage(account_id)`, `car(token_id)`, `car_race(race_id)`, `operator()`.
+
+Every mint, burn and transfer emits a NEP-245 `EVENT_JSON` log.
+
+## Build and test
+
+Needs Rust (the version is pinned in `rust-toolchain.toml`) and [cargo-near](https://github.com/near/cargo-near).
+
+```sh
+cargo test                                         # 8 unit tests
+cargo near build non-reproducible-wasm --no-abi    # → target/near/coindraft_garage.wasm
 ```
 
-## How to Test Locally?
+On Windows, set `AWS_LC_SYS_PREBUILT_NASM=1` for `cargo test`. `--no-abi` is needed on Windows because the ABI step can't link natively there.
 
-```bash
-cargo test
+## Deploy
+
+```sh
+near contract deploy garage.<you>.testnet use-file target/near/coindraft_garage.wasm \
+  with-init-call new json-args '{"owner_id":"<you>.testnet","operator_id":"<you>.testnet"}' \
+  prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
 ```
-
-## How to Deploy?
-
-Deployment is automated with GitHub Actions CI/CD pipeline.
-To deploy manually, install [`cargo-near`](https://github.com/near/cargo-near) and run:
-
-If you deploy for debugging purposes:
-
-```bash
-cargo near deploy build-non-reproducible-wasm
-```
-
-If you deploy production ready smart contract:
-
-```bash
-cargo near deploy build-reproducible-wasm
-```
-
-## Initialize the contract
-
-```bash
-# on Linux / Windows WSL
-TWO_MINUTES_FROM_NOW=$(date -d '+2 minutes' +%s000000000)
-# on MacOS
-TWO_MINUTES_FROM_NOW=$(date -v+2M +%s000000000)
-
-near contract call-function as-transaction '<CONTRACT_ACCOUNT_ID>' init json-args '{"end_time": "'$TWO_MINUTES_FROM_NOW'", "auctioneer": "<AUCTIONEER_ACCOUNT_ID>"}' prepaid-gas '30.0 Tgas' attached-deposit '0 NEAR'
-```
-
-## Useful Links
-
-- [cargo-near](https://github.com/near/cargo-near) - NEAR smart contract development toolkit for Rust
-- [near CLI](https://near.cli.rs) - Interact with NEAR blockchain from command line
-- [NEAR Rust SDK Documentation](https://docs.near.org/sdk/rust/introduction)
-- [NEAR Documentation](https://docs.near.org)
-- [NEAR StackOverflow](https://stackoverflow.com/questions/tagged/nearprotocol)
-- [NEAR Discord](https://near.chat)
-- [NEAR Telegram Developers Community Group](https://t.me/neardev)
-- NEAR DevHub: [Telegram](https://t.me/neardevhub), [Twitter](https://twitter.com/neardevhub)
