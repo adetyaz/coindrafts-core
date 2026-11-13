@@ -488,19 +488,19 @@
 					>Try again</button
 				>
 			{:else}
-				<span class="text-xs whitespace-nowrap text-text-muted">Wallet connected —</span>
+				<span class="text-xs whitespace-nowrap text-text-muted">Almost in —</span>
 				<button
 					onclick={retrySign}
 					class="cursor-pointer rounded-full border-none bg-primary px-3.5 py-1.5 text-xs font-bold whitespace-nowrap text-text transition hover:bg-primary-hover"
-					>Sign to verify</button
+					>Confirm sign-in</button
 				>
 			{/if}
 		{:else if appkitReady}
-			<appkit-button></appkit-button>
+			<appkit-button label="Sign in"></appkit-button>
 		{:else}
 			<button
 				class="cursor-not-allowed rounded-full border border-border bg-transparent px-3.5 py-1.5 text-xs whitespace-nowrap text-text-muted"
-				disabled>loading wallet...</button
+				disabled>Loading…</button
 			>
 		{/if}
 	</div>

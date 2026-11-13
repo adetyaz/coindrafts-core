@@ -193,7 +193,7 @@
 						</a>
 					{:else if appkitReady}
 						<div class="*:h-13 *:rounded-full *:px-8">
-							<appkit-button></appkit-button>
+							<appkit-button label="Sign in to play"></appkit-button>
 						</div>
 						<a
 							href={resolve('/dashboard')}
@@ -204,14 +204,14 @@
 					{:else}
 						<button
 							class="inline-flex h-13 cursor-not-allowed items-center rounded-full bg-primary/50 px-8 text-sm font-extrabold text-text/50"
-							disabled>Loading wallet…</button
+							disabled>Loading…</button
 						>
 					{/if}
 				</div>
 
 				{#if page.url.searchParams.get('auth') === 'required'}
 					<p class="mt-4 text-xs text-negative-ink">
-						Sign in with your wallet to access draft and contest routes.
+						Sign in with email, Google or a wallet to draft and race.
 					</p>
 				{/if}
 

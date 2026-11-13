@@ -67,11 +67,22 @@ if (typeof window !== 'undefined') {
 				url: window.location.origin,
 				icons: [`${window.location.origin}/icon.svg`]
 			},
+			// Email and social login (NEAR HACKATHON, Track 09: no seed phrases,
+			// popups or gas prompts in the game loop). Reown creates an embedded
+			// wallet for these users; it signs the same SIWE message as any other
+			// EVM wallet, so /api/auth/verify needs no changes. Wallets stay
+			// listed for crypto players.
 			features: {
 				analytics: false,
-				email: false,
-				socials: false
-			}
+				email: true,
+				socials: ['google', 'x', 'discord', 'apple'],
+				emailShowWallets: true
+			},
+			// Embedded wallets default to a smart-contract account on some chains.
+			// Its signature is validated by a contract (ERC-1271), which the
+			// server-side `siwe.verify` can't do without an RPC — so sign-in would
+			// fail for every email/social user. A plain EOA signs normally.
+			defaultAccountTypes: { eip155: 'eoa' }
 		});
 	}
 
