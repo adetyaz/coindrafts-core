@@ -160,6 +160,7 @@
 		if (e.kind === 'showroom') return `Bought new from the Showroom by ${e.to}`;
 		if (e.kind === 'market') return `${e.to} bought it from ${e.from ?? '?'} for ⚙️ ${e.price}`;
 		if (e.kind === 'sell_now') return `${e.from ?? '?'} sold it to ${e.to} for ⚙️ ${e.price}`;
+		if (e.kind === 'prize') return `Won by ${e.to} as a tournament prize`;
 		if (e.kind === 'staked') return `${e.to} staked it in a car race`;
 		if (e.kind === 'race_won') return `${e.to} won it from ${e.from ?? '?'} in a car race`;
 		return e.kind;

@@ -255,7 +255,12 @@ export const lobbies = pgTable('lobbies', {
 	// Set when this lobby is one bracket stage of a Tournament rather than a
 	// standalone lobby — null for every ordinary lobby.
 	tournamentId: uuid('tournament_id').references(() => tournaments.id),
-	tournamentStage: integer('tournament_stage') // 0 = qualifier group, 1 = final
+	tournamentStage: integer('tournament_stage'), // 0 = qualifier group, 1 = final
+	// Race length, circuit and the draft deadline (tournament groups and finals).
+	// A player who hasn't drafted by draftClosesAt races an auto-drafted lineup.
+	durationMinutes: integer('duration_minutes'),
+	circuit: text('circuit'),
+	draftClosesAt: timestamp('draft_closes_at')
 });
 
 // ─── Tournaments ──────────────────────────────────────────────────────────────
@@ -292,8 +297,45 @@ export const tournaments = pgTable('tournaments', {
 	// silently when nobody joins, which is the expected path, not a failure —
 	// so they're flagged to keep that noise out of user-facing notifications.
 	isAutoCreated: boolean('is_auto_created').default(false),
-	createdAt: timestamp('created_at').defaultNow()
+	createdAt: timestamp('created_at').defaultNow(),
+	// GAMEPLAY_FLOWS.md, F4.
+	durationMinutes: integer('duration_minutes').default(15),
+	groupTrack: text('group_track'),
+	finalTrack: text('final_track'),
+	// Gears from the game for the best-placed humans: [1st, 2nd, 3rd].
+	prizes: jsonb('prizes').$type<number[]>(),
+	// Optional entry fee in Gears; the pot goes to the top 3 humans (50/30/20).
+	entryFee: integer('entry_fee').default(0).notNull(),
+	// Scheduled cups the game runs itself ('daily-monza', 'weekend-spa'); null for player-made.
+	cup: text('cup'),
+	// A car for the winner (its rarity), e.g. the Weekend Spa Classic.
+	carPrize: text('car_prize'),
+	drawnAt: timestamp('drawn_at'),
+	// Final standings and what each human won, written once at the end.
+	results:
+		jsonb('results').$type<
+			{ userId: string; username: string; place: number; gears: number; car?: string }[]
+		>()
 });
+
+// Who registered for a tournament, and where the draw put them.
+export const tournamentEntries = pgTable(
+	'tournament_entries',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		tournamentId: uuid('tournament_id')
+			.references(() => tournaments.id)
+			.notNull(),
+		userId: uuid('user_id')
+			.references(() => users.id)
+			.notNull(),
+		feePaid: integer('fee_paid').default(0).notNull(),
+		pot: integer('pot'), // 1 = strongest, by XP at the draw
+		groupNo: integer('group_no'),
+		joinedAt: timestamp('joined_at').defaultNow().notNull()
+	},
+	(t) => [uniqueIndex('tournament_entries_unique_idx').on(t.tournamentId, t.userId)]
+);
 
 // ─── Tournament Invites ───────────────────────────────────────────────────────
 // How a private tournament is joined — it isn't listed publicly, so an invite is

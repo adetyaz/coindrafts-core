@@ -1,9 +1,18 @@
 import { json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { lobbies, lobbyParticipants, lineups, lineupPicks, tournaments } from '$lib/server/schema';
+import {
+	cars,
+	lobbies,
+	lobbyParticipants,
+	lineups,
+	lineupPicks,
+	tournaments
+} from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice } from '$lib/server/sosovalue';
+import { getAllPrices } from '$lib/server/prices';
+import { kickOffIfReady } from '$lib/server/tournament-resolution';
 import { classifySector } from '$lib/sectors';
 
 export async function POST({ params, request, cookies }) {
@@ -28,6 +37,11 @@ export async function POST({ params, request, cookies }) {
 		.then((rows) => rows[0] ?? null);
 
 	if (!lobby) return json({ error: 'Lobby not found' }, { status: 404 });
+	// Lineups lock while drafting. After the deadline the race has started (or
+	// is about to, with an auto-drafted lineup for anyone who missed it).
+	if (lobby.status !== 'drafting' && lobby.status !== 'waiting') {
+		return json({ error: 'The draft is closed: this race has started.' }, { status: 409 });
+	}
 
 	const participants = await db
 		.select()
@@ -76,25 +90,44 @@ export async function POST({ params, request, cookies }) {
 		.limit(1)
 		.then((rows) => rows[0] ?? null);
 
+	// The car from the race setup step. Cosmetic; a bad value is ignored.
+	let carId: string | null = null;
+	if (typeof body?.carId === 'string') {
+		const [car] = await db
+			.select({ id: cars.id, ownerId: cars.ownerId })
+			.from(cars)
+			.where(eq(cars.id, body.carId));
+		if (car?.ownerId === parsed.userId) carId = car.id;
+	}
+
 	let lineupId = existingLineup?.id;
 	if (!lineupId) {
 		const inserted = await db
 			.insert(lineups)
-			.values({ lobbyId, userId: parsed.userId, locked: true, finalScore: '0' })
+			.values({ lobbyId, userId: parsed.userId, locked: true, finalScore: '0', carId })
 			.returning({ id: lineups.id });
 		lineupId = inserted[0].id;
 	} else {
-		await db.update(lineups).set({ locked: true }).where(eq(lineups.id, lineupId));
+		await db.update(lineups).set({ locked: true, carId }).where(eq(lineups.id, lineupId));
 		await db.delete(lineupPicks).where(eq(lineupPicks.lineupId, lineupId));
 	}
 
+	// One batch for all five entry prices (same source scoring uses), with a
+	// single-token lookup only as a fallback. Five parallel snapshot calls
+	// were the burst pattern that rate-limited 1v1 lineups to $0 entries.
+	const fresh = await getAllPrices().catch(() => null);
 	const snapshots = await Promise.all(
-		picks.map((p: { currencyId: unknown }) => getSnapshot(String(p.currencyId)).catch(() => null))
+		picks.map(async (p: { currencyId: unknown; symbol?: unknown }) => {
+			const live = fresh?.get(String(p.symbol ?? '').toUpperCase())?.price;
+			if (live && live > 0) return { price: live };
+			return getSnapshot(String(p.currencyId)).catch(() => null);
+		})
 	);
 
 	for (let i = 0; i < picks.length; i++) {
 		const pick = picks[i];
-		const entryPrice = extractPrice(snapshots[i]);
+		const snap = snapshots[i] as { price?: number } | null;
+		const entryPrice = snap && 'price' in snap && snap.price ? snap.price : extractPrice(snap);
 		await db.insert(lineupPicks).values({
 			lineupId,
 			tokenSymbol: String(pick.symbol ?? '').toUpperCase(),
@@ -109,17 +142,8 @@ export async function POST({ params, request, cookies }) {
 	}
 
 	// Once every participant has locked a lineup, the lobby goes live
-	const lockedLineups = await db
-		.select()
-		.from(lineups)
-		.where(and(eq(lineups.lobbyId, lobbyId), eq(lineups.locked, true)));
-
-	if (lockedLineups.length >= participants.length) {
-		const windowDays = lobby.contestType === 'weekly' ? 7 : 1;
-		const startAt = new Date();
-		const endAt = new Date(Date.now() + windowDays * 24 * 60 * 60 * 1000);
-		await db.update(lobbies).set({ status: 'live', startAt, endAt }).where(eq(lobbies.id, lobbyId));
-	}
+	// Everyone drafted? The race starts (after the pre-race grid moment).
+	await kickOffIfReady(lobby);
 
 	return json({ ok: true, lobbyId, lineupId });
 }

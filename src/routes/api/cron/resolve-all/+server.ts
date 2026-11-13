@@ -7,6 +7,7 @@ import { resolveContest } from '$lib/server/contest-resolution';
 import { resolveLobby } from '$lib/server/lobby-resolution';
 import { flushOutbox } from '$lib/server/cars';
 import { cancelAbandonedCarRaces } from '$lib/server/carRace';
+import { sweepTournaments } from '$lib/server/tournament-resolution';
 
 // Merges the contest and lobby resolution sweeps into a single cron job.
 // Vercel's Hobby plan caps cron jobs at once/day and limits how many a
@@ -38,6 +39,9 @@ async function sweep(authHeader: string | null) {
 		dueLobbies.map(async (l) => ({ lobbyId: l.id, ...(await resolveLobby(l.id)) }))
 	);
 
+	// Tournaments: closes, kick-offs, results and tomorrow's cups.
+	const tournamentSweep = await sweepTournaments().catch((e) => ({ error: String(e) }));
+
 	// Car races nobody started within the hour: cars go back to their garages.
 	const carRacesCancelled = await cancelAbandonedCarRaces().catch((e) => {
 		console.error('[cron/resolve-all] car race cleanup failed:', e);
@@ -51,6 +55,7 @@ async function sweep(authHeader: string | null) {
 	return json({
 		near,
 		carRacesCancelled,
+		tournaments: tournamentSweep,
 		contests: {
 			checked: dueContests.length,
 			resolved: contestResults.filter((r) => r.resolved).length,

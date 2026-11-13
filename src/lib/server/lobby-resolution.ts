@@ -24,6 +24,13 @@ export async function resolveLobby(
 
 	if (!lobby) return { resolved: false, reason: 'not_found' };
 	if (lobby.status !== 'live') return { resolved: false, reason: `status_${lobby.status}` };
+	// Not before the race is over. Viewing a result used to resolve a live lobby
+	// on the spot, ending a 24-hour race the moment anyone opened its page.
+	if (lobby.endAt && new Date(lobby.endAt).getTime() > Date.now()) {
+		return { resolved: false, reason: 'not_finished' };
+	}
+	const durationMinutes =
+		lobby.durationMinutes ?? (lobby.contestType === 'weekly' ? 7 * 1440 : 1440);
 
 	const participants = await db
 		.select()
@@ -42,7 +49,7 @@ export async function resolveLobby(
 				.limit(1)
 				.then((rows) => rows[0] ?? null);
 
-			const score = lineup ? await scoreLineupPicks(lineup.id) : 0;
+			const score = lineup ? await scoreLineupPicks(lineup.id, durationMinutes) : 0;
 			if (lineup) {
 				await db
 					.update(lineups)
@@ -90,8 +97,9 @@ export async function resolveLobby(
 
 	await db
 		.update(lobbies)
-		.set({ status: 'resolved', winnerId: scored[0].userId, endAt: new Date() })
-		.where(eq(lobbies.id, lobbyId));
+		// endAt stays the scheduled end. Claimed live → resolved so it happens once.
+		.set({ status: 'resolved', winnerId: scored[0].userId })
+		.where(and(eq(lobbies.id, lobbyId), eq(lobbies.status, 'live')));
 
 	if (lobby.tournamentId) {
 		await onLobbyResolved({

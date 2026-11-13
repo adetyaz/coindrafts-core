@@ -538,7 +538,7 @@
 						</div>
 						{#if l.myLineupLocked}
 							<a
-								href={`/lobby/${l.id}/result`}
+								href={`/race/${l.id}`}
 								class="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-text no-underline"
 								>{l.status === 'live' ? 'Watch' : 'Waiting for others'}</a
 							>

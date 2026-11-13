@@ -355,7 +355,7 @@
 					const errData = await r2.json().catch(() => ({}));
 					throw new Error((errData as { error?: string }).error ?? 'Failed to submit lineup');
 				}
-				window.location.href = `/lobby/${lobbyId}/result`;
+				window.location.href = `/race/${lobbyId}`;
 				return;
 			}
 
