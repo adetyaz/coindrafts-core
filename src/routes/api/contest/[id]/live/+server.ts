@@ -1,7 +1,15 @@
 import { json } from '@sveltejs/kit';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { contests, lineups, lineupPicks, users, priceSamples, stakes } from '$lib/server/schema';
+import {
+	cars,
+	contests,
+	lineups,
+	lineupPicks,
+	users,
+	priceSamples,
+	stakes
+} from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
 import { getAllPrices } from '$lib/server/prices';
@@ -120,7 +128,14 @@ export async function GET({ params, cookies }) {
 		);
 
 		const total = enriched.reduce((sum, p) => sum + p.pct, 0);
-		return { userId, name, picks: enriched, totalPct: Number(total.toFixed(3)) };
+		const car = lineup.carId
+			? await db
+					.select({ model: cars.model, rarity: cars.rarity })
+					.from(cars)
+					.where(eq(cars.id, lineup.carId))
+					.then((rows) => rows[0] ?? null)
+			: null;
+		return { userId, name, car, picks: enriched, totalPct: Number(total.toFixed(3)) };
 	}
 
 	const opponentId = contest.userAId === parsed.userId ? contest.userBId : contest.userAId;
@@ -209,6 +224,7 @@ export async function GET({ params, cookies }) {
 		finished: endAt ? now >= endAt : false,
 		me,
 		opponent,
-		rival
+		rival,
+		circuit: contest.circuit
 	});
 }

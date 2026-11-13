@@ -1,13 +1,19 @@
 import { json } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { contests, lineups, lineupPicks } from '$lib/server/schema';
+import { cars, contests, lineups, lineupPicks, users } from '$lib/server/schema';
+import { CIRCUITS } from '$lib/race/circuits';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
 import { getAllPrices } from '$lib/server/prices';
 import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { personalityOf } from '$lib/bots/personalities';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
+
+// The race starts this long after both lineups lock, so the pre-race screen
+// (cars on the grid, driver cards, start lights) has its own time instead of
+// eating into the race.
+const PRE_RACE_MS = 10_000;
 
 export async function POST({ params, request, cookies }) {
 	const token = cookies.get('session');
@@ -21,6 +27,20 @@ export async function POST({ params, request, cookies }) {
 	const picks = Array.isArray(body?.picks) ? body.picks : [];
 	if (picks.length !== 5) {
 		return json({ error: 'Exactly 5 picks are required' }, { status: 400 });
+	}
+
+	// Car and circuit from the race setup steps. Both are cosmetic, so a bad
+	// value is ignored rather than failing the lock.
+	const circuitId: string | null = CIRCUITS.some((c) => c.id === body?.circuit)
+		? body.circuit
+		: null;
+	let carId: string | null = null;
+	if (typeof body?.carId === 'string') {
+		const [car] = await db
+			.select({ id: cars.id, ownerId: cars.ownerId, stakedInRace: cars.stakedInRace })
+			.from(cars)
+			.where(eq(cars.id, body.carId));
+		if (car && car.ownerId === parsed.userId && !car.stakedInRace) carId = car.id;
 	}
 
 	const existingContest = await db
@@ -127,15 +147,25 @@ export async function POST({ params, request, cookies }) {
 		if (!existingLineup?.id) {
 			const inserted = await tx
 				.insert(lineups)
-				.values({ contestId, userId: parsed.userId, locked: true, finalScore: '0' })
+				.values({ contestId, userId: parsed.userId, locked: true, finalScore: '0', carId })
 				.returning({ id: lineups.id });
 			lineupId = inserted[0].id;
 		} else {
 			lineupId = existingLineup.id;
-			await tx.update(lineups).set({ locked: true }).where(eq(lineups.id, lineupId));
+			await tx.update(lineups).set({ locked: true, carId }).where(eq(lineups.id, lineupId));
 			await tx.delete(lineupPicks).where(eq(lineupPicks.lineupId, lineupId));
 		}
 		await tx.insert(lineupPicks).values(pickRows.map((r) => ({ ...r, lineupId })));
+		// The car you race is the one pre-selected next time.
+		if (carId) await tx.update(users).set({ lastCarId: carId }).where(eq(users.id, parsed.userId));
+		// First to choose sets the circuit. (Versus: the rock-paper-scissors
+		// tiebreak decides when two choices differ — GAMEPLAY_FLOWS.md, F2.)
+		if (circuitId) {
+			await tx
+				.update(contests)
+				.set({ circuit: circuitId })
+				.where(and(eq(contests.id, contestId), isNull(contests.circuit)));
+		}
 	});
 	lineupId = lineupId!;
 
@@ -161,7 +191,20 @@ export async function POST({ params, request, cookies }) {
 
 				const [botLineup] = await db
 					.insert(lineups)
-					.values({ contestId, userId: bot.id, locked: true, finalScore: '0' })
+					.values({
+						contestId,
+						userId: bot.id,
+						locked: true,
+						finalScore: '0',
+						// The bot races one of its own cars.
+						carId: await db
+							.select({ id: cars.id })
+							.from(cars)
+							.where(and(eq(cars.ownerId, bot.id), isNull(cars.stakedInRace)))
+							.orderBy(sql`random()`)
+							.limit(1)
+							.then((r) => r[0]?.id ?? null)
+					})
 					.returning({ id: lineups.id });
 
 				for (const p of botPicks) {
@@ -235,7 +278,7 @@ export async function POST({ params, request, cookies }) {
 
 		if (otherLineupReady) {
 			const durationMinutes = contestNow.durationMinutes ?? DEFAULT_DURATION_MINUTES;
-			const startAt = new Date();
+			const startAt = new Date(Date.now() + PRE_RACE_MS);
 			const endAt = new Date(startAt.getTime() + durationMinutes * 60 * 1000);
 			await db
 				.update(contests)

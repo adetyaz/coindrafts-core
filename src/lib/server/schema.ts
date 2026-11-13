@@ -44,7 +44,9 @@ export const users = pgTable('users', {
 	// In-game currency. Postgres is the read model; the contract is the record
 	// when CAR_LEDGER=near.
 	gears: integer('gears').default(0).notNull(),
-	starterKitAt: timestamp('starter_kit_at')
+	starterKitAt: timestamp('starter_kit_at'),
+	// The car the race flow pre-selects (the one you raced last).
+	lastCarId: uuid('last_car_id')
 });
 
 // ─── Cars ─────────────────────────────────────────────────────────────────────
@@ -126,7 +128,10 @@ export const contests = pgTable('contests', {
 	durationMinutes: integer('duration_minutes').default(1440),
 	startAt: timestamp('start_at'),
 	endAt: timestamp('end_at'),
-	winnerId: uuid('winner_id').references(() => users.id)
+	winnerId: uuid('winner_id').references(() => users.id),
+	// Real circuit id from $lib/race/circuits. Cosmetic only. Null on races from
+	// before circuits existed (they fall back to a circuit picked from the id).
+	circuit: text('circuit')
 });
 
 // ─── Lineups ──────────────────────────────────────────────────────────────────
@@ -139,7 +144,9 @@ export const lineups = pgTable('lineups', {
 	userId: uuid('user_id').references(() => users.id),
 	locked: boolean('locked').default(false),
 	finalScore: numeric('final_score').default('0'),
-	breakdown: text('breakdown') // pre-generated AI text (for seeded contests)
+	breakdown: text('breakdown'), // pre-generated AI text (for seeded contests)
+	// The car this player raced with. Cosmetic only.
+	carId: uuid('car_id')
 });
 
 // ─── Lineup Picks ─────────────────────────────────────────────────────────────

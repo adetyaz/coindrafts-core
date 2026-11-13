@@ -341,8 +341,8 @@ Build (11–14 Nov; the 3D race from 2–8 Nov counts for this entry too):
 Every flow in [GAMEPLAY_FLOWS.md](GAMEPLAY_FLOWS.md) is agreed. Built in this order, one step at a
 time, plain functional layouts until the new design system lands.
 
-- [ ] 1. Real circuits on the 3D track (Monza, Suzuka, Spa, Interlagos from measured data) — F2
-- [ ] 2. Race stages: car step (last-used pre-selected), track step, pre-race screen, podium — F2
+- [x] 1. Real circuits on the 3D track (Monza, Suzuka, Spa, Interlagos from measured data) — F2
+- [x] 2. Race stages: car step (last-used pre-selected), track step, pre-race screen, podium — F2
 - [ ] 3. First sign-in: your first car reveal, racing name, straight into a 1-minute race — F1
 - [ ] 4. Landing: live race hero, "Run your game", "Back your takes" — F1
 - [ ] 5. Showroom, customising, Sell now, car history (Gears sinks) — F3

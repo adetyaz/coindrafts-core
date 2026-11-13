@@ -2,14 +2,14 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import { sectorTheme } from '$lib/sectorTheme';
-	import { durationLabel } from '$lib/constants';
 	import TokenIcon from '$lib/components/TokenIcon.svelte';
 	import RaceChart from '$lib/components/RaceChart.svelte';
 	import StakeCommit from '$lib/components/StakeCommit.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
 	import { streamPrices } from '$lib/race/priceStream';
-	import { circuitForRace } from '$lib/race/circuits';
+	import { circuitById, circuitForRace } from '$lib/race/circuits';
+	import { rarityColor } from '$lib/economy/rarity';
 	import {
 		MOOD_LABEL,
 		lineFor,
@@ -27,7 +27,13 @@
 		currentPrice: number;
 		pct: number;
 	};
-	type Side = { userId: string; name: string | null; picks: Pick[]; totalPct: number } | null;
+	type Side = {
+		userId: string;
+		name: string | null;
+		car: { model: string; rarity: string } | null;
+		picks: Pick[];
+		totalPct: number;
+	} | null;
 	type Live = {
 		status: string;
 		isPaper: boolean;
@@ -39,6 +45,7 @@
 		me: Side;
 		opponent: Side;
 		stakeId?: string | null;
+		circuit?: string | null;
 		rival?: {
 			username: string;
 			tagline: string;
@@ -52,10 +59,13 @@
 	const SAMPLE_SECONDS = 4;
 
 	const contestId = page.params.id;
-	const circuit = circuitForRace(contestId ?? '');
-
 	let live = $state<Live | null>(null);
-	let phase = $state<'loading' | 'waiting' | 'start' | 'racing' | 'error'>('loading');
+	// The circuit chosen in the race setup; older races fall back to one picked
+	// from the race id.
+	const circuit = $derived(
+		live?.circuit ? circuitById(live.circuit) : circuitForRace(contestId ?? '')
+	);
+	let phase = $state<'loading' | 'waiting' | 'racing' | 'error'>('loading');
 	let errorMessage = $state('');
 	let msRemaining = $state(0);
 	let leaving = false;
@@ -102,7 +112,8 @@
 				if (phase === 'racing' && !leaving) {
 					leaving = true;
 					msRemaining = 0;
-					setTimeout(() => (window.location.href = `/contest/result?contestId=${contestId}`), 4000);
+					// Long enough for the cars to stop and the podium to show.
+					setTimeout(() => (window.location.href = `/contest/result?contestId=${contestId}`), 7000);
 				} else if (phase !== 'racing') {
 					window.location.href = `/contest/result?contestId=${contestId}`;
 				}
@@ -141,7 +152,8 @@
 			if (data.status === 'open') {
 				phase = 'waiting';
 			} else if (phase === 'loading' || phase === 'waiting') {
-				phase = 'start';
+				// Straight to the track: before the start it shows the pre-race screen.
+				phase = 'racing';
 			}
 		} catch (e) {
 			if (phase === 'loading') {
@@ -343,6 +355,53 @@
 			});
 		}
 	});
+
+	// ── Pre-race (GAMEPLAY_FLOWS.md, F2 step 6) ──────────────────────────────
+	// The race starts a few seconds after both lineups lock. Until then the cars
+	// wait on the grid under the pre-race screen; the start lights count the
+	// last three seconds and the cars go at the exact start.
+	let now = $state(Date.now());
+	let preRaceSkipped = $state(false);
+	$effect(() => {
+		const t = setInterval(() => (now = Date.now()), 200);
+		return () => clearInterval(t);
+	});
+	const startMs = $derived(live?.startAt ? new Date(live.startAt).getTime() : 0);
+	const msToStart = $derived(Math.max(0, startMs - now));
+	const holding = $derived(msToStart > 0);
+	const showPreRace = $derived(holding && !preRaceSkipped);
+	const lightsOn = $derived(msToStart > 3000 ? 0 : Math.min(3, 3 - Math.floor(msToStart / 1000)));
+	const justStarted = $derived(startMs > 0 && now >= startMs && now - startMs < 1200);
+	const TIPS = [
+		"Every second, your coins' move speeds your car up or slows it down.",
+		'The car in front is always the lineup up the most. Cars and tracks never change that.',
+		'Tap Chase for the view from behind your car.',
+		'Bots remember you. Beat one three times and see how it talks to you.',
+		'Gears from this race go straight to your garage, recorded on NEAR.'
+	];
+	const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+
+	type GridDriver = {
+		key: string;
+		name: string;
+		side: Side;
+		isMe: boolean;
+	};
+	const gridDrivers = $derived<GridDriver[]>(
+		[
+			{ key: 'me', name: live?.me?.name ?? 'You', side: live?.me ?? null, isMe: true },
+			{
+				key: 'opp',
+				name: live?.opponent?.name ?? 'Opponent',
+				side: live?.opponent ?? null,
+				isMe: false
+			}
+		].filter((d) => d.side)
+	);
+
+	function fmtPrice(p: number) {
+		return p > 0 ? `${p < 1 ? p.toPrecision(3) : p.toFixed(2)}` : '—';
+	}
 </script>
 
 <div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18">
@@ -367,131 +426,6 @@
 				class="mt-6 inline-flex h-12 items-center rounded-full bg-primary px-8 text-sm font-extrabold text-text no-underline"
 				>Back to dashboard</a
 			>
-		</div>
-
-		<!-- ── START SCREEN ─────────────────────────────────────────────── -->
-	{:else if phase === 'start'}
-		<div class="hero-coral dot-grid rounded-[24px] p-11 max-sm:p-6">
-			<div class="flex flex-wrap items-center gap-2.5">
-				<span
-					class="rounded-full bg-text px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] text-primary uppercase"
-					>Ready</span
-				>
-				{#if live?.isPaper}
-					<span class="rounded-full bg-black/10 px-2.5 py-1 text-[10px] font-bold uppercase"
-						>Scrimmage</span
-					>
-				{/if}
-			</div>
-			<div
-				class="mt-4 text-[52px] leading-[0.94] font-black tracking-[-0.045em] max-sm:text-[34px]"
-			>
-				{live?.me?.name ?? 'You'} vs {live?.opponent?.name ?? 'Opponent'}
-			</div>
-			<p class="mt-3 text-[15px] opacity-80">
-				Both lineups are locked at their entry prices. From here it's decided by the market —
-				whoever's five move furthest, wins.
-			</p>
-
-			<div class="mt-8 flex flex-wrap gap-9">
-				<div>
-					<div class="font-mono text-[34px] leading-none font-bold tracking-[-0.03em]">{clock}</div>
-					<div class="mt-2 text-[10px] font-extrabold tracking-[0.1em] uppercase opacity-70">
-						Time left
-					</div>
-				</div>
-				<div>
-					<div class="font-mono text-[34px] leading-none font-bold tracking-[-0.03em]">
-						{durationLabel(live?.durationMinutes)}
-					</div>
-					<div class="mt-2 text-[10px] font-extrabold tracking-[0.1em] uppercase opacity-70">
-						Duration
-					</div>
-				</div>
-				<div>
-					<div class="font-mono text-[34px] leading-none font-bold tracking-[-0.03em]">
-						{live?.me?.picks.length ?? 0} v {live?.opponent?.picks.length ?? 0}
-					</div>
-					<div class="mt-2 text-[10px] font-extrabold tracking-[0.1em] uppercase opacity-70">
-						Picks
-					</div>
-				</div>
-			</div>
-
-			<button
-				onclick={() => (phase = 'racing')}
-				class="mt-9 h-13 cursor-pointer rounded-full bg-text px-9 text-sm font-extrabold text-primary transition hover:-translate-y-0.5"
-			>
-				Watch the race →
-			</button>
-		</div>
-
-		{#if live?.rival}
-			{@const r = live.rival}
-			<div
-				class="mt-4.5 flex flex-wrap items-start gap-4 rounded-[20px] border border-border bg-surface p-5"
-			>
-				<div class="min-w-0 flex-1">
-					<div class="flex flex-wrap items-center gap-2">
-						<span class="text-lg font-black">{r.username}</span>
-						<span class="rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
-							>BOT</span
-						>
-						<span class="text-xs text-text-muted">{r.tagline}</span>
-					</div>
-					<div class="mt-1 text-xs text-text-muted">
-						{MOOD_LABEL[r.mood]}
-						{#if r.record.races > 0}
-							· you’re {r.record.playerWins}–{r.record.botWins} against it
-						{/if}
-					</div>
-					{#if gridLine && botChat !== 'off'}
-						<p class="mt-3 rounded-2xl bg-surface-alt px-4 py-3 text-sm font-bold">“{gridLine}”</p>
-					{/if}
-				</div>
-			</div>
-		{/if}
-
-		{#if live?.stakeId}
-			<div class="mt-4.5">
-				<StakeCommit stakeId={live.stakeId} />
-			</div>
-		{/if}
-
-		<div class="mt-4.5 flex flex-wrap gap-4.5">
-			{#each [{ side: live?.me, label: 'Your lineup', mine: true }, { side: live?.opponent, label: `${live?.opponent?.name ?? 'Opponent'}'s lineup`, mine: false }] as col (col.label)}
-				<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-6">
-					<div class="mb-4 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-						{col.label}
-					</div>
-					{#if !col.side}
-						<p class="text-[13px] text-text-muted">No lineup yet.</p>
-					{:else}
-						<div class="flex flex-col gap-2.5">
-							{#each col.side.picks as p (p.symbol)}
-								{@const th = sectorTheme(p.sector)}
-								<div class="flex items-center gap-3 rounded-2xl bg-surface-alt p-3">
-									<TokenIcon symbol={p.symbol} size={30} bg={th.color} fg="var(--color-ink)" />
-									<div class="min-w-0 flex-1">
-										<div class="text-sm font-extrabold">{p.symbol.toUpperCase()}</div>
-										<div
-											class="text-[10px] font-extrabold tracking-[0.1em] uppercase"
-											style="color:{th.ink}"
-										>
-											{th.label}
-										</div>
-									</div>
-									<span class="font-mono text-xs text-text-muted">
-										{p.entryPrice > 0
-											? `$${p.entryPrice < 1 ? p.entryPrice.toPrecision(3) : p.entryPrice.toFixed(2)}`
-											: '—'}
-									</span>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/each}
 		</div>
 
 		<!-- ── RACE SCREEN ──────────────────────────────────────────────── -->
@@ -571,13 +505,141 @@
 			<p class="mb-2 text-xs font-bold text-text-muted">
 				{circuit.name}, {circuit.place} · {circuit.lengthKm} km · {circuit.character}
 			</p>
-			<RaceTrack3D
-				circuit={circuit.id}
-				cars={raceCars}
-				finished={msRemaining <= 0}
-				{onOvertake}
-				onUnsupported={() => (view = 'chart')}
-			/>
+			{#if live?.stakeId}
+				<div class="mb-3"><StakeCommit stakeId={live.stakeId} /></div>
+			{/if}
+			<div class="relative">
+				{#key circuit.id}
+					<RaceTrack3D
+						circuit={circuit.id}
+						cars={raceCars}
+						{holding}
+						finished={msRemaining <= 0}
+						{onOvertake}
+						onUnsupported={() => (view = 'chart')}
+					/>
+				{/key}
+
+				{#if showPreRace}
+					<!-- Pre-race: the grid before lights out -->
+					<div
+						class="absolute inset-0 flex flex-col justify-between rounded-[24px] bg-black/55 p-5 text-white max-sm:p-3"
+					>
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<div class="font-mono text-[11px] font-bold tracking-[0.14em] uppercase opacity-80">
+									On the grid
+								</div>
+								<div class="text-2xl font-black">{circuit.name}</div>
+								<div class="text-xs opacity-80">
+									{circuit.place} · {circuit.lengthKm} km · {circuit.character}
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => (preRaceSkipped = true)}
+								class="cursor-pointer rounded-full border border-white/40 bg-transparent px-3 py-1 text-xs font-bold text-white"
+								>Skip</button
+							>
+						</div>
+
+						<div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+							{#each gridDrivers as d (d.key)}
+								<div class="rounded-2xl bg-black/50 p-3">
+									<div class="flex flex-wrap items-center gap-2">
+										<span class="font-black">{d.isMe ? 'You' : d.name}</span>
+										{#if !d.isMe && live?.rival}
+											<span
+												class="rounded bg-white px-1.5 py-0.5 text-[9px] font-extrabold text-black"
+												>BOT</span
+											>
+											<span class="text-[11px] opacity-80">{live.rival.tagline}</span>
+										{/if}
+									</div>
+									{#if d.side?.car}
+										<div class="mt-1 text-xs">
+											{d.side.car.model}
+											<span
+												class="ml-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold text-black uppercase"
+												style="background:{rarityColor(d.side.car.rarity)}"
+												>{d.side.car.rarity}</span
+											>
+										</div>
+									{/if}
+									<div class="mt-2 flex flex-wrap gap-1.5 font-mono text-[11px]">
+										{#each d.side?.picks ?? [] as p (p.symbol)}
+											<span class="rounded bg-white/15 px-1.5 py-0.5"
+												>{p.symbol.toUpperCase()} {fmtPrice(p.currentPrice)}</span
+											>
+										{/each}
+									</div>
+									{#if !d.isMe && live?.rival}
+										<div class="mt-2 text-[11px] opacity-80">
+											{MOOD_LABEL[live.rival.mood]}{live.rival.record.races > 0
+												? ` · you're ${live.rival.record.playerWins}–${live.rival.record.botWins}`
+												: ''}
+										</div>
+										{#if gridLine && botChat !== 'off'}
+											<p class="mt-1 text-sm font-bold">“{gridLine}”</p>
+										{/if}
+									{/if}
+								</div>
+							{/each}
+						</div>
+
+						<div>
+							<div class="mb-2 flex justify-center gap-3" aria-label="Start lights">
+								{#each [0, 1, 2] as i (i)}
+									<span
+										class="h-6 w-6 rounded-full border-2 border-white/60 transition {lightsOn > i
+											? 'bg-red-500'
+											: 'bg-transparent'}"
+									></span>
+								{/each}
+							</div>
+							<div class="h-1.5 overflow-hidden rounded-full bg-white/20">
+								<div
+									class="h-full bg-white transition-[width]"
+									style="width:{Math.min(100, ((10000 - msToStart) / 10000) * 100)}%"
+								></div>
+							</div>
+							<p class="mt-2 text-center text-xs opacity-80">
+								Loading track… {tip}
+							</p>
+						</div>
+					</div>
+				{:else if justStarted}
+					<div class="pointer-events-none absolute inset-0 grid place-items-center">
+						<span class="rounded-full bg-black/60 px-6 py-2 text-3xl font-black text-white"
+							>GO!</span
+						>
+					</div>
+				{/if}
+
+				{#if msRemaining <= 0}
+					<!-- Podium -->
+					<div class="absolute inset-x-0 top-14 flex justify-center">
+						<div class="rounded-2xl bg-black/65 px-5 py-3 text-white">
+							<div
+								class="text-center font-mono text-[11px] font-bold tracking-[0.14em] uppercase opacity-80"
+							>
+								Podium
+							</div>
+							<ol class="mt-1 flex flex-col gap-1">
+								{#each [...raceCars].sort((x, y) => y.pct - x.pct) as c, i (c.id)}
+									<li class="flex items-center gap-3 text-sm font-bold">
+										<span class="w-6 text-lg">{['🥇', '🥈', '🥉'][i] ?? i + 1}</span>
+										<span>{c.isMe ? 'You' : c.name}</span>
+										<span class="ml-auto font-mono">{c.pct >= 0 ? '+' : ''}{c.pct.toFixed(2)}%</span
+										>
+									</li>
+								{/each}
+							</ol>
+							<div class="mt-1 text-center text-[11px] opacity-80">Final prices coming in…</div>
+						</div>
+					</div>
+				{/if}
+			</div>
 			{#if commentary.length > 0}
 				<div class="mt-3 flex flex-col gap-1 px-1">
 					{#each commentary as line, i (line + i)}

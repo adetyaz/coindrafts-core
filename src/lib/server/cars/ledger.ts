@@ -299,7 +299,7 @@ export async function grantStarterKit(userId: string): Promise<boolean> {
 
 export async function getGarage(userId: string) {
 	const [user] = await db
-		.select({ gears: users.gears, nearAccountId: users.nearAccountId })
+		.select({ gears: users.gears, nearAccountId: users.nearAccountId, lastCarId: users.lastCarId })
 		.from(users)
 		.where(eq(users.id, userId));
 	if (!user) return null;
@@ -325,6 +325,8 @@ export async function getGarage(userId: string) {
 	const cfg = nearConfig();
 	return {
 		gears: user.gears,
+		// Pre-selected by the race flow's car step.
+		lastCarId: user.lastCarId,
 		cars: owned.map((c) => ({
 			id: c.id,
 			tokenId: c.tokenId,

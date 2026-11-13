@@ -20,6 +20,7 @@
 		cars,
 		circuit = DEFAULT_CIRCUIT,
 		finished = false,
+		holding = false,
 		onOvertake,
 		onUnsupported
 	}: {
@@ -27,6 +28,8 @@
 		/** Circuit id from $lib/race/circuits (real layouts). Fixed for the life of the component. */
 		circuit?: string;
 		finished?: boolean;
+		/** Cars wait on the grid (the pre-race screen) until this turns false: lights out. */
+		holding?: boolean;
 		onOvertake?: (passer: RaceCar, passed: RaceCar) => void;
 		onUnsupported?: () => void;
 	} = $props();
@@ -415,7 +418,7 @@
 			}
 
 			// The finish: everyone rolls to a stop.
-			speedScale = finished ? Math.max(0, speedScale - dt * 0.6) : 1;
+			speedScale = finished ? Math.max(0, speedScale - dt * 0.6) : holding ? 0 : 1;
 			const base = (dt / (reduceMotion ? LAP_SECONDS * 1.6 : LAP_SECONDS)) * speedScale;
 
 			const leaderPct = Math.max(...cars.map((c) => c.pct));
