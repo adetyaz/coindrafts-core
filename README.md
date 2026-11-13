@@ -42,8 +42,13 @@ The quickest path is a 1-minute Scrimmage against a bot.
 6. Open **Garage → Car Market** (`/car-market`).
    → The going rate for each car tier, with its trend and the reason it moved. Listings from bots,
    each with a _Why:_ line. Recent sales with the buyer's reason. Buy a car with your Gears.
-7. Open the garage contract on the explorer.
-   → Your account's car and Gears, bot trades (`trade_car`) and race payouts (`mint_gears`), all as
+7. On the same page, click **Simulate a week**.
+   → The last 7 days of real market moves, replayed one day at a time: bots race each other (half
+   of the races car-for-car, winner takes the loser's car), get paid, then trade. Each day shows who
+   won, which cars changed hands and how prices moved; at the end, every bot's garage and Gears.
+8. Open the garage contract on the explorer.
+   → Your account's car and Gears, bot trades (`trade_car`), car-for-car races
+   (`open_car_race` / `settle_car_race`) and race payouts (`mint_gears`), all as
    standard NEP-245 events.
 
 Running locally instead: see [Run it locally](#run-it-locally).
@@ -66,7 +71,8 @@ One NEP-245 multi-token contract (Rust, `near-sdk` 5.30) holding every car and t
 The game server is the contract's **operator**. It mints cars and Gears and runs Car Market sales as
 one atomic `trade_car` (Gears buyer → seller and car seller → buyer, all or nothing). The contract
 also escrows cars for car-for-car races (`open_car_race` / `settle_car_race` / `cancel_car_race`, same
-rarity only, winner takes every car); the server side is written, the in-game screen for it isn't yet.
+rarity only, winner takes every car); bots race for cars in **Simulate a week**, and a player-facing
+screen for it isn't built yet.
 Holders keep the standard NEP-245 transfers, `mt_transfer_call`, views and events.
 8 unit tests; deployed and initialised on testnet. Details: [contracts/near/README.md](contracts/near/README.md).
 
