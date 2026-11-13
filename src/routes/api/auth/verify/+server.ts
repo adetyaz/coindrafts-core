@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import { createSessionToken } from '$lib/server/auth';
+import { flushOutbox, grantStarterKit } from '$lib/server/cars';
 
 export async function POST({ request, cookies }) {
 	const body = await request.json();
@@ -99,6 +100,19 @@ export async function POST({ request, cookies }) {
 			{ error: 'Could not create your account. Please try again.', retryable: true },
 			{ status: 503 }
 		);
+	}
+
+	// ── Starter kit ─────────────────────────────────────────────────────────
+	// First sign-in gets a NEAR account, a free car and Gears. Never allowed to
+	// fail or stall the login: the grant is Postgres-only, and the on-chain copy
+	// gets at most a few seconds here — anything left stays queued in
+	// near_outbox for the next flush.
+	try {
+		if (await grantStarterKit(user.id)) {
+			await Promise.race([flushOutbox(5), new Promise((r) => setTimeout(r, 4000))]);
+		}
+	} catch (e) {
+		console.error('[auth/verify] starter kit failed:', e instanceof Error ? e.message : e);
 	}
 
 	// ── Create session cookie ───────────────────────────────────────────────

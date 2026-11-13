@@ -32,7 +32,57 @@ export const users = pgTable('users', {
 	lastResearchDate: date('last_research_date'),
 	// AI Draft Agent (G-06) / Free Hit (X-11) — waiver mechanic only; nothing
 	// grants one yet, X-11's earn-path is still an open, separate question.
-	freeHitsAvailable: integer('free_hits_available').default(0)
+	freeHitsAvailable: integer('free_hits_available').default(0),
+	// NEAR account that owns this user's cars and Gears in the garage contract.
+	// Players get an implicit account (64-hex, no on-chain creation needed);
+	// bots get a named sub-account of the operator. Null until onboarded.
+	nearAccountId: text('near_account_id').unique(),
+	// Player's implicit-account private key, AES-256-GCM encrypted. The game
+	// never needs it (the operator moves tokens), but keeping it means a player
+	// can later take full custody. Null for bots.
+	nearKeyCipher: text('near_key_cipher'),
+	// In-game currency. Postgres is the read model; the contract is the record
+	// when CAR_LEDGER=near.
+	gears: integer('gears').default(0).notNull(),
+	starterKitAt: timestamp('starter_kit_at')
+});
+
+// ─── Cars ─────────────────────────────────────────────────────────────────────
+// Cosmetic, owned assets. Mirrors the NEP-245 garage contract when
+// CAR_LEDGER=near; is the only record when CAR_LEDGER=db.
+
+export const cars = pgTable('cars', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	tokenId: text('token_id').unique().notNull(), // `car:<id>`, same as on-chain
+	ownerId: uuid('owner_id')
+		.references(() => users.id)
+		.notNull(),
+	model: text('model').notNull(),
+	rarity: text('rarity').notNull(), // 'Common' | 'Rare' | 'Epic' | 'Legendary'
+	races: integer('races').default(0).notNull(),
+	wins: integer('wins').default(0).notNull(),
+	// Set while the car is staked in an open car-for-car race.
+	stakedInRace: text('staked_in_race'),
+	createdAt: timestamp('created_at').defaultNow()
+});
+
+// ─── NEAR outbox ──────────────────────────────────────────────────────────────
+// Every on-chain write goes through here, in order. The game updates Postgres
+// first and never waits on the chain to stay playable; this queue replays the
+// same change on the contract and survives a failed or slow RPC. Processed
+// oldest-first and stops at the first failure, because order matters (a car
+// must be minted before it can be traded).
+
+export const nearOutbox = pgTable('near_outbox', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	method: text('method').notNull(), // contract method, e.g. 'mint_car'
+	args: jsonb('args').notNull(),
+	status: text('status').default('pending').notNull(), // 'pending' | 'done' | 'failed'
+	attempts: integer('attempts').default(0).notNull(),
+	lastError: text('last_error'),
+	txHash: text('tx_hash'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	doneAt: timestamp('done_at')
 });
 
 // ─── Contests ─────────────────────────────────────────────────────────────────
