@@ -758,8 +758,8 @@ highlighted. A sponsored tournament shows the sponsor's name and livery througho
 
 ## 13. Not in v1 (don't design yet)
 
-Real-money wagers & KYC screens · paid tournament entry · limited cars as NFTs
-(ZetaChain cross-chain) · more tracks · multiplayer binary race (AI picks 5 coins,
+Real-money wagers & KYC screens · paid tournament entry · cars on NEAR mainnet
+(NEP-245) · more tracks · multiplayer binary race (AI picks 5 coins,
 3 rerolls) · head-to-head trivia · online-players / challenge list · extra pit-stop
 items · seasons · race replays and shareable race clips · sound & haptics settings
 beyond defaults.

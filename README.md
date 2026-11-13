@@ -5,6 +5,7 @@
 > For the current technical architecture and 0G integration detail, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 **Demo videos:**
+
 - [Coindraft Overview Demo](https://youtu.be/DVWOqzw5of8)
 - [CoinDraft Full Demo](https://youtu.be/0E16bxQnfPw)
 
@@ -133,18 +134,18 @@ What's actually built and live, not a roadmap — see [Status](#status--whats-do
 
 ## 7. Tech stack
 
-| Layer      | Choice                                          | Notes                             |
-| ---------- | ----------------------------------------------- | --------------------------------- |
-| Framework  | SvelteKit + TypeScript                          | SSR + API routes in one repo      |
-| Styling    | Tailwind CSS                                    | Utility-first                     |
+| Layer      | Choice                                          | Notes                                                     |
+| ---------- | ----------------------------------------------- | --------------------------------------------------------- |
+| Framework  | SvelteKit + TypeScript                          | SSR + API routes in one repo                              |
+| Styling    | Tailwind CSS                                    | Utility-first                                             |
 | Database   | Postgres (Supabase)                             | Migrated off Neon after repeated compute-quota exhaustion |
-| ORM        | Drizzle ORM                                     | Type-safe, lightweight            |
-| Auth       | Reown AppKit (EVM + Solana)                     | SIWE + ed25519 wallet signature   |
-| Cache      | In-memory Map (Wave 1) → Upstash Redis (Wave 2) |                                   |
-| AI         | **0G Compute Router** (testnet), Groq fallback  | Mentor, breakdown, Draft Agent, Gauntlet — see below |
-| Data       | SoSoValue API + Binance batch pricing           | Tokens, sectors, ETF, news, live prices |
-| Execution  | SoDEX API (Wave 2+)                             | On-chain price feeds, prize pools |
-| Deployment | Vercel + adapter-vercel                         | One-click CI/CD                   |
+| ORM        | Drizzle ORM                                     | Type-safe, lightweight                                    |
+| Auth       | Reown AppKit (EVM + Solana)                     | SIWE + ed25519 wallet signature                           |
+| Cache      | In-memory Map (Wave 1) → Upstash Redis (Wave 2) |                                                           |
+| AI         | **0G Compute Router** (testnet), Groq fallback  | Mentor, breakdown, Draft Agent, Gauntlet — see below      |
+| Data       | SoSoValue API + Binance batch pricing           | Tokens, sectors, ETF, news, live prices                   |
+| Execution  | SoDEX API (Wave 2+)                             | On-chain price feeds, prize pools                         |
+| Deployment | Vercel + adapter-vercel                         | One-click CI/CD                                           |
 
 ### 0G Integration
 
@@ -175,11 +176,11 @@ Everything below is independently verified — read back directly from the chain
 
 `CoinDraftAchievements` — soulbound, claim-based ERC-721 achievement badges.
 
-| | |
-| --- | --- |
+|          |                                                                                                                            |
+| -------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Contract | [`0x4d1651189e5ba8da437fdd6a689011904d742caa`](https://chainscan.0g.ai/address/0x4d1651189e5ba8da437fdd6a689011904d742caa) |
-| RPC | `https://evmrpc.0g.ai` |
-| Explorer | [chainscan.0g.ai](https://chainscan.0g.ai) |
+| RPC      | `https://evmrpc.0g.ai`                                                                                                     |
+| Explorer | [chainscan.0g.ai](https://chainscan.0g.ai)                                                                                 |
 
 Bootstrapped with all 9 achievement types **seeded with their metadata URIs already set** in the same transactions — no window where a claimed badge would resolve to empty metadata (`contracts/scripts/bootstrap-achievements.ts`): First Blood, Scrimmage Starter, Sharp Shooter, Know-It-All, On Fire, Unstoppable, Veteran, Champion, League Founder. Voucher signer authorised. Verified by pulling a real claim voucher from the live app and confirming it points at this exact contract address.
 
@@ -187,22 +188,22 @@ Bootstrapped with all 9 achievement types **seeded with their metadata URIs alre
 
 Permanent record of the AI-generated crypto vocabulary knowledge base that powers the Gauntlet quiz and Word of the Day.
 
-| | |
-| --- | --- |
-| Indexer | `https://indexer-storage-turbo.0g.ai` |
-| Root hash | `0x2c394d85db6f38e8eade1d00c81e3eb22fdeb7bf9a474bc07c05891fae277bca` |
-| Transaction | [`0x66a0c36a09e130886e72f0311341a2153bf841e552172627c9abee0774d6f13d`](https://chainscan.0g.ai/tx/0x66a0c36a09e130886e72f0311341a2153bf841e552172627c9abee0774d6f13d) |
-| Storage explorer | [storagescan.0g.ai/submission/212233](https://storagescan.0g.ai/submission/212233) |
-| Contents | 101 real, AI-generated vocabulary terms (txSeq 212233) |
+|                  |                                                                                                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Indexer          | `https://indexer-storage-turbo.0g.ai`                                                                                                                                 |
+| Root hash        | `0x2c394d85db6f38e8eade1d00c81e3eb22fdeb7bf9a474bc07c05891fae277bca`                                                                                                  |
+| Transaction      | [`0x66a0c36a09e130886e72f0311341a2153bf841e552172627c9abee0774d6f13d`](https://chainscan.0g.ai/tx/0x66a0c36a09e130886e72f0311341a2153bf841e552172627c9abee0774d6f13d) |
+| Storage explorer | [storagescan.0g.ai/submission/212233](https://storagescan.0g.ai/submission/212233)                                                                                    |
+| Contents         | 101 real, AI-generated vocabulary terms (txSeq 212233)                                                                                                                |
 
 Verified replicated across 3 independent storage nodes and downloaded back with merkle-proof verification (`indexer.download(root, path, true)`) — content confirmed intact, not just "upload returned success."
 
 ### 0G Compute
 
-| | |
-| --- | --- |
+|        |                               |
+| ------ | ----------------------------- |
 | Router | `https://router-api.0g.ai/v1` |
-| Model | `qwen3.8-flash` |
+| Model  | `qwen3.8-flash`               |
 
 Model choice is evidence-based: tested against the app's own vocab-quiz validation rules (4 distinct options, ≥6 words each, correct answer present, definition must not just restate the term) against every mainnet-catalogue candidate worth considering — `qwen3.8-flash` passed cleanly on every item; `deepseek-v4-flash` ran verbose and truncated before finishing valid JSON; `qwen3-vl-30b` is a vision-language model, not a fit for this text task.
 
@@ -421,6 +422,141 @@ npm run check     # svelte-check — should report 0 errors on a clean checkout
 
 _CoinDraft · PRD v1.0 · SoSoValue Buildathon · May 2026_
 _Solo builder · SvelteKit + Drizzle + Postgres + 0G Compute + Reown AppKit_
+
+---
+
+## Tatum x Walrus "Total Recall" Hackathon Entry
+
+**Hackathon:** [Total Recall](https://recall-tatum-walrus.vercel.app/) — Tatum x Walrus Memory Hackathon  
+**Dates:** 20 Oct – 10 Nov 2026 (3 weeks)  
+**Prize Pool:** $4,500  
+**Track:** **Track 1 — Markets & Sports Prediction** ($1,000 top prize)  
+**Special Awards:** Best Walrus Memory ($500), Best Tatum AI Builder app ($500), Best Use of Agent Payments ($500)
+
+### Why CoinDraft fits Track 1
+
+CoinDraft is a fantasy sports-style prediction game for crypto markets:
+
+- Users draft 5-token lineups across sectors (L1, L2, DeFi, Meme, Wildcard)
+- Compete head-to-head or in tournaments on real price performance
+- Post-match AI breakdown explains _why_ tokens moved (grounded in SoSoValue news)
+- Daily Gauntlet/Trivia teaches market literacy — knowledge earns draft boosts
+- Leagues, leaderboards, and win/loss records build player credibility over time
+
+### Walrus Memory Integration (required: 10+ Mainnet writes)
+
+| Memory Type         | What's Stored                              | Trigger           |
+| ------------------- | ------------------------------------------ | ----------------- |
+| Contest lineup      | 5 picks + sectors + entry prices           | On draft submit   |
+| Contest result      | Final scores, winner, per-pick P&L         | On resolution     |
+| Gauntlet answer     | Question, user answer, correct/incorrect   | On submit         |
+| Trivia session      | 8 answers, score, pass/fail, XP earned     | On completion     |
+| AI Mentor chat      | Conversation summary + key insights        | On session end    |
+| Sector boost earned | Sector, source (Gauntlet/Research), expiry | On boost grant    |
+| League standing     | Rank, W/L, points at season end            | On season close   |
+| Badge claim         | Badge type, contest/context, tx hash       | On 0G Chain claim |
+| User preferences    | Default mode, sector, duration, stake      | On settings save  |
+| Price snapshot      | Top movers at draft time                   | On draft lock     |
+
+All memories written to Walrus Mainnet via `@walrus/memory` SDK. Agent ID from Walrus Memory dashboard.
+
+### Tatum Integration
+
+- **Tatum RPC (Sui):** Read onchain data for any Sui-based tokens in draft pool (future: Sui sector support)
+- **Tatum Data APIs:** Token metadata, price history, holder analytics for drafted tokens
+- **Tatum AI Builder (optional $500 bonus):** Generate scaffolding for Walrus Memory writer + Tatum data hooks
+
+### Submission Checklist
+
+- [ ] Walrus Memory agent created on Mainnet (dashboard → delegate key = `MEMWAL_AGENT_ID`)
+- [ ] 10+ memory writes to Walrus Mainnet verified
+- [ ] Tatum RPC/Data API calls integrated where relevant
+- [ ] Blog post published: architecture, Walrus + Tatum usage, learning loop demo
+- [ ] Working demo at `coindrafts.vercel.app` + public repo
+- [ ] (Optional) Portion built via Tatum AI Builder for bonus award
+
+---
+
+## NEAR Hackathon Entry
+
+**Hackathon:** [NEAR HACKATHON](https://nearhackathon.com/) — Build What's Next  
+**Dates:** 1–14 Nov 2026 (2 weeks) — _overlaps with Tatum 1–10 Nov_  
+**Prize Pool:** $250K total (Grand $55K + 13 tracks × $10K/$3K/$2K)  
+**Track:** **Track 09 — Games With Real Economies** ($10K 1st place)  
+**Secondary Tracks:** 07 Agent Economy, 01 Unstoppable DeFi, 13 Open Innovation
+
+### Why CoinDraft fits Track 09 (Games With Real Economies)
+
+> "The economy is the gameplay. Build NPCs with wallets, player-owned markets and economies that evolve without a dev patch. Judged on the game loop, not the token — bonus if players never notice the chain."
+
+CoinDraft **is** this track:
+
+- **Game loop = economy:** Your 5-token draft lineup _is_ your car's engine; live market prices drive position on track
+- **NPCs with wallets:** Scrimmage mode pits you against a bot that drafts real lineups (bot = NPC with wallet)
+- **Player-owned markets:** Draft pool sourced from live markets; future USDC shop for cars/cosmetics/boosts
+- **Economy evolves:** Sector Wars, Whale Watch, AI Mentor — market context changes daily
+- **Chain abstraction:** Reown AppKit handles EVM + Solana; user never manages RPCs, gas, or bridges
+
+### NEAR Integration Plan (Minimum Viable for Hackathon)
+
+| NEAR Tech                          | CoinDraft Integration                                                | Effort                                                 |
+| ---------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| **NEAR Wallet (via Reown AppKit)** | Add NEAR as 3rd wallet option alongside EVM/Solana                   | Low — AppKit supports NEAR                             |
+| **NEAR Intents (Testnet)**         | Cross-chain wager settlement: USDC on Base/Solana ↔ NEAR via Intents | Medium — `SettlementProvider` interface already exists |
+| **Chain Signatures**               | Sign EVM/Solana wager txs from NEAR account (unified UX)             | Medium — replaces per-chain signing                    |
+| **NEAR AI**                        | Deploy AI Mentor/Draft Agent to NEAR AI (private, verifiable)        | Medium — pluggable `aiCompute.ts` backend              |
+| **NEP-245**                        | Game metadata for NEAR ecosystem discoverability                     | Low — JSON manifest                                    |
+| **FastAuth / Social Login**        | Email/social login option for non-crypto users                       | Low — NEAR FastAuth SDK                                |
+
+**MVP Scope (1–10 Nov overlap):**
+
+1. Add NEAR wallet connect → create NEAR account for user
+2. Deploy `CoinDraftGame` contract on NEAR testnet: records contest results, XP, badges
+3. Wire one wager settlement path through NEAR Intents testnet (XP → USDC)
+4. Demo: "Same race, now settled cross-chain via NEAR Intents"
+
+### NEAR-Specific Judging Criteria Mapping
+
+| Criterion               | CoinDraft Evidence                                                         |
+| ----------------------- | -------------------------------------------------------------------------- |
+| **Game loop design**    | Racing game where market _is_ the physics; draft→race→result in <1 min     |
+| **Real economy**        | XP → boosts/perks → better drafts → more wins; USDC shop for cosmetics     |
+| **Chain abstraction**   | Reown AppKit (EVM/Solana/NEAR); `SettlementProvider` swap for Intents      |
+| **Player-owned**        | Cars, badges (0G Chain soulbound NFTs), future USDC-purchased assets       |
+| **No dev patch needed** | Sector Wars/Whale Watch/AI Mentor update daily from live data              |
+| **Technical quality**   | SvelteKit 5, Drizzle, HMAC auth, pluggable AI, 0G Compute/Storage/Chain    |
+| **Sustainability**      | Revenue: boost/perk sales (XP/USDC), wager rake, tournament cut, track ads |
+
+### Submission Checklist
+
+- [ ] NEAR testnet account + contract deployed (`CoinDraftGame`)
+- [ ] NEAR wallet option in Reown AppKit
+- [ ] One wager settlement via NEAR Intents testnet
+- [ ] NEP-245 manifest published
+- [ ] Demo video showing NEAR integration (cross-chain wager)
+- [ ] Public repo + X post tagging @NEARProtocol
+- [ ] Submit form by 14 Nov 2026 23:59 UTC
+
+---
+
+## Future Hackathon & Grant Targets (Post-NEAR)
+
+**Immediate (reuse NEAR/Tatum demo):**
+
+- **0G Grants** — live on Compute/Storage/Chain; rare triple integration
+- **Reown AppKit Grants** — EVM + Solana + NEAR wallet abstraction case study
+- **SoSoValue Ecosystem** — flagship API consumer (5 endpoints, production)
+- **Walrus/Sui Grants** — Tatum hackathon work = Walrus Memory integration
+
+**Next Cycle (Q1 2027):**
+
+- **ETHGlobal** — Consumer/Gaming/AI track
+- **Solana Hyperdrive** — Gaming/DeFi/Consumer
+- **Base Buildathon** — USDC-native gaming economy
+- **Chainlink** — VRF/Functions/CCIP for wager settlement
+- **Polygon/Arbitrum/Optimism** — L2 gaming deployment
+- **NEAR AI Agent Hackathons** — verifiable AI agents
+- **Gitcoin QF** — crypto literacy public good (Gauntlet/Trivia)
 
 ## Building
 

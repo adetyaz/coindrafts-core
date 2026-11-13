@@ -3,7 +3,7 @@
 Single source of truth for what's done, what's left, and why. Start with the
 **Launch tracker** — it's the checklist. Everything below it is reference detail.
 
-Last updated: 2026-10-13.
+Last updated: 2026-10-25 (hackathon entry added).
 
 ---
 
@@ -39,6 +39,8 @@ Last updated: 2026-10-13.
 - [x] Gauntlet — 1 daily question + 24h sector boost (to be replaced by Trivia)
 - [x] Boost scoring — ×1.25 on movement, judged at scheduled end
 - [x] Term of the Day backend (no UI; to be folded into Trivia)
+- [x] Removed 0G everywhere (2026-10-30): AI is Groq-only; 0G Storage, the
+      on-chain achievement contract + claim flow, and the 0G wallet chains are gone
 
 ### ⬜ Left for v1 — in suggested build order
 
@@ -101,7 +103,8 @@ Last updated: 2026-10-13.
 **4. Cars & garage**
 
 - [ ] Cars stored in the database first (model, rarity tier, paint, decals,
-      owner); limited editions become NFTs later via ZetaChain (cross-chain)
+      owner); ownership can also live on NEAR as NEP-245 tokens, switchable by
+      env flag (see step 14)
 - [ ] Free starter car for every new player
 - [ ] Garage: your cars, choose the one you race, customize paint and decals
 - [ ] **Cars are cosmetic.** Speed comes only from the market, plus earned boosts
@@ -174,7 +177,157 @@ Last updated: 2026-10-13.
 - [ ] Notifications: match found · result in · trivia live / streak at risk ·
       tournament closing / starting — toggles in Me → Settings
 
-**13. Before launch**
+**13. Tatum x Walrus "Total Recall": moved to createthings (2026-10-30)**
+
+The Walrus entry is now createthings in Track 02 (Smart Agents for Real Life); its plan lives in `create-things/Project Breakdown.md`. The Walrus keys moved to that project's `.env`. CoinDraft's memory features below (race engineer, credibility, bots that remember you, race chat) stay planned and store their data in Postgres for now; Walrus can come later.
+
+_Original CoinDraft plan, kept for reference:_
+_Deadline: 10 Nov 2026, 17:00 UTC. Window opened 20 Oct; only work done since then counts_
+
+Decided 2026-10-29:
+
+- **The demo is the race.** Draft 5 coins, watch your car race on the 3D track
+  against bots or players. Memory is what makes the race smarter each time
+- **Memory = credibility + race engineer.** Every race logs your picks before the
+  start; the result is remembered; your per-sector track record updates ("sharp
+  in DeFi, shaky in Meme"); the Draft Agent recalls it before your next draft and
+  changes its advice. That is the learning loop the judges reward
+- **Bots learn too.** Bot drivers draft from remembered player behaviour, so they
+  get harder and more human over time (like other games track how you play)
+- **Race for 10 Nov (3D only):** one looping track, isometric camera (+1 more if
+  time allows), up to 5 low-poly cars placed by each lineup's live % move,
+  overtakes, nitro flame, finish line. Weather, billboards, garage and crash
+  effects come after. Three.js for the engine; Spline (and any other tool) for
+  car and track models
+- **Multiple race lengths** (e.g. 5 / 15 / 60 min on 1-minute prices, plus 24h)
+  and **spectating**: anyone can jump into a race in progress and watch it live
+- **Players see their memory:** "What the game knows about you" on the profile,
+  with a delete button
+- **Credibility is public:** "Sharp in DeFi · 71%" on the player card, plus a
+  best-callers ranking per sector
+- **A real feature**, kept after the hackathon
+- **Order:** memory + Tatum 29 Oct–1 Nov → race 2–8 Nov → blog + video 9–10 Nov
+- **One app memory account, one namespace per player.** Saves go through a queue
+  (hosted limit ≈ 12 saves/min) and are summarised per race, not per click.
+  Game data only: the hosted relayer sees plain text
+
+Build:
+
+- [ ] Create the MemWal account + delegate key at memory.walrus.xyz (mainnet)
+      _(needs you)_ → `MEMWAL_PRIVATE_KEY`, `MEMWAL_ACCOUNT_ID` server-side;
+      the public delegate key is the form's `MEMWAL_AGENT_ID`
+- [ ] `@mysten-incubation/memwal` SDK (not `@walrus/memory`, which does not exist)
+- [ ] `walrus_memories` table: local log + outbox queue (type, user, status, job id)
+- [ ] `src/lib/server/walrusMemory.ts`: `remember(type, userId, payload)` queues;
+      a flusher sends within the rate limit; `recall(userId, query)`
+- [ ] 10+ memory types, on routes that exist today:
+  - [ ] `race_entry`: lineup + start prices, written before the race (lineup submit)
+  - [ ] `race_result`: finish, score, which picks pushed or dragged (resolution)
+  - [ ] `credibility`: per-sector hit rate after each result
+  - [ ] `agent_advice`: what the Draft Agent suggested and whether you took it
+  - [ ] `nitro_used`: boost sector and whether it paid off
+  - [ ] `rps_tiebreak`: throws in a tiebreaker (players' habits)
+  - [ ] `trivia_result`: Gauntlet today, Trivia once built
+  - [ ] `tournament_result`: group / final placing
+  - [ ] `league_standing`: after league updates
+  - [ ] `badge_earned`: on badge grant
+  - [ ] `bot_profile`: the playing style a bot learned
+  - [ ] `bot_relationship`: each bot remembers each player (mood: stranger,
+        cocky, afraid, grudge, respect); bots tease, show fear or hold a grudge
+        on the grid, during overtakes and after the result, and race you
+        differently because of it. Me → Rivals list; bot chat On / Quiet / Off
+  - [ ] `player_rivalry`: head-to-head between two humans, for race chat.
+        Quick-chat lines + emotes over cars, memory-suggested taunts ("That is
+        3 in a row"), optional filtered free text, mute / block / report,
+        spectators read-only
+- [ ] Memory visibly changes the product: Draft Agent cites your history,
+      credibility badges on the player card, bots draft from memory
+- [ ] Tatum Data API (`src/lib/server/tatumData.ts`): token prices/metadata for
+      the draft pool
+- [ ] Tatum Sui RPC, used for real: read the MemWal account object on Sui and show
+      "your memory lives on-chain here"; Sui tokens in the pool if time allows
+- [ ] Verify 10+ memories on mainnet (dashboard check)
+- [ ] (Optional) Tatum AI Builder ($500 bonus)
+- [ ] Blog post: what the app does, how it uses Tatum + Walrus, how it learned
+      over time. Its link goes in the description (no blog field)
+- [ ] 2–3 min demo video; X / LinkedIn post (bonus points)
+
+---
+
+**14. NEAR Hackathon (Track 09: Games With Real Economies; also tick Track 10)**
+_Building 1–14 Nov 2026; deadline 14 Nov, 23:59 UTC. Only code written since
+1 Nov counts. Judged "on the game loop, not the token"; bonus "if players never
+notice the chain". Prizes $10K / $3K / $2K per track + $55K grand prize_
+
+Decided 2026-10-29:
+
+- **NEAR owns the economy.** Game memory (bots, rivalries, credibility) lives in
+  Postgres; the Walrus entry moved to createthings (step 13)
+- **An always-on game:** races keep running; you can join one, race bots or
+  humans, or jump in and watch
+- **Bots are NPCs:** each bot has a NEAR account, owns cars, enters races, wins
+  and loses cars. Every bot decision is remembered (Postgres), so you can see how
+  each bot has been performing: its record, its style, its form
+- **Bots have personalities and taunt you:** each bot has a name, a racing style
+  and a personality. It remembers every player it has raced (mood: stranger,
+  cocky, afraid, grudge, respect), taunts on the grid, on overtakes and after the
+  result, and races you differently because of it. Players get quick-chat taunts
+  and emotes too, with memory-suggested lines ("That is 3 in a row")
+- **Cars are NEP-245 tokens on NEAR** (replaces ZetaChain). Car-for-car races
+  (same rarity tier, winner takes the car) settled by the contract
+- **Chain is switchable:** car ownership sits behind one interface with two
+  backends: database-only or NEAR. An env flag picks which, so cars can run
+  off-chain if NEAR isn't wanted (or isn't funded)
+- **Players never see the chain:** the server creates NEAR accounts in the
+  background; no wallet popup to play
+- **Testnet for the hackathon**, mainnet at launch
+- Dropped from the old plan: wager settlement via NEAR Intents, Chain
+  Signatures, NEAR AI backend, FastAuth, badge mirroring
+
+Build (11–14 Nov; the 3D race from 2–8 Nov counts for this entry too):
+
+- [ ] Car ledger interface (`src/lib/server/cars/`): `db` and `near` backends,
+      chosen by env flag
+- [ ] `contracts/near/`: NEP-245 car contract (mint, transfer, stake-race
+      escrow + settle) → deploy to testnet, `NEAR_CONTRACT_ID`
+- [ ] Server-managed NEAR accounts for players and bots (`near_account_id` on
+      `users`)
+- [ ] Bot NPC loop: bots join races on a schedule, stake cars, win/lose them
+- [ ] Bot pages: record, style and form from memory; bot leaderboard
+- [ ] Bot personalities + per-player relationship memory + taunts (grid,
+      overtakes, results); Me → Rivals; bot chat On / Quiet / Off
+- [ ] Player quick chat + emotes over cars, memory-suggested taunts; mute/block
+- [ ] Car-for-car race: stake → race → contract moves the car
+- [ ] README rewritten to match what is built (their AI check compares them)
+- [ ] Demo video + X post saying it was built at NEAR HACKATHON; submit by 14 Nov
+
+---
+
+### Future Hackathon & Grant Opportunities (Post-NEAR, Tier 2/3)
+
+**Tier 2 — Apply Immediately After NEAR (leverage same demo/repo):**
+
+| Opportunity                    | Deadline | Track Fit               | Prep Needed                                                  |
+| ------------------------------ | -------- | ----------------------- | ------------------------------------------------------------ |
+| **Reown AppKit Grants**        | Rolling  | Wallet UX / Multi-chain | ✅ EVM + Solana + NEAR via AppKit — write case study         |
+| **SoSoValue Ecosystem Grants** | Unknown  | Data + Consumer         | ✅ 5 endpoints, cached, rate-limit aware — flagship consumer |
+| **Walrus / Sui Grants**        | Rolling  | Memory + Gaming         | ✅ Tatum hackathon work = Walrus Memory integration          |
+
+**Tier 3 — Next Cycle (Q1 2027):**
+
+| Hackathon                                | Timeline  | Track Fit                    | CoinDraft Angle                                                     |
+| ---------------------------------------- | --------- | ---------------------------- | ------------------------------------------------------------------- |
+| **ETHGlobal** (Bangkok/Next)             | Periodic  | Consumer / Gaming / AI       | Racing game + AI agents + NEAR car economy                          |
+| **Solana Hyperdrive / Grizzlython**      | ~Q1 2027  | Gaming / DeFi / Consumer     | Native Solana wallet + USDC shop + multi-chain                      |
+| **Base Buildathon / Onchain Summer**     | Seasonal  | Consumer / Gaming / Payments | USDC-native economy, Base wallet, "real economies"                  |
+| **Chainlink Buildathon**                 | Periodic  | Gaming / Data                | VRF for fair bot drafts, Functions for prices, CCIP for cross-chain |
+| **Polygon / Arbitrum / Optimism Grants** | Rolling   | Gaming / Consumer            | Deploy racing contracts + USDC economy on L2                        |
+| **NEAR AI Agent Hackathons**             | Periodic  | AI Agents                    | AI Mentor + Draft Agent as verifiable NEAR AI agents                |
+| **Gitcoin Grants / QF Rounds**           | Quarterly | Public Goods / Education     | Gauntlet/Trivia = crypto literacy public good                       |
+
+**Double-Dip Strategy:** Submit same repo/demo to **NEAR Track 09 + Reown Grant + Walrus/Sui Grants**. Narrative: _"Market-driven racing game with a NEAR car economy, Walrus Memory learning loop and multi-chain wallet sign-in."_
+
+**15. Before launch**
 
 - [ ] End-to-end test of the full v1 flow _(needs you)_
 - [ ] Domain + name decision _(needs you)_
@@ -187,7 +340,7 @@ Last updated: 2026-10-13.
 
 - [ ] Real-money wagers + escrow + in-house KYC (planned $25 cap)
 - [ ] Paid tournament entry
-- [ ] Limited-edition cars as NFTs, cross-chain via ZetaChain
+- [ ] Cars on NEAR mainnet (testnet during the hackathon)
 - [ ] More tracks
 - [ ] Multiplayer binary race — AI picks 5 coins (one per sector) from cached
       news, 3 rerolls
@@ -214,8 +367,8 @@ wherever they conflict.
   market and from earned or small-purchase boosts/perks.
 - **Car wagering:** stake a car against one of the same rarity tier, winner takes
   it — details left open.
-- **Ownership:** database first; limited editions become NFTs later, cross-chain
-  via ZetaChain.
+- **Ownership:** database or NEAR (NEP-245), switchable by env flag. ZetaChain
+  dropped 2026-10-29.
 - **Views:** multiple 3D camera views, isometric as the default.
 - **Money:** cars, limited editions and customization (USDC); nitro and pit-stop
   items; sponsored tournaments; paid banner and billboard slots on tracks; later,
@@ -310,7 +463,7 @@ Status legend: ✅ built & verified · 🟡 built, gaps or unverified in a real 
    styling on `/share/[id]` **and** in every `Toast.svelte` toast (info/error/
    success) — missed across two brand-color changes since.
 8. No rate limiting on `/api/breakdown` — an authenticated user can trigger it
-   arbitrarily (real cost on 0G mainnet if that path is ever flagged on), and it
+   arbitrarily, and it
    regenerates on every result-page view despite its input being immutable once a
    contest resolves — never cached.
 9. Result card SVG (`resultCard.ts`) duplicates sector hex values from
@@ -388,8 +541,7 @@ later, rematch loop with head-to-head record + hourly cap. **Real escrow is the
 one genuinely unbuilt piece.**
 
 Escrow research to date assumed CoinDraft would build its own settlement (on-chain
-non-custodial vs. custodial DB-backed, with 0G's own hybrid deposit/off-chain-debit
-Payment Layer pattern as a reference to copy). **This is now superseded by the
+non-custodial vs. custodial DB-backed). **This is now superseded by the
 actual decision: a third-party escrow provider**, chosen specifically so CoinDraft
 never custodies funds. That changes what needs deciding — evaluate providers
 against the same open risks the internal research already surfaced:
@@ -412,8 +564,7 @@ everyone drafts against the same published bot lineup as a common yardstick,
 everyone who beats it splits the pool (rake to CoinDraft). Economically
 peer-to-peer, auditable, no house position. Not built, not yet ticketed.
 
-Gasless transactions: ERC-4337 EntryPoint contracts are confirmed deployed on both
-0G mainnet and testnet, so gasless is technically possible but needs a
+Gasless transactions: possible via ERC-4337, but needs a
 self-run bundler + paymaster — real infra work, not a config flag. Deliberately
 staged: XP first (done), then real gas-paid-by-player escrow, then a paymaster
 only if UX friction actually demands it. One sharp point worth keeping: making
@@ -429,7 +580,7 @@ below) — re-verify the settle-before-`endAt` item before shipping real money.
 
 ### AI Draft Agent
 
-🟡 Built and live-verified (0G Compute backend, same call shape as `/api/breakdown`). Full
+🟡 Built and live-verified (Groq, same call shape as `/api/breakdown`). Full
 auto-draft confirmed real (not just single-pick nudging), XP cost 15/slot charged
 upfront, disclosure required before use, cross-slot duplicate-token bug fixed with
 a shared `used` set, incorrectly charging XP even in Scrimmage mode fixed via an
@@ -454,15 +605,11 @@ live-data grading bug and the UTC day-boundary bug.
 ### AI Mentor
 
 ⛔ **Removed 2026-09-26** — route, page, and nav links deleted. Was built,
-streaming, Groq-backed with 0G Compute as an optional flag.
+streaming, Groq-backed.
 
 ### Breakdown
 
-✅ Built, Groq-backed with 0G Compute as an optional flag (confirmed live via
-direct API test — real completion, real billing — but `USE_0G_COMPUTE` defaults
-off and is never exercised through the app itself). Testnet's only available chat
-model is materially weaker than Groq's default; the quality/latency comparison the
-original plan called for has never been run. See known issues above for the
+✅ Built, Groq-backed. See known issues above for the
 missing rate-limiting and caching gaps.
 
 ### Research Hub / Knowledge Base
@@ -645,9 +792,7 @@ thread, nothing new to report.
 
 ## 4. What's intentionally not in this document
 
-- Everything under `docs-project/0g/` and `docs-project/infra/` — 0G-specific
-  integration detail and the old multi-repo migration plan. Relevant to the
-  planned chain-agnostic rework, not to this consolidation pass.
+- Everything under `docs-project/infra/` — the old multi-repo migration plan.
 - Compliance/jurisdiction and KYC/gasless-infrastructure research — tracked as
   their own separate workstreams, not feature status.
 - The product pitch/positioning — deliberately deferred to its own session, using
