@@ -349,7 +349,7 @@ time, plain functional layouts until the new design system lands.
 - [x] 6. Car races for players (stake a car, same rarity) — F3 _(bot opponents; player-vs-player matching later)_
 - [x] 7. Daily trivia (8 questions) and nitro / pit-stop items in the pre-race tray — F7, F8
 - [x] 8. Tournaments: pots and draw, groups of 5 with bots, Gears prizes, marquee finals, auto cups — F4
-- [x] 9. Leagues: league night, home track, monthly seasons — F5 _(needs scripts/migrate-step9.sql)_
+- [x] 9. Leagues: league night, home track, monthly seasons — F5
 - [ ] 10. Profile, player cards, bot cards — F6
 - [ ] 11. Binary race mode — F9
 - [ ] 12. The bots' daily life (one bot day per day, automatically) — F10
