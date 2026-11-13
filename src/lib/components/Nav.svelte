@@ -202,6 +202,8 @@
 		return null;
 	}
 
+	let welcomeNext = false;
+
 	async function signAndVerifyEvm(address: string, provider: MaybeEthereum): Promise<boolean> {
 		const nonceRes = await fetch('/api/auth/nonce');
 		if (!nonceRes.ok) return false;
@@ -233,10 +235,10 @@
 			body: JSON.stringify({ type: 'evm', address, message, signature })
 		});
 
-		if (!verifyRes.ok) {
-			const payload = await verifyRes.json().catch(() => ({}));
-			signErrorMessage = payload?.error ?? '';
-		}
+		const payload = await verifyRes.json().catch(() => ({}));
+		if (!verifyRes.ok) signErrorMessage = payload?.error ?? '';
+		// First sign-in: the first-car reveal, not a reload in place.
+		if (verifyRes.ok && payload?.welcome) welcomeNext = true;
 		return verifyRes.ok;
 	}
 
@@ -295,7 +297,8 @@
 				console.log('[Auth] Success! Reloading page');
 				signError = false;
 				await invalidateAll();
-				window.location.reload();
+				if (welcomeNext) window.location.href = '/welcome';
+				else window.location.reload();
 			} else {
 				signError = true;
 			}

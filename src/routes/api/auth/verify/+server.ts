@@ -107,8 +107,12 @@ export async function POST({ request, cookies }) {
 	// fail or stall the login: the grant is Postgres-only, and the on-chain copy
 	// gets at most a few seconds here — anything left stays queued in
 	// near_outbox for the next flush.
+	// `welcome` is true only on the sign-in that hands out the starter kit, so the
+	// browser can show the first-car reveal (GAMEPLAY_FLOWS.md, F1).
+	let welcome = false;
 	try {
-		if (await grantStarterKit(user.id)) {
+		welcome = await grantStarterKit(user.id);
+		if (welcome) {
 			await Promise.race([flushOutbox(5), new Promise((r) => setTimeout(r, 4000))]);
 		}
 	} catch (e) {
@@ -127,6 +131,7 @@ export async function POST({ request, cookies }) {
 
 	return json({
 		ok: true,
+		welcome,
 		user: { id: user.id, username: user.username, walletAddress: user.walletAddress }
 	});
 }

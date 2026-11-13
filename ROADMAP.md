@@ -343,7 +343,7 @@ time, plain functional layouts until the new design system lands.
 
 - [x] 1. Real circuits on the 3D track (Monza, Suzuka, Spa, Interlagos from measured data) — F2
 - [x] 2. Race stages: car step (last-used pre-selected), track step, pre-race screen, podium — F2
-- [ ] 3. First sign-in: your first car reveal, racing name, straight into a 1-minute race — F1
+- [x] 3. First sign-in: your first car reveal, racing name, straight into a 1-minute race — F1
 - [ ] 4. Landing: live race hero, "Run your game", "Back your takes" — F1
 - [ ] 5. Showroom, customising, Sell now, car history (Gears sinks) — F3
 - [ ] 6. Car races for players (stake a car, same rarity) — F3
