@@ -271,7 +271,45 @@ mood towards you** and your record, and its recent Car Market moves with their r
 
 ---
 
+## F7 — Daily trivia ✅
+
+Built today: the Gauntlet — one question a day; a right answer gives XP and an automatic 24-hour
+sector boost. Retired by this flow.
+
+1. **Today's trivia:** 8 questions, about 1 minute in total, on the dashboard with your streak.
+2. Start → questions one after another; a tap locks the answer, a quick right/wrong, then the next.
+3. Time runs out → the remaining questions count as wrong.
+4. **Result:** score X/8. **Pass at 4/8** → XP, and your **streak grows only on a pass**.
+5. **Rewards:** a perfect **8/8 earns a Nitro canister**; a **7-day streak earns a pit-stop item**.
+6. Already played today → your result and a countdown to the next set.
+
+---
+
+## F8 — Nitro & pit-stop ✅
+
+Items you choose to use, not boosts that happen to you. Built today: an automatic ×1.25 sector boost
+for 24 hours, and a "Free Hit" that only waives the AI draft agent's cost. Both are replaced.
+
+### The items
+
+| Item                          | What it does in one race                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
+| **Nitro**                     | Choose a sector; that sector's coin counts **×1.25**. Shows as the flame on your car |
+| **Turbo** (was Captain)       | Choose one coin; its move counts **double**                                          |
+| **Spare Tyre** (was Free Hit) | **Swap one coin** during the first 10% of the race                                   |
+| **Shield**                    | Your **worst coin's loss is halved**                                                 |
+
+### Rules
+
+- **One item per race** (nitro and pit-stop items can't be combined), **max 3 per week**.
+- Used in the **pre-race screen** (F2, step 6): a tray of what you own → choose one → choose its
+  sector or coin → it's locked in for the race and shown on the result.
+- **Getting items:** trivia (8/8 → Nitro), streaks (7 days → a pit-stop item), XP levels, or **buy
+  with Gears** in the Showroom — still within the weekly cap, so nobody buys a win. Gears come from
+  racing, never from money.
+
+---
+
 ## Still to discuss ⏳
 
-Simulate a week · Daily trivia · Binary race mode · Nitro & pit-stop · PWA & notifications ·
-Sponsors & track ads.
+Simulate a week · Binary race mode · PWA & notifications · Sponsors & track ads.
