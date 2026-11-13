@@ -53,7 +53,33 @@ export const users = pgTable('users', {
 	items: jsonb('items').$type<Partial<Record<string, number>>>(),
 	// Daily trivia: consecutive days passed, and the last day passed (UTC).
 	triviaStreak: integer('trivia_streak').default(0).notNull(),
-	triviaLastPass: date('trivia_last_pass')
+	triviaLastPass: date('trivia_last_pass'),
+	// Me (GAMEPLAY_FLOWS.md, F6): the car and up to 3 badges shown on your card,
+	// and your settings.
+	showcaseCarId: uuid('showcase_car_id'),
+	showcaseBadges: jsonb('showcase_badges').$type<string[]>(),
+	settings: jsonb('settings').$type<{
+		botChat?: 'on' | 'quiet' | 'off';
+		notifications?: boolean;
+		reducedMotion?: boolean;
+	}>()
+});
+
+// A Versus invite from a player card (F6): race me, on these terms.
+export const challenges = pgTable('challenges', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	fromUserId: uuid('from_user_id')
+		.references(() => users.id)
+		.notNull(),
+	toUserId: uuid('to_user_id')
+		.references(() => users.id)
+		.notNull(),
+	durationMinutes: integer('duration_minutes').default(15).notNull(),
+	message: text('message'),
+	status: text('status').default('pending').notNull(), // 'pending' | 'accepted' | 'declined' | 'expired'
+	contestId: uuid('contest_id'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	respondedAt: timestamp('responded_at')
 });
 
 // ─── Cars ─────────────────────────────────────────────────────────────────────

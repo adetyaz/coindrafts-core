@@ -9,6 +9,13 @@
 	let tickerItems = $state<string[]>([]);
 
 	onMount(async () => {
+		// Me → Settings → Reduce motion, remembered in this browser (see layout.css).
+		try {
+			if (localStorage.getItem('reducedMotion') === '1')
+				document.documentElement.dataset.reducedMotion = '';
+		} catch {
+			// Storage blocked: the OS-level prefers-reduced-motion still applies.
+		}
 		try {
 			const res = await fetch('/api/tokens');
 			if (res.ok) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerLink from '$lib/components/ui/PlayerLink.svelte';
 	// One tournament (GAMEPLAY_FLOWS.md, F4): registration → the draw → groups →
 	// final → podium. The draw animates the first time you see it (pots fill the
 	// groups seat by seat) and the page is shareable as is.
@@ -162,7 +163,7 @@
 	>
 		<span class="flex min-w-0 items-center gap-2">
 			{#if s.rank}<span class="w-5 font-mono text-xs font-bold">{s.rank}</span>{/if}
-			<span class="truncate font-bold">{s.isMe ? 'You' : s.username}</span>
+			<PlayerLink id={s.userId} name={s.isMe ? 'You' : s.username} class="truncate font-bold" />
 			{#if s.isBot}<span
 					class="rounded px-1.5 py-0.5 text-[9px] font-extrabold {s.isMe
 						? 'bg-surface text-text'

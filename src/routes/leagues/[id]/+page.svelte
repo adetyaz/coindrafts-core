@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerLink from '$lib/components/ui/PlayerLink.svelte';
 	import { onMount, type ComponentProps } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -134,7 +135,11 @@
 										? 'color:var(--color-primary-ink)'
 										: 'color:var(--color-text-muted)'}>{i + 1}</span
 								>
-								<span class="truncate text-sm font-bold">{member.username}</span>
+								<PlayerLink
+									id={member.userId}
+									name={member.username}
+									class="truncate text-sm font-bold"
+								/>
 								<span class="text-right font-mono text-sm font-bold text-positive-ink"
 									>{member.wins}</span
 								>

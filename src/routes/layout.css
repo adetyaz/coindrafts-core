@@ -253,6 +253,15 @@ body {
 	animation: cd-float2 6s ease-in-out infinite;
 }
 
+/* Me → Settings → Reduce motion: the same, chosen in the app. */
+:root[data-reduced-motion] *,
+:root[data-reduced-motion] *::before,
+:root[data-reduced-motion] *::after {
+	animation-duration: 0.01ms !important;
+	animation-iteration-count: 1 !important;
+	transition-duration: 0.01ms !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.anim-marquee,
 	.anim-pulse,

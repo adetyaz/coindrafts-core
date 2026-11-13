@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerLink from '$lib/components/ui/PlayerLink.svelte';
 	// A multi-car race: a tournament group or final (GAMEPLAY_FLOWS.md, F4).
 	// Draft wait → pre-race grid → the race on the stage's circuit → standings.
 	// Same 3D track and item maths as 1v1 races.
@@ -276,7 +277,7 @@
 							>{race.status === 'resolved' ? d.rank : i + 1}</span
 						>
 						<span class="flex-1 font-black"
-							>{d.isMe ? 'You' : d.name}
+							><PlayerLink id={d.userId} name={d.isMe ? 'You' : d.name} />
 							{#if d.isBot}<span
 									class="ml-1 rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
 									>BOT</span

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { users } from '$lib/server/schema';
+import { cars, userBadges, users } from '$lib/server/schema';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { parseSessionToken } from '$lib/server/auth';
 
@@ -32,9 +32,10 @@ export async function GET({ cookies }) {
 	});
 }
 
-// PATCH { username }: set your racing name (first sign-in, or Me → Profile).
-// Bots and opponents say it out loud, so it has to read like a name.
+// PATCH: any of { username, showcaseCarId, showcaseBadges, settings }.
+// Username: bots and opponents say it out loud, so it has to read like a name.
 const NAME = /^[A-Za-z0-9_]{3,20}$/;
+const BOT_CHAT = ['on', 'quiet', 'off'];
 
 export async function PATCH({ request, cookies }) {
 	const token = cookies.get('session');
@@ -42,21 +43,66 @@ export async function PATCH({ request, cookies }) {
 	if (!parsed) return json({ error: 'Unauthorized' }, { status: 401 });
 
 	const body = await request.json().catch(() => ({}));
-	const username = String(body?.username ?? '').trim();
-	if (!NAME.test(username)) {
-		return json(
-			{ error: 'Use 3–20 letters, numbers or underscores (no spaces).' },
-			{ status: 400 }
-		);
-	}
-	// Case-insensitive, so "Tayo" and "tayo" can't both exist.
-	const [taken] = await db
-		.select({ id: users.id })
-		.from(users)
-		.where(and(sql`lower(${users.username}) = lower(${username})`, ne(users.id, parsed.userId)))
-		.limit(1);
-	if (taken) return json({ error: 'That name is taken — try another.' }, { status: 409 });
+	const set: Partial<typeof users.$inferInsert> = {};
 
-	await db.update(users).set({ username }).where(eq(users.id, parsed.userId));
-	return json({ ok: true, username });
+	if (body.username !== undefined) {
+		const username = String(body.username ?? '').trim();
+		if (!NAME.test(username)) {
+			return json(
+				{ error: 'Use 3–20 letters, numbers or underscores (no spaces).' },
+				{ status: 400 }
+			);
+		}
+		// Case-insensitive, so "Tayo" and "tayo" can't both exist.
+		const [taken] = await db
+			.select({ id: users.id })
+			.from(users)
+			.where(and(sql`lower(${users.username}) = lower(${username})`, ne(users.id, parsed.userId)))
+			.limit(1);
+		if (taken) return json({ error: 'That name is taken — try another.' }, { status: 409 });
+		set.username = username;
+	}
+
+	if (body.showcaseCarId !== undefined) {
+		if (body.showcaseCarId === null) set.showcaseCarId = null;
+		else {
+			const [car] = await db
+				.select({ id: cars.id })
+				.from(cars)
+				.where(and(eq(cars.id, String(body.showcaseCarId)), eq(cars.ownerId, parsed.userId)));
+			if (!car) return json({ error: "That isn't your car" }, { status: 400 });
+			set.showcaseCarId = car.id;
+		}
+	}
+
+	if (body.showcaseBadges !== undefined) {
+		const wanted = Array.isArray(body.showcaseBadges) ? body.showcaseBadges.map(String) : [];
+		const earned = new Set(
+			(
+				await db
+					.select({ code: userBadges.badgeCode })
+					.from(userBadges)
+					.where(eq(userBadges.userId, parsed.userId))
+			).map((b) => b.code)
+		);
+		set.showcaseBadges = wanted.filter((c: string) => earned.has(c)).slice(0, 3);
+	}
+
+	if (body.settings && typeof body.settings === 'object') {
+		const [cur] = await db
+			.select({ settings: users.settings })
+			.from(users)
+			.where(eq(users.id, parsed.userId));
+		const next = { ...(cur?.settings ?? {}) };
+		if (BOT_CHAT.includes(body.settings.botChat)) next.botChat = body.settings.botChat;
+		if (typeof body.settings.notifications === 'boolean')
+			next.notifications = body.settings.notifications;
+		if (typeof body.settings.reducedMotion === 'boolean')
+			next.reducedMotion = body.settings.reducedMotion;
+		set.settings = next;
+	}
+
+	if (!Object.keys(set).length) return json({ error: 'Nothing to change' }, { status: 400 });
+	await db.update(users).set(set).where(eq(users.id, parsed.userId));
+	return json({ ok: true, ...set });
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerLink from '$lib/components/ui/PlayerLink.svelte';
 	import { onMount } from 'svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import { toast } from '$lib/toast';
@@ -67,7 +68,9 @@
 							>
 						{/if}
 					</div>
-					<div class="text-xl font-extrabold tracking-[-0.02em]">{row.username}</div>
+					<div class="text-xl font-extrabold tracking-[-0.02em]">
+						<PlayerLink id={row.id} name={row.username} />
+					</div>
 					<div
 						class="mt-1 font-mono text-[13px]"
 						style={i === 0 ? 'opacity:0.72' : 'color:var(--color-text-muted)'}
@@ -97,7 +100,7 @@
 						<span class="font-mono text-sm font-bold text-text-muted">{row.rank}</span>
 						<div class="min-w-0">
 							<p class="truncate text-sm font-bold">
-								{row.username}{#if row.isMe}<span
+								<PlayerLink id={row.id} name={row.username} />{#if row.isMe}<span
 										class="ml-2 rounded-full bg-primary px-2 py-0.5 text-[9px] font-extrabold tracking-[0.1em] text-text uppercase"
 										>You</span
 									>{/if}
