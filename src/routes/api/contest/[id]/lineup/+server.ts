@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { contests, lineups, lineupPicks } from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
+import { getAllPrices } from '$lib/server/prices';
 import { pickScrimmageBot, draftBotLineup } from '$lib/server/botDraft';
 import { DEFAULT_DURATION_MINUTES } from '$lib/constants';
 
@@ -68,10 +69,18 @@ export async function POST({ params, request, cookies }) {
 	// prices silently landing on $0 under any rate-limit blip: extractPrice()
 	// treats a failed fetch as "$0", not "unknown", and a $0 entry gets
 	// filtered out of the race chart client-side, making it read as blank.
+	//
+	// Entry is locked from the same 10s batch that prices the exit at
+	// resolution (contest-resolution.ts). The token pool above it is cached for
+	// 60s, which is fine for a 24h race but in a 1-minute sprint would measure
+	// partly the minute *before* the race. The pool is the fallback.
+	const fresh = await getAllPrices().catch(() => null);
 	const priceByCurrency = new Map(
 		(await getTokensWithPrices()).map((t) => [t.currency_id, t.price])
 	);
-	async function priceFor(currencyId: string): Promise<number> {
+	async function priceFor(currencyId: string, symbol: string): Promise<number> {
+		const live = fresh?.get(symbol.toUpperCase())?.price;
+		if (live != null && live > 0) return live;
 		const cached = priceByCurrency.get(currencyId);
 		if (cached != null && cached > 0) return cached;
 		// Rare fallback — a token that's dropped out of the pool since the user
@@ -94,7 +103,7 @@ export async function POST({ params, request, cookies }) {
 		score: string;
 	}[] = [];
 	for (const pick of picks) {
-		const entryPrice = await priceFor(String(pick.currencyId));
+		const entryPrice = await priceFor(String(pick.currencyId), String(pick.symbol ?? ''));
 		pickRows.push({
 			tokenSymbol: String(pick.symbol ?? '').toUpperCase(),
 			tokenName: String(pick.name ?? pick.symbol ?? ''),
@@ -155,7 +164,9 @@ export async function POST({ params, request, cookies }) {
 					.returning({ id: lineups.id });
 
 				for (const p of botPicks) {
-					const entryPrice = p.price ?? 0;
+					// Same fresh batch as the player's entry, so both sides start from
+					// prices taken at the same moment.
+					const entryPrice = fresh?.get(p.symbol.toUpperCase())?.price ?? p.price ?? 0;
 					await db.insert(lineupPicks).values({
 						lineupId: botLineup.id,
 						tokenSymbol: p.symbol.toUpperCase(),

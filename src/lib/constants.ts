@@ -18,8 +18,12 @@ export const SECTORS: Sector[] = [
 // list is the matching vocabulary as much as it is a UI menu — every extra
 // option splits the pool, which is why it's a fixed set rather than free entry.
 
-/** Hard floor for any game. */
-export const MIN_DURATION_MINUTES = 10;
+/**
+ * Hard floor for any game. One minute: a sprint you can watch start to finish
+ * on the 3D track (and in a demo). Scoring stays fair at that length because
+ * moves are scaled by the square root of time (scoring.ts → durationScale).
+ */
+export const MIN_DURATION_MINUTES = 1;
 
 export interface DurationOption {
 	minutes: number;
@@ -29,6 +33,8 @@ export interface DurationOption {
 }
 
 export const DURATION_OPTIONS: DurationOption[] = [
+	{ minutes: 1, label: '1 min', type: 'daily' },
+	{ minutes: 5, label: '5 min', type: 'daily' },
 	{ minutes: 10, label: '10 min', type: 'daily' },
 	{ minutes: 20, label: '20 min', type: 'daily' },
 	{ minutes: 45, label: '45 min', type: 'daily' },

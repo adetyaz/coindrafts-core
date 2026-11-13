@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { contests, lineups, lineupPicks, users, priceSamples, stakes } from '$lib/server/schema';
 import { parseSessionToken } from '$lib/server/auth';
 import { getSnapshot, extractPrice, getTokensWithPrices } from '$lib/server/sosovalue';
+import { getAllPrices } from '$lib/server/prices';
 
 // Don't re-sample more often than this. Two players watching the same game
 // would otherwise each write a full set of rows every poll.
@@ -58,10 +59,19 @@ export async function GET({ params, cookies }) {
 	// a rate-limited fetch used to silently fall back to "0% move" for that
 	// tick, and under sustained rate-limiting that's every tick, every pick —
 	// a real, drawn line that just never moves.
+	// Fresh 10s batch first (same source as entry and exit), so a short race
+	// doesn't sit on a 60s-old pool price.
+	const fresh = await getAllPrices().catch(() => null);
 	const priceByCurrency = new Map(
 		(await getTokensWithPrices()).map((t) => [t.currency_id, t.price])
 	);
-	async function currentPriceFor(currencyId: string, fallback: number): Promise<number> {
+	async function currentPriceFor(
+		currencyId: string,
+		symbol: string,
+		fallback: number
+	): Promise<number> {
+		const live = fresh?.get(symbol.toUpperCase())?.price;
+		if (live != null && live > 0) return live;
 		const cached = priceByCurrency.get(currencyId);
 		if (cached != null && cached > 0) return cached;
 		// Rare fallback — a token the batch pool doesn't currently carry.
@@ -94,7 +104,7 @@ export async function GET({ params, cookies }) {
 		const enriched = await Promise.all(
 			picks.map(async (p) => {
 				const entry = Number(p.entryPrice ?? 0);
-				const current = await currentPriceFor(p.currencyId, entry);
+				const current = await currentPriceFor(p.currencyId, p.tokenSymbol, entry);
 				const pct = entry > 0 ? ((current - entry) / entry) * 100 : 0;
 				return {
 					sector: p.sector,

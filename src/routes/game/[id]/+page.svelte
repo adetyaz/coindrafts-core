@@ -43,6 +43,7 @@
 	let phase = $state<'loading' | 'waiting' | 'start' | 'racing' | 'error'>('loading');
 	let errorMessage = $state('');
 	let msRemaining = $state(0);
+	let leaving = false;
 
 	// Rebuilt from server-stored samples on every poll, so the line survives a
 	// refresh and both players see the same race. Each entry is one sampled
@@ -81,7 +82,15 @@
 			msRemaining = data.msRemaining ?? 0;
 
 			if (data.status === 'resolved' || data.finished) {
-				window.location.href = `/contest/result?contestId=${contestId}`;
+				// Watching the race: hold on the chequered flag while the cars roll to
+				// a stop, then go to the result. Anywhere else, go straight there.
+				if (phase === 'racing' && !leaving) {
+					leaving = true;
+					msRemaining = 0;
+					setTimeout(() => (window.location.href = `/contest/result?contestId=${contestId}`), 4000);
+				} else if (phase !== 'racing') {
+					window.location.href = `/contest/result?contestId=${contestId}`;
+				}
 				return;
 			}
 
