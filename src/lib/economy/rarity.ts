@@ -1,11 +1,15 @@
 import type { Rarity } from './rules';
 
-/** Badge colours per tier, from the design tokens in layout.css. */
+/**
+ * Badge backgrounds per tier, from the design tokens in layout.css. Light
+ * tints, because the label text is ink: under Meadow `border-strong` became
+ * ink, and Common badges turned into black-on-black blanks.
+ */
 export const RARITY_COLOR: Record<Rarity, string> = {
-	Common: 'var(--color-border-strong)',
-	Rare: 'var(--color-blue)',
-	Epic: 'var(--color-rps-lizard)',
-	Legendary: 'var(--color-amber)'
+	Common: 'var(--color-bg)',
+	Rare: 'var(--color-sky-tint)',
+	Epic: 'var(--color-lavender)',
+	Legendary: 'var(--color-butter)'
 };
 
 export function rarityColor(rarity: string): string {

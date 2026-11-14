@@ -59,6 +59,26 @@ export function vehicleFor(model: string | null | undefined): Vehicle | null {
 	return MODEL_VEHICLE[model] ?? null;
 }
 
+/**
+ * Each vehicle's own body colour (from the pack), for a car with no paint
+ * chosen. The pictures are rendered with a light-grey body so any colour can
+ * be multiplied on; without this, unpainted cars came out grey.
+ */
+export const FACTORY_PAINT: Record<Vehicle, string> = {
+	'car-a01-2': '#2b4a6b',
+	'car-a01-3': '#b8bcc2',
+	'car-a02-2': '#e0a23a',
+	'car-a02-3': '#2f8a63',
+	'car-a03': '#8a2f2f',
+	'tractor-a01': '#5a5d61',
+	'tractor-a02': '#e0a23a',
+	'tractor-a03': '#8a2f2f',
+	'truck-a01': '#7a3030',
+	'truck-a02': '#3d4650',
+	'truck-a03': '#e0a23a',
+	'truck-a04': '#2b4a6b'
+};
+
 /** Pictures for flat screens (garage, Showroom, cards): the vehicle, and where its paint goes. */
 export function vehicleSprite(v: Vehicle): { picture: string; paint: string } {
 	return {

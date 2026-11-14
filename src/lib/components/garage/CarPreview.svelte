@@ -4,7 +4,7 @@
 	// the same model, assets-src/render_sprites.py), with the paint multiplied
 	// onto the body through a mask. Without one, a side-on SVG drawing.
 	import { paintColor, type CarLook } from '$lib/economy/rules';
-	import { vehicleFor, vehicleSprite } from '$lib/race/vehicles';
+	import { FACTORY_PAINT, vehicleFor, vehicleSprite } from '$lib/race/vehicles';
 
 	let {
 		look = {},
@@ -18,7 +18,7 @@
 	const vehicle = $derived(vehicleFor(model));
 	const sprite = $derived(vehicle ? vehicleSprite(vehicle) : null);
 	// No paint chosen: the vehicle keeps its own factory colour.
-	const paint = $derived(paintColor(look));
+	const paint = $derived(paintColor(look) ?? (vehicle ? FACTORY_PAINT[vehicle] : null));
 </script>
 
 {#if sprite}

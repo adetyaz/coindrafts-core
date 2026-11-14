@@ -233,7 +233,7 @@
 								look={isOpen && open?.panel === 'customise' ? draft : car.look}
 								model={car.model}
 							/>
-							<div class="min-w-0 flex-1">
+							<div class="min-w-[11rem] flex-1">
 								<div class="flex items-start justify-between gap-2">
 									<div>
 										<div class="text-xl font-black tracking-[-0.02em]">{car.model}</div>
