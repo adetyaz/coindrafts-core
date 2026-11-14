@@ -129,7 +129,7 @@
 							: ''}"
 					>
 						<div class="w-full [&>svg]:h-auto [&>svg]:w-full">
-							<CarPreview look={car.look ?? {}} />
+							<CarPreview look={car.look ?? {}} model={car.model} />
 						</div>
 						<div class="flex items-center justify-between gap-2">
 							<span class="font-display text-xl font-extrabold">{car.model}</span>

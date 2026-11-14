@@ -103,7 +103,7 @@
 				<!-- The reveal: your car drives in over the grass. -->
 				<div class="m-card mt-6 overflow-hidden !p-0">
 					<div class="m-sky relative px-4 pt-8">
-						<div class="anim-drive mx-auto w-fit"><CarPreview size={260} /></div>
+						<div class="anim-drive mx-auto w-fit"><CarPreview size={260} model="Viper" /></div>
 					</div>
 					<div class="m-ground h-5"></div>
 					<div class="flex flex-wrap items-center justify-between gap-3 p-5">

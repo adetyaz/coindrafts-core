@@ -160,7 +160,7 @@
 				<div class="mt-4 flex justify-center">
 					<!-- The car's paint is a token in the app; the preview shows your exact colour. -->
 					<div style="--color-coral:{livery}">
-						<CarPreview look={{ paint: 'coral' }} size={240} />
+						<CarPreview look={{ paint: 'coral' }} size={240} model="Apex" />
 					</div>
 				</div>
 			</div>

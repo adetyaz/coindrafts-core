@@ -196,7 +196,7 @@
 		<!-- Your driver card: the car in its garage, your name, your XP. -->
 		<section class="m-card overflow-hidden !p-0" aria-label="Your driver card">
 			<div class="m-sky flex justify-center px-4 pt-6 [&>svg]:h-auto [&>svg]:w-[min(100%,18rem)]">
-				<CarPreview look={p.card.car?.look ?? {}} />
+				<CarPreview look={p.card.car?.look ?? {}} model={p.card.car?.model} />
 			</div>
 			<div class="m-ground h-4"></div>
 			<div class="flex flex-wrap items-end justify-between gap-4 p-5">

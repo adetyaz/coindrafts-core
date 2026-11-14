@@ -229,7 +229,10 @@
 							: 'border-border'} {isOpen ? 'col-span-full' : ''}"
 					>
 						<div class="flex flex-wrap items-start gap-4">
-							<CarPreview look={isOpen && open?.panel === 'customise' ? draft : car.look} />
+							<CarPreview
+								look={isOpen && open?.panel === 'customise' ? draft : car.look}
+								model={car.model}
+							/>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-start justify-between gap-2">
 									<div>

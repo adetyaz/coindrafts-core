@@ -105,7 +105,7 @@
 					? 'bg-lavender'
 					: 'm-sky'}"
 			>
-				<CarPreview look={card.car?.look ?? {}} />
+				<CarPreview look={card.car?.look ?? {}} model={card.car?.model} />
 			</div>
 			<div class="m-ground h-4"></div>
 			<div class="flex flex-wrap items-end justify-between gap-3 px-5 pt-4">

@@ -249,7 +249,7 @@
 						<div
 							class="mb-2 rounded-[14px] border-2 border-border bg-sky-tint px-2 pt-3 [&>svg]:h-auto [&>svg]:w-full"
 						>
-							<CarPreview />
+							<CarPreview model={l.model} />
 						</div>
 						<div class="flex items-start justify-between gap-2">
 							<div>

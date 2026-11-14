@@ -34,9 +34,12 @@ hedges, a chunky pickup).
 - [ ] **Postcards** (`src/lib/components/race/WorldThumb.svelte`) are flat SVG drawings of
       each world and look poor. Replace them with rendered stills of the real worlds once
       those look right (one per theme, same 16:9).
-- [ ] **Car preview drawing** (`src/lib/components/garage/CarPreview.svelte`) is a flat SVG
-      used in the garage, car step, onboarding, player cards and Car Market. It should match
-      the new 3D car (a rendered sprite per paint, or an SVG redrawn from the model).
+- [ ] **Car preview drawing.** **Built, check in app:** `CarPreview` shows a picture of the
+      real race vehicle when it gets `model` (garage, car step, Car Market, car race, player
+      cards, Me, onboarding), with the chosen paint multiplied onto the body through a mask.
+      Pictures: `static/models/cars/sprites/`, made by `assets-src/render_sprites.py` +
+      `assets-src/sprites.py`. Decals don't show on pictures yet (the SVG fallback still
+      draws them).
 - [ ] **Sponsor ads on track** (billboard, banner, start/finish arch). **Built, check in
       app:** the art now sits on cream boards with ink posts, readable from both sides.
 

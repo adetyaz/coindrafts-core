@@ -114,7 +114,9 @@
 						? '-translate-y-1 !bg-butter'
 						: ''}"
 				>
-					<div class="[&>svg]:h-auto [&>svg]:w-full"><CarPreview look={car.look ?? {}} /></div>
+					<div class="[&>*]:w-full [&>svg]:h-auto">
+						<CarPreview look={car.look ?? {}} model={car.model} />
+					</div>
 					<div class="font-display text-xl font-extrabold">{car.model}</div>
 					<span
 						class="w-fit rounded-lg border-2 border-border px-2 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
