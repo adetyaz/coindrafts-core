@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import { sectorTheme } from '$lib/sectorTheme';
@@ -132,16 +133,16 @@
 
 			// Convert stored prices into % moves against each pick's locked entry.
 			// Entry prices live on the picks, so history only has to carry prices.
-			const entryFor = new Map<string, { key: string; entry: number }>();
+			const entryFor: Record<string, { key: string; entry: number }> = {};
 			for (const p of data.me?.picks ?? [])
-				entryFor.set(p.currencyId, { key: keyFor('me', p.symbol), entry: p.entryPrice });
+				entryFor[p.currencyId] = { key: keyFor('me', p.symbol), entry: p.entryPrice };
 			for (const p of data.opponent?.picks ?? [])
-				entryFor.set(p.currencyId, { key: keyFor('opp', p.symbol), entry: p.entryPrice });
+				entryFor[p.currencyId] = { key: keyFor('opp', p.symbol), entry: p.entryPrice };
 
 			const rebuilt = (data.history ?? []).map((tick) => {
 				const vals: Record<string, number> = {};
 				for (const [currencyId, price] of Object.entries(tick.prices)) {
-					const meta = entryFor.get(currencyId);
+					const meta = entryFor[currencyId];
 					if (!meta || meta.entry <= 0) continue;
 					vals[meta.key] = ((price - meta.entry) / meta.entry) * 100;
 				}
@@ -226,9 +227,9 @@
 	];
 	const symbolColor = $derived.by(() => {
 		const uniqueSymbols = [...new Set(racers.map((r) => r.pick.symbol.toUpperCase()))].sort();
-		const map = new Map<string, string>();
-		uniqueSymbols.forEach((sym, i) => map.set(sym, RACE_PALETTE[i % RACE_PALETTE.length]));
-		return map;
+		return Object.fromEntries(
+			uniqueSymbols.map((sym, i) => [sym, RACE_PALETTE[i % RACE_PALETTE.length]])
+		) as Record<string, string>;
 	});
 
 	// Shapes the race data for the chart component.
@@ -237,7 +238,7 @@
 			key: r.key,
 			label: r.pick.symbol.toUpperCase(),
 			sector: r.pick.sector,
-			colour: symbolColor.get(r.pick.symbol.toUpperCase()) ?? sectorTheme(r.pick.sector).color,
+			colour: symbolColor[r.pick.symbol.toUpperCase()] ?? sectorTheme(r.pick.sector).color,
 			mine: r.mine
 		}))
 	);
@@ -517,7 +518,7 @@
 		<div class="m-card text-center">
 			<div class="text-[28px] font-black tracking-[-0.03em]">Can't load this game</div>
 			<p class="mt-3 text-[15px] text-text-muted">{errorMessage}</p>
-			<a href="/dashboard" class="m-btn primary lg mt-6">Back to dashboard</a>
+			<a href={resolve('/dashboard')} class="m-btn primary lg mt-6">Back to dashboard</a>
 		</div>
 
 		<!-- ── RACE SCREEN ──────────────────────────────────────────────── -->
