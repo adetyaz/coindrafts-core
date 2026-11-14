@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CarPreview from '$lib/components/garage/CarPreview.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import BotDay from '$lib/components/BotDay.svelte';
 	import { resolve } from '$app/paths';
@@ -166,52 +167,173 @@
 <div class="m-page">
 	<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
 		<div>
-			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-				Car Market
-			</div>
-			<h1 class="mt-2 text-[40px] leading-none font-black tracking-[-0.04em] max-sm:text-[30px]">
-				Buy and sell cars
-			</h1>
-			<p class="mt-2 max-w-[60ch] text-sm text-text-muted">
+			<span class="m-eyebrow">Car Market</span>
+			<h1 class="m-title mt-1">Buy and sell cars.</h1>
+			<p class="m-lead mt-1">
 				Nobody sets these prices. They move with how many cars are for sale and how fast they sell.
 				Bots trade here too, and every bot move shows its reason.
 			</p>
 		</div>
 		<div class="flex items-center gap-4">
 			{#if gears != null}
-				<div class="text-right">
-					<div class="font-mono text-[28px] leading-none font-bold">⚙️ {gears}</div>
-					<div class="mt-1 text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
-						Your Gears
-					</div>
+				<div class="flat m-card !bg-butter !px-4 !py-2 text-end">
+					<div class="m-num text-2xl leading-none font-bold">⚙️ {gears.toLocaleString()}</div>
+					<div class="m-eyebrow mt-1">Your Gears</div>
 				</div>
 			{/if}
-			<a
-				href={resolve('/garage')}
-				class="rounded-full border border-border bg-surface px-4 py-2 text-xs font-extrabold text-text no-underline"
-				>My garage</a
-			>
+			<a href={resolve('/garage')} class="m-btn">My garage</a>
 		</div>
 	</div>
 
+	{#if phase === 'loading'}
+		<div class="h-48 animate-pulse rounded-[24px] bg-surface-alt"></div>
+	{:else if phase === 'error'}
+		<div class="m-card text-center">
+			<p class="text-lg font-black">Couldn't load the Car Market</p>
+			<button onclick={load} class="m-btn primary mt-4">Try again</button>
+		</div>
+	{:else}
+		<!-- Going rate per tier -->
+		<p class="m-eyebrow mb-3">Going rate · tap one to filter</p>
+		<div class="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
+			{#each tiers as t (t.rarity)}
+				<button
+					type="button"
+					onclick={() => (filter = filter === t.rarity ? 'All' : t.rarity)}
+					title={t.reason}
+					aria-pressed={filter === t.rarity}
+					class="flat m-card cursor-pointer !p-4 text-start transition-transform {filter ===
+					t.rarity
+						? '-translate-y-1 !bg-butter shadow-[4px_4px_0_var(--color-ink)]'
+						: ''}"
+				>
+					<span
+						class="inline-block rounded-lg border-2 border-border px-2 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
+						style="background:{rarityColor(t.rarity)}">{t.rarity}</span
+					>
+					<div class="m-num mt-2 text-2xl font-bold">⚙️ {t.price}</div>
+					<div class="mt-1 text-[11px] font-bold">
+						{#if t.trendPct === 0}
+							<span class="text-text-muted">— usual price</span>
+						{:else}
+							<span
+								class:text-positive-ink={t.trendPct > 0}
+								class:text-negative-ink={t.trendPct < 0}
+								>{t.trendPct > 0 ? '↑' : '↓'} {Math.abs(t.trendPct)}%</span
+							>
+						{/if}
+					</div>
+					<div class="mt-1 text-[11px] text-text-muted">{t.reason}</div>
+				</button>
+			{/each}
+		</div>
+
+		<div class="mt-7 mb-3 flex items-center justify-between">
+			<h2 class="font-display text-2xl font-extrabold">
+				For sale {filter !== 'All' ? `· ${filter}` : ''}
+				<span class="font-mono text-sm text-text-muted">({shown.length})</span>
+			</h2>
+			{#if filter !== 'All'}
+				<button onclick={() => (filter = 'All')} class="m-btn sm">Show all</button>
+			{/if}
+		</div>
+
+		{#if shown.length === 0}
+			<div class="dashed m-card text-center text-sm font-semibold">
+				Nothing for sale right now. Bots list spare cars after races, so check back soon.
+			</div>
+		{:else}
+			<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4">
+				{#each shown as l (l.id)}
+					<div class="m-card flex flex-col">
+						<div
+							class="mb-2 rounded-[14px] border-2 border-border bg-sky-tint px-2 pt-3 [&>svg]:h-auto [&>svg]:w-full"
+						>
+							<CarPreview />
+						</div>
+						<div class="flex items-start justify-between gap-2">
+							<div>
+								<div class="font-display text-xl font-extrabold">{l.model}</div>
+								<span
+									class="mt-1 inline-block rounded-lg border-2 border-border px-2 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
+									style="background:{rarityColor(l.rarity)}">{l.rarity}</span
+								>
+							</div>
+							<div class="m-num text-xl font-bold">⚙️ {l.price}</div>
+						</div>
+						<div class="mt-3 text-xs text-text-muted">
+							{l.races} races · {l.wins} wins · sold by
+							<span class="font-bold text-text">{l.seller}</span>
+							{#if l.sellerIsBot}
+								<span
+									class="ms-1 rounded-md border-2 border-border bg-lavender px-1.5 py-0.5 text-[9px] font-extrabold text-text"
+									>BOT</span
+								>
+							{/if}
+						</div>
+						{#if l.reason}
+							<p
+								class="mt-2 rounded-[12px] border-2 border-dashed border-border bg-butter px-3 py-2 text-xs"
+							>
+								<span class="font-extrabold">Why:</span>
+								{l.reason}
+							</p>
+						{/if}
+						<div class="mt-auto pt-4">
+							{#if l.sellerId === meId}
+								<p class="text-center text-xs font-bold text-text-muted">Your listing</p>
+							{:else}
+								<button
+									disabled={buying !== null || (gears != null && gears < l.price)}
+									onclick={() => buy(l)}
+									class="m-btn primary block"
+								>
+									{buying === l.id
+										? 'Buying…'
+										: gears != null && gears < l.price
+											? `Need ${l.price - gears} more Gears`
+											: 'Buy'}
+								</button>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		{#if sales.length > 0}
+			<h2 class="mt-10 mb-3 font-display text-2xl font-extrabold">Recent sales</h2>
+			<div class="flex flex-col gap-2">
+				{#each sales as s (s.id)}
+					<div class="flat m-card flex flex-wrap items-center justify-between gap-2 !p-4 text-xs">
+						<div>
+							<span class="font-extrabold">{s.buyer}</span> bought {s.seller}'s
+							<span class="font-bold">{s.rarity} {s.model}</span> for ⚙️ {s.price}
+							{#if s.buyReason}<span class="text-text-muted"> · {s.buyReason}</span>{/if}
+						</div>
+						<span class="font-mono text-text-muted">{ago(s.closedAt)}</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	{/if}
+
+	<!-- The bot world: what the bots did, and a fast-forward. Secondary to trading. -->
+	<h2 class="m-eyebrow mt-12 mb-3">The bot world</h2>
 	<BotDay />
 
 	<!-- Simulate a week: the bot economy over 7 real market days, in about a minute -->
-	<div class="mb-7 rounded-[20px] border border-border bg-surface-alt p-5">
+	<div class="m-card">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div class="max-w-[64ch]">
-				<div class="text-sm font-black">Simulate a week</div>
+				<h3 class="font-display text-xl font-extrabold">Simulate a week</h3>
 				<p class="mt-1 text-xs text-text-muted">
 					Replays the last 7 days of real market moves. Each day the bots race each other (half of
 					them car-for-car: winner takes the loser's car), get paid in Gears, then trade here. Every
 					change is recorded on NEAR. Your own cars and Gears aren't touched.
 				</p>
 			</div>
-			<button
-				onclick={simulate}
-				disabled={simulating}
-				class="h-11 cursor-pointer rounded-full border-none bg-text px-6 text-sm font-extrabold text-surface disabled:cursor-wait disabled:opacity-60"
-			>
+			<button onclick={simulate} disabled={simulating} class="m-btn dark disabled:opacity-60">
 				{simulating ? `Day ${simDay} of 7…` : 'Simulate a week'}
 			</button>
 		</div>
@@ -251,7 +373,7 @@
 				{/each}
 
 				{#if sim.bots.length > 0}
-					<div class="rounded-2xl border border-border bg-surface p-4">
+					<div class="flat m-card !p-4">
 						<div class="mb-2 text-xs font-extrabold">After the week</div>
 						<div class="grid grid-cols-4 gap-2 text-xs max-sm:grid-cols-2">
 							{#each sim.bots as b (b.username)}
@@ -276,142 +398,6 @@
 			</div>
 		{/if}
 	</div>
-
-	{#if phase === 'loading'}
-		<div class="h-48 animate-pulse rounded-[24px] bg-surface-alt"></div>
-	{:else if phase === 'error'}
-		<div class="rounded-[24px] border border-border bg-surface p-10 text-center">
-			<p class="text-lg font-black">Couldn't load the Car Market</p>
-			<button
-				onclick={load}
-				class="mt-4 h-11 cursor-pointer rounded-full border-none bg-primary px-6 text-sm font-extrabold text-text"
-				>Try again</button
-			>
-		</div>
-	{:else}
-		<!-- Going rate per tier -->
-		<div class="grid grid-cols-4 gap-3 max-md:grid-cols-2">
-			{#each tiers as t (t.rarity)}
-				<button
-					type="button"
-					onclick={() => (filter = filter === t.rarity ? 'All' : t.rarity)}
-					title={t.reason}
-					class="cursor-pointer rounded-[18px] border bg-surface p-4 text-left transition {filter ===
-					t.rarity
-						? 'border-text'
-						: 'border-border'}"
-				>
-					<span
-						class="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
-						style="background:{rarityColor(t.rarity)}">{t.rarity}</span
-					>
-					<div class="mt-2 font-mono text-2xl font-bold">⚙️ {t.price}</div>
-					<div class="mt-1 text-[11px] font-bold">
-						{#if t.trendPct === 0}
-							<span class="text-text-muted">— usual price</span>
-						{:else}
-							<span
-								class:text-positive-ink={t.trendPct > 0}
-								class:text-negative-ink={t.trendPct < 0}
-								>{t.trendPct > 0 ? '↑' : '↓'} {Math.abs(t.trendPct)}%</span
-							>
-						{/if}
-					</div>
-					<div class="mt-1 text-[11px] text-text-muted">{t.reason}</div>
-				</button>
-			{/each}
-		</div>
-
-		<div class="mt-7 mb-3 flex items-center justify-between">
-			<h2 class="text-lg font-black">
-				For sale {filter !== 'All' ? `· ${filter}` : ''}
-				<span class="font-mono text-sm text-text-muted">({shown.length})</span>
-			</h2>
-			{#if filter !== 'All'}
-				<button
-					onclick={() => (filter = 'All')}
-					class="cursor-pointer border-none bg-transparent text-xs font-bold text-text-muted"
-					>Show all</button
-				>
-			{/if}
-		</div>
-
-		{#if shown.length === 0}
-			<div
-				class="rounded-[20px] border border-border bg-surface p-8 text-center text-sm text-text-muted"
-			>
-				Nothing for sale right now. Bots list spare cars after races, so check back soon.
-			</div>
-		{:else}
-			<div class="grid grid-cols-3 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
-				{#each shown as l (l.id)}
-					<div class="flex flex-col rounded-[20px] border border-border bg-surface p-5">
-						<div class="flex items-start justify-between gap-2">
-							<div>
-								<div class="text-lg font-black tracking-[-0.02em]">{l.model}</div>
-								<span
-									class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
-									style="background:{rarityColor(l.rarity)}">{l.rarity}</span
-								>
-							</div>
-							<div class="font-mono text-xl font-bold">⚙️ {l.price}</div>
-						</div>
-						<div class="mt-3 text-xs text-text-muted">
-							{l.races} races · {l.wins} wins · sold by
-							<span class="font-bold text-text">{l.seller}</span>
-							{#if l.sellerIsBot}
-								<span
-									class="ml-1 rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
-									>BOT</span
-								>
-							{/if}
-						</div>
-						{#if l.reason}
-							<p class="mt-2 rounded-xl bg-surface-alt px-3 py-2 text-[11px]">
-								<span class="font-extrabold">Why:</span>
-								{l.reason}
-							</p>
-						{/if}
-						<div class="mt-auto pt-4">
-							{#if l.sellerId === meId}
-								<p class="text-center text-xs font-bold text-text-muted">Your listing</p>
-							{:else}
-								<button
-									disabled={buying !== null || (gears != null && gears < l.price)}
-									onclick={() => buy(l)}
-									class="h-10 w-full cursor-pointer rounded-full border-none bg-primary text-xs font-extrabold text-text disabled:cursor-not-allowed disabled:opacity-50"
-								>
-									{buying === l.id
-										? 'Buying…'
-										: gears != null && gears < l.price
-											? `Need ${l.price - gears} more Gears`
-											: 'Buy'}
-								</button>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-
-		{#if sales.length > 0}
-			<h2 class="mt-9 mb-3 text-lg font-black">Recent sales</h2>
-			<div class="flex flex-col gap-2">
-				{#each sales as s (s.id)}
-					<div
-						class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs"
-					>
-						<div>
-							<span class="font-extrabold">{s.buyer}</span> bought {s.seller}'s
-							<span class="font-bold">{s.rarity} {s.model}</span> for ⚙️ {s.price}
-							{#if s.buyReason}<span class="text-text-muted"> · {s.buyReason}</span>{/if}
-						</div>
-						<span class="font-mono text-text-muted">{ago(s.closedAt)}</span>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	{/if}
 </div>
 
 <Toast />

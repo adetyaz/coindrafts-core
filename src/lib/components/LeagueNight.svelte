@@ -43,10 +43,8 @@
 		new Date(`${m}-01T00:00:00Z`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 </script>
 
-<div class="rounded-[20px] border border-border bg-surface p-5">
-	<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-		League night
-	</div>
+<div class="m-card">
+	<div class="m-eyebrow text-text-muted">League night</div>
 	{#if live && night.myGrid}
 		<p class="mt-2 font-black">Tonight's grid is open.</p>
 		<p class="text-sm text-text-muted">
@@ -61,16 +59,12 @@
 		{#if night.myGrid.status === 'drafting' && !night.myGrid.drafted}
 			<!-- resolve() can't carry a query string; the path itself is resolved. -->
 			<!-- eslint-disable svelte/no-navigation-without-resolve -->
-			<a
-				href={`${resolve('/draft')}?lobbyId=${night.myGrid.lobbyId}`}
-				class="mt-3 inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-extrabold text-text no-underline"
+			<a href={`${resolve('/draft')}?lobbyId=${night.myGrid.lobbyId}`} class="m-btn primary mt-3"
 				>Draft now &rarr;</a
 			>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{:else}
-			<a
-				href={resolve('/race/[id]', { id: night.myGrid.lobbyId })}
-				class="mt-3 inline-flex h-11 items-center rounded-full bg-text px-6 text-sm font-extrabold text-surface no-underline"
+			<a href={resolve('/race/[id]', { id: night.myGrid.lobbyId })} class="m-btn dark mt-3"
 				>{night.myGrid.status === 'resolved' ? 'Results' : 'Watch'} &rarr;</a
 			>
 		{/if}
@@ -102,8 +96,8 @@
 	</p>
 </div>
 
-<div class="rounded-[20px] border border-border bg-surface p-5">
-	<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">Season</div>
+<div class="m-card">
+	<div class="m-eyebrow text-text-muted">Season</div>
 	<p class="mt-2 text-sm">
 		Ends in <span class="font-mono font-bold">{until(seasonEnds)}</span>. The leader wins the 🏆
 		trophy and ⚙️ Gears, then the table resets.

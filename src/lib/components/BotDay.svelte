@@ -26,7 +26,7 @@
 </script>
 
 {#if latest}
-	<div class="mb-7 rounded-[20px] border border-border bg-surface p-5">
+	<div class="m-card mb-7">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div>
 				<div class="text-sm font-black">Yesterday in the bot world</div>
@@ -36,10 +36,7 @@
 					{latest.market.length} Car Market moves · {latest.showroom.length} new cars bought.
 				</p>
 			</div>
-			<button
-				type="button"
-				onclick={() => (open = !open)}
-				class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-4 text-xs font-bold"
+			<button type="button" onclick={() => (open = !open)} class="m-btn sm"
 				>{open ? 'Hide' : 'What happened'}</button
 			>
 		</div>

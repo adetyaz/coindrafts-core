@@ -1,4 +1,5 @@
 <script lang="ts">
+	import WorldThumb from '$lib/components/race/WorldThumb.svelte';
 	// Tournaments (GAMEPLAY_FLOWS.md, F4): the game's scheduled cups, open
 	// tournaments, yours in progress, and creating one. Each opens its own page
 	// (registration, the draw, groups, final). Invite links land here
@@ -144,15 +145,13 @@
 </script>
 
 {#snippet card(r: Row)}
-	<div class="flex flex-col rounded-[20px] border border-border bg-surface p-5">
-		<div class="flex items-start justify-between gap-2">
-			<div class="font-black">{r.name}</div>
-			{#if r.cup}<span
-					class="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
-					>Cup</span
-				>{/if}
+	<div class="m-card flex flex-col gap-1">
+		<div class="relative mb-2">
+			<WorldThumb theme="village" paint="var(--color-mint)" label={false} />
+			{#if r.cup}<span class="m-tag absolute -end-1 -top-2 rotate-3 bg-butter">🏆 Cup</span>{/if}
 		</div>
-		<div class="mt-1 font-mono text-xs text-text-muted">{closesIn(r)}</div>
+		<div class="font-display text-xl font-extrabold">{r.name}</div>
+		<div class="m-num text-xs font-bold">{closesIn(r)}</div>
 		<div class="mt-3 text-sm">
 			{r.groupTrack} groups → {r.finalTrack} final · {lengthLabel(r.durationMinutes)} races
 		</div>
@@ -168,9 +167,7 @@
 		</div>
 		<div class="mt-4 flex gap-2">
 			{#if r.joined}
-				<a
-					href={resolve('/tournament/[id]', { id: r.id })}
-					class="inline-flex h-10 items-center rounded-full bg-text px-5 text-xs font-extrabold text-surface no-underline"
+				<a href={resolve('/tournament/[id]', { id: r.id })} class="m-btn dark sm"
 					>{r.status === 'open' ? "You're in · View" : 'Go to your race'}</a
 				>
 			{:else}
@@ -178,14 +175,10 @@
 					type="button"
 					disabled={busy}
 					onclick={() => join(r.id)}
-					class="h-10 cursor-pointer rounded-full border-none bg-primary px-5 text-xs font-extrabold text-text disabled:opacity-50"
+					class="m-btn primary sm disabled:opacity-50"
 					>Join{r.entryFee ? ` · ⚙️ ${r.entryFee}` : ''}</button
 				>
-				<a
-					href={resolve('/tournament/[id]', { id: r.id })}
-					class="inline-flex h-10 items-center rounded-full border border-border px-4 text-xs font-bold text-text no-underline"
-					>View</a
-				>
+				<a href={resolve('/tournament/[id]', { id: r.id })} class="m-btn sm">View</a>
 			{/if}
 		</div>
 	</div>
@@ -194,27 +187,20 @@
 <div class="m-page">
 	<div class="flex flex-wrap items-end justify-between gap-4">
 		<div>
-			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-				Tournaments
-			</div>
-			<h1 class="mt-2 text-[40px] leading-none font-black tracking-[-0.04em] max-sm:text-[30px]">
-				Race for the podium
-			</h1>
-			<p class="mt-2 max-w-[60ch] text-sm text-text-muted">
+			<span class="m-eyebrow">Compete</span>
+			<h1 class="m-title mt-1">Tournaments.</h1>
+			<p class="m-lead mt-1">
 				At the closing time, drivers are drawn into groups of 5 by strength; bots fill empty seats.
 				Group winners race a final on a marquee track. Prizes go to the best-placed humans.
 			</p>
 		</div>
-		<button
-			type="button"
-			onclick={() => (creating = !creating)}
-			class="h-11 cursor-pointer rounded-full border border-border bg-surface px-5 text-sm font-bold"
+		<button type="button" onclick={() => (creating = !creating)} class="m-btn"
 			>{creating ? 'Close' : 'Create a tournament'}</button
 		>
 	</div>
 
 	{#if creating}
-		<div class="mt-6 grid gap-4 rounded-[24px] border border-border bg-surface p-6 sm:grid-cols-2">
+		<div class="m-card mt-6 grid gap-4 sm:grid-cols-2">
 			<label class="text-sm font-bold sm:col-span-2"
 				>Name
 				<input
@@ -303,8 +289,7 @@
 					type="button"
 					disabled={busy || !form.name.trim()}
 					onclick={create}
-					class="h-11 cursor-pointer rounded-full border-none bg-primary px-6 text-sm font-extrabold text-text disabled:opacity-50"
-					>Create and enter</button
+					class="m-btn primary disabled:opacity-50">Create and enter</button
 				>
 			</div>
 		</div>
@@ -318,19 +303,25 @@
 		<p class="mt-8 text-sm text-negative-ink">Couldn't load tournaments. Refresh to try again.</p>
 	{:else}
 		{#if mine.length}
-			<h2 class="mt-10 text-sm font-black tracking-[0.06em] uppercase">Yours</h2>
-			<div class="mt-3 grid grid-cols-3 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+			<h2 class="m-eyebrow mt-10">Yours</h2>
+			<div
+				class="mt-3 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4"
+			>
 				{#each mine as r (r.id)}{@render card(r)}{/each}
 			</div>
 		{/if}
-		<h2 class="mt-10 text-sm font-black tracking-[0.06em] uppercase">Cups</h2>
-		<div class="mt-3 grid grid-cols-3 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+		<h2 class="m-eyebrow mt-10">Cups</h2>
+		<div
+			class="mt-3 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4"
+		>
 			{#each cups as r (r.id)}{@render card(r)}{:else}<p class="text-sm text-text-muted">
 					The next cups are being scheduled.
 				</p>{/each}
 		</div>
-		<h2 class="mt-10 text-sm font-black tracking-[0.06em] uppercase">Open tournaments</h2>
-		<div class="mt-3 grid grid-cols-3 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+		<h2 class="m-eyebrow mt-10">Open tournaments</h2>
+		<div
+			class="mt-3 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4"
+		>
 			{#each open as r (r.id)}{@render card(r)}{:else}<p class="text-sm text-text-muted">
 					None open right now. Create one and invite your friends.
 				</p>{/each}

@@ -50,9 +50,11 @@
 			>
 		{/if}
 	</div>
-	<div class="mt-4 grid grid-cols-4 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+	<div
+		class="mt-4 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))] gap-4"
+	>
 		{#each ITEM_KINDS as k (k)}
-			<div class="flex flex-col rounded-[20px] border border-border bg-surface p-4">
+			<div class="flat m-card flex flex-col !p-4">
 				<div class="text-2xl">{ITEMS[k].icon}</div>
 				<div class="mt-1 font-black">{ITEMS[k].label}</div>
 				<p class="mt-1 flex-1 text-xs text-text-muted">{ITEMS[k].does}</p>
@@ -61,8 +63,7 @@
 					type="button"
 					disabled={busy || gears < ITEMS[k].price}
 					onclick={() => buy(k)}
-					class="mt-3 h-10 cursor-pointer rounded-full border-none bg-primary text-xs font-extrabold text-text disabled:opacity-50"
-					>Buy · ⚙️ {ITEMS[k].price}</button
+					class="m-btn primary sm mt-3 disabled:opacity-50">Buy · ⚙️ {ITEMS[k].price}</button
 				>
 			</div>
 		{/each}

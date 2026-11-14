@@ -156,10 +156,10 @@
 	{:else}
 		<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
 			<div>
-				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
+				<div class="m-eyebrow">
 					{race.leagueId ? 'League night' : race.isFinal ? 'Final' : 'Group race'} · {circuit.name}
 				</div>
-				<h1 class="mt-1 text-[32px] leading-none font-black tracking-[-0.04em]">
+				<h1 class="m-title mt-1">
 					{race.status === 'drafting'
 						? 'On the way to the grid'
 						: race.status === 'resolved'
@@ -169,7 +169,7 @@
 								: 'Racing'}
 				</h1>
 			</div>
-			<div class="text-right font-mono text-sm">
+			<div class="text-end font-mono text-sm">
 				{#if race.status === 'drafting' && race.draftClosesAt}
 					Auto-draft in {clock(new Date(race.draftClosesAt).getTime() - now)}
 				{:else if race.status === 'live' && !holding}
@@ -179,7 +179,7 @@
 		</div>
 
 		{#if race.status === 'drafting'}
-			<div class="rounded-[24px] border border-border bg-surface p-6">
+			<div class="m-card">
 				<p class="font-bold">
 					{race.drivers.filter((d) => d.drafted).length} of {race.drivers.length} drivers have locked
 					a lineup.
@@ -191,9 +191,7 @@
 				{#if me && !me.drafted}
 					<!-- resolve() can't carry a query string; the path itself is resolved. -->
 					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={`${resolve('/draft')}?lobbyId=${race.id}`}
-						class="mt-4 inline-flex h-12 items-center rounded-full bg-primary px-7 text-sm font-extrabold text-text no-underline"
+					<a href={`${resolve('/draft')}?lobbyId=${race.id}`} class="m-btn primary lg mt-4"
 						>Draft your lineup &rarr;</a
 					>
 					<!-- eslint-enable svelte/no-navigation-without-resolve -->
@@ -204,7 +202,7 @@
 							<span class="font-bold"
 								>{d.isMe ? 'You' : d.name}
 								{#if d.isBot}<span
-										class="ml-1 rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
+										class="ms-1 rounded-md border-2 border-border bg-lavender px-1.5 py-0.5 text-[9px] font-extrabold text-text"
 										>BOT</span
 									>{/if}</span
 							>
@@ -253,9 +251,9 @@
 							{#each race.drivers as d (d.userId)}
 								<div class="rounded-xl bg-black/50 px-3 py-2 text-xs">
 									<span class="font-black">{d.isMe ? 'You' : d.name}</span>
-									{#if d.isBot}<span class="ml-1 opacity-70">BOT</span>{/if}
-									{#if d.car}<span class="ml-1 opacity-80">· {d.car.model}</span>{/if}
-									{#if d.item}<span class="ml-1">{ITEMS[d.item.kind].icon}</span>{/if}
+									{#if d.isBot}<span class="ms-1 opacity-70">BOT</span>{/if}
+									{#if d.car}<span class="ms-1 opacity-80">· {d.car.model}</span>{/if}
+									{#if d.item}<span class="ms-1">{ITEMS[d.item.kind].icon}</span>{/if}
 								</div>
 							{/each}
 						</div>
@@ -285,14 +283,14 @@
 						<span class="flex-1 font-black"
 							><PlayerLink id={d.userId} name={d.isMe ? 'You' : d.name} />
 							{#if d.isBot}<span
-									class="ml-1 rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
+									class="ms-1 rounded-md border-2 border-border bg-lavender px-1.5 py-0.5 text-[9px] font-extrabold text-text"
 									>BOT</span
 								>{/if}
 							{#if d.car}<span
-									class="ml-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase"
+									class="ms-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase"
 									style="background:{rarityColor(d.car.rarity)}">{d.car.model}</span
 								>{/if}
-							{#if d.item}<span class="ml-1" title={ITEMS[d.item.kind].label}
+							{#if d.item}<span class="ms-1" title={ITEMS[d.item.kind].label}
 									>{ITEMS[d.item.kind].icon}</span
 								>{/if}
 						</span>
@@ -300,7 +298,7 @@
 							>{d.picks.map((p) => p.symbol.toUpperCase()).join(' · ')}</span
 						>
 						<span
-							class="w-20 text-right font-mono font-bold {total(d) >= 0
+							class="w-20 text-end font-mono font-bold {total(d) >= 0
 								? 'text-positive-ink'
 								: 'text-negative-ink'}">{pct(total(d))}</span
 						>
@@ -310,16 +308,10 @@
 		{/if}
 
 		{#if race.leagueId}
-			<a
-				href={resolve('/leagues/[id]', { id: race.leagueId })}
-				class="mt-6 inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-bold text-text no-underline"
-				>&larr; League</a
-			>
+			<a href={resolve('/leagues/[id]', { id: race.leagueId })} class="m-btn mt-6">&larr; League</a>
 		{/if}
 		{#if race.tournamentId}
-			<a
-				href={resolve('/tournament/[id]', { id: race.tournamentId })}
-				class="mt-6 inline-flex h-11 items-center rounded-full border border-border px-5 text-sm font-bold text-text no-underline"
+			<a href={resolve('/tournament/[id]', { id: race.tournamentId })} class="m-btn mt-6"
 				>&larr; Tournament</a
 			>
 		{/if}

@@ -60,7 +60,7 @@
 </script>
 
 <div class="m-page mid">
-	<h1 class="text-[32px] leading-none font-black tracking-[-0.04em]">Sponsor bookings</h1>
+	<h1 class="m-title">Sponsor bookings</h1>
 	{#if denied}
 		<p class="mt-6 text-sm text-text-muted">Not found.</p>
 	{:else if !rows}
@@ -68,7 +68,7 @@
 	{:else}
 		<ul class="mt-6 flex flex-col gap-3">
 			{#each rows as r (r.id)}
-				<li class="rounded-[20px] border border-border bg-surface p-5 text-sm">
+				<li class="m-card text-sm">
 					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div>
 							<div class="font-black">
@@ -109,24 +109,21 @@
 									type="button"
 									disabled={busy}
 									onclick={() => act(r.id, 'paid')}
-									class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-4 text-xs font-bold"
-									>Mark paid</button
+									class="m-btn sm">Mark paid</button
 								>
 							{:else}
 								<button
 									type="button"
 									disabled={busy}
 									onclick={() => act(r.id, 'approve')}
-									class="h-9 cursor-pointer rounded-full border-none bg-primary px-4 text-xs font-extrabold text-text"
-									>Approve</button
+									class="m-btn primary sm">Approve</button
 								>
 							{/if}
 							<button
 								type="button"
 								disabled={busy}
 								onclick={() => act(r.id, 'reject')}
-								class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-4 text-xs font-bold text-negative-ink"
-								>Reject</button
+								class="m-btn danger sm">Reject</button
 							>
 						</div>
 					{/if}

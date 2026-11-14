@@ -195,9 +195,7 @@
 	{:else}
 		<div class="flex flex-wrap items-start justify-between gap-6">
 			<div class="min-w-0 flex-1">
-				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-					Me
-				</div>
+				<div class="m-eyebrow">Me</div>
 				<div class="mt-2 flex flex-wrap items-center gap-2">
 					<input
 						bind:value={name}
@@ -212,8 +210,7 @@
 							onclick={async () => {
 								if (await save({ username: name.trim() }, 'Name saved')) await load();
 							}}
-							class="h-11 cursor-pointer rounded-full border-none bg-primary px-5 text-sm font-extrabold text-text"
-							>Save</button
+							class="m-btn primary">Save</button
 						>
 					{/if}
 				</div>
@@ -224,27 +221,27 @@
 				>
 			</div>
 			{#if p.card.car}
-				<div class="text-right">
+				<div class="text-end">
 					<CarPreview look={p.card.car.look ?? {}} size={200} />
 					<div class="text-sm font-bold">{p.card.car.model}</div>
 				</div>
 			{/if}
 		</div>
 
-		<div class="mt-6 grid grid-cols-4 gap-2 max-sm:grid-cols-2">
+		<div class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))] gap-3">
 			{#each [['Races', p.card.stats.races], ['Wins', p.card.stats.wins], ['Podiums', p.card.stats.podiums]] as [label, n] (label)}
-				<div class="rounded-2xl border border-border bg-surface p-4">
+				<div class="flat m-card !p-4">
 					<div class="font-mono text-3xl font-bold">{n}</div>
-					<div class="text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
+					<div class="m-eyebrow !text-[10px] text-text-muted">
 						{label}
 					</div>
 				</div>
 			{/each}
-			<div class="rounded-2xl border border-border bg-surface p-4">
+			<div class="flat m-card !p-4">
 				<div class="text-xl font-black">
 					{p.card.stats.bestSector ? sectorTheme(p.card.stats.bestSector.sector).label : '—'}
 				</div>
-				<div class="text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
+				<div class="m-eyebrow !text-[10px] text-text-muted">
 					Best sector{p.card.stats.bestSector
 						? ` · avg ${p.card.stats.bestSector.avgPct >= 0 ? '+' : ''}${p.card.stats.bestSector.avgPct}%`
 						: ''}
@@ -254,12 +251,10 @@
 
 		{#if p.challenges.length}
 			<section class="mt-8">
-				<h2 class="text-sm font-black tracking-[0.06em] uppercase">Challenges</h2>
+				<h2 class="m-eyebrow">Challenges</h2>
 				<ul class="mt-3 flex flex-col gap-2">
 					{#each p.challenges as c (c.id)}
-						<li
-							class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 text-sm"
-						>
+						<li class="flat m-card flex flex-wrap items-center justify-between gap-2 !p-4 text-sm">
 							<div>
 								<span class="font-bold"
 									>{c.incoming ? `${c.other} challenged you` : `You challenged ${c.other}`}</span
@@ -273,15 +268,13 @@
 										type="button"
 										disabled={busy}
 										onclick={() => respond(c.id, true)}
-										class="h-9 cursor-pointer rounded-full border-none bg-primary px-4 text-xs font-extrabold text-text"
-										>Accept</button
+										class="m-btn primary sm">Accept</button
 									>
 									<button
 										type="button"
 										disabled={busy}
 										onclick={() => respond(c.id, false)}
-										class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-4 text-xs font-bold"
-										>Decline</button
+										class="m-btn sm">Decline</button
 									>
 								</div>
 							{:else if c.status === 'accepted' && c.contestId}
@@ -289,8 +282,7 @@
 								<!-- eslint-disable svelte/no-navigation-without-resolve -->
 								<a
 									href={`${resolve('/draft')}?contestId=${c.contestId}&type=daily`}
-									class="inline-flex h-9 items-center rounded-full bg-text px-4 text-xs font-extrabold text-surface no-underline"
-									>Draft &rarr;</a
+									class="m-btn dark sm">Draft &rarr;</a
 								>
 								<!-- eslint-enable svelte/no-navigation-without-resolve -->
 							{:else}
@@ -303,8 +295,8 @@
 		{/if}
 
 		<div class="mt-8 grid gap-4 md:grid-cols-2">
-			<section class="rounded-[20px] border border-border bg-surface p-5">
-				<h2 class="text-sm font-black tracking-[0.06em] uppercase">Showcased car</h2>
+			<section class="m-card">
+				<h2 class="m-eyebrow">Showcased car</h2>
 				<div class="mt-3 flex flex-wrap gap-1.5">
 					{#each p.cars as c (c.id)}
 						<button
@@ -336,8 +328,8 @@
 				</div>
 			</section>
 
-			<section class="rounded-[20px] border border-border bg-surface p-5">
-				<h2 class="text-sm font-black tracking-[0.06em] uppercase">
+			<section class="m-card">
+				<h2 class="m-eyebrow">
 					Badges · showing {p.showcaseBadges.length}/3
 				</h2>
 				<div class="mt-3 flex flex-wrap gap-1.5">
@@ -347,11 +339,7 @@
 							aria-pressed={p.showcaseBadges.includes(b.code)}
 							title={b.description}
 							onclick={() => toggleBadge(b.code)}
-							class="h-9 cursor-pointer rounded-full border px-3 text-xs font-bold {p.showcaseBadges.includes(
-								b.code
-							)
-								? 'border-text bg-text text-surface'
-								: 'border-border bg-bg'}">{b.emoji} {b.name}</button
+							class="m-chip text-xs">{b.emoji} {b.name}</button
 						>
 					{:else}<p class="text-sm text-text-muted">Win races to earn badges.</p>{/each}
 				</div>
@@ -359,17 +347,17 @@
 		</div>
 
 		<section class="mt-8">
-			<h2 class="text-sm font-black tracking-[0.06em] uppercase">Rivals</h2>
+			<h2 class="m-eyebrow">Rivals</h2>
 			<div class="mt-3 grid gap-2 sm:grid-cols-2">
 				{#each p.rivals.bots as r (r.id)}
 					<a
 						href={resolve('/players/[id]', { id: r.id })}
-						class="flex items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 text-sm text-text no-underline"
+						class="flat m-card flex items-center justify-between gap-2 !p-4 text-sm text-text no-underline"
 					>
 						<span>
 							<span class="font-bold">{r.username}</span>
 							<span
-								class="ml-1 rounded bg-text px-1.5 py-0.5 text-[9px] font-extrabold text-surface"
+								class="ms-1 rounded-md border-2 border-border bg-lavender px-1.5 py-0.5 text-[9px] font-extrabold text-text"
 								>BOT</span
 							>
 							<span class="block text-xs text-text-muted">{MOOD_LABEL[r.mood]}</span>
@@ -380,7 +368,7 @@
 				{#each p.rivals.humans as h (h.id)}
 					<a
 						href={resolve('/players/[id]', { id: h.id })}
-						class="flex items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 text-sm text-text no-underline"
+						class="flat m-card flex items-center justify-between gap-2 !p-4 text-sm text-text no-underline"
 					>
 						<span>
 							<span class="font-bold">{h.username}</span>
@@ -392,8 +380,8 @@
 			</div>
 		</section>
 
-		<section class="mt-8 rounded-[20px] border border-border bg-surface p-5">
-			<h2 class="text-sm font-black tracking-[0.06em] uppercase">Settings</h2>
+		<section class="m-card mt-8">
+			<h2 class="m-eyebrow">Settings</h2>
 			<div class="mt-4 flex flex-col gap-4 text-sm">
 				<div class="flex flex-wrap items-center justify-between gap-2">
 					<span class="font-bold">Bot chat</span>
@@ -403,10 +391,7 @@
 								type="button"
 								aria-pressed={p.settings.botChat === v}
 								onclick={() => setSetting('botChat', v)}
-								class="h-8 cursor-pointer rounded-full border px-3 text-xs font-bold capitalize {p
-									.settings.botChat === v
-									? 'border-text bg-text text-surface'
-									: 'border-border bg-bg'}">{v}</button
+								class="m-chip text-xs capitalize">{v}</button
 							>
 						{/each}
 					</div>
@@ -428,8 +413,7 @@
 								onclick={async () => {
 									if (await save({ email: email.trim() }, 'Email saved')) await load();
 								}}
-								class="h-9 cursor-pointer rounded-full border-none bg-primary px-4 text-xs font-extrabold text-text"
-								>Save</button
+								class="m-btn primary sm">Save</button
 							>
 						{/if}
 					</div>
@@ -446,12 +430,7 @@
 						class="h-5 w-5"
 					/>
 				</label>
-				<button
-					type="button"
-					onclick={signOut}
-					class="h-10 w-fit cursor-pointer rounded-full border border-border bg-transparent px-5 text-sm font-bold"
-					>Sign out</button
-				>
+				<button type="button" onclick={signOut} class="m-btn sm w-fit">Sign out</button>
 			</div>
 		</section>
 	{/if}

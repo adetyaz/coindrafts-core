@@ -124,7 +124,7 @@
 	<a href={resolve('/sponsor')} class="text-sm font-bold text-text-muted no-underline"
 		>&larr; Sponsors</a
 	>
-	<h1 class="mt-3 text-[34px] leading-none font-black tracking-[-0.04em]">Book trackside ads</h1>
+	<h1 class="m-title mt-3">Book trackside ads</h1>
 
 	<div class="mt-6 grid gap-6 lg:grid-cols-2">
 		<div class="flex flex-col gap-5">
@@ -136,10 +136,7 @@
 							type="button"
 							aria-pressed={circuit === c.id}
 							onclick={() => (circuit = c.id)}
-							class="h-10 cursor-pointer rounded-full border px-4 text-sm font-bold {circuit ===
-							c.id
-								? 'border-text bg-text text-surface'
-								: 'border-border bg-surface'}">{c.name}</button
+							class="m-chip !min-h-11 !px-5 !text-sm text-sm">{c.name}</button
 						>
 					{/each}
 				</div>
@@ -177,7 +174,7 @@
 								type="button"
 								aria-pressed={slot === id}
 								onclick={() => (slot = id)}
-								class="cursor-pointer rounded-2xl border p-3 text-left text-sm {slot === id
+								class="cursor-pointer rounded-2xl border p-3 text-start text-sm {slot === id
 									? 'border-text'
 									: 'border-border'} bg-surface"
 							>
@@ -250,7 +247,7 @@
 					/>
 				{/key}
 			</div>
-			<div class="mt-4 rounded-[20px] border border-border bg-surface p-5">
+			<div class="m-card mt-4">
 				<div class="flex items-baseline justify-between">
 					<span class="text-sm font-bold"
 						>{days > 0 ? `${days} day${days === 1 ? '' : 's'}` : '—'}</span
@@ -264,8 +261,7 @@
 					type="button"
 					disabled={busy || !artwork || clash || days < 1}
 					onclick={submit}
-					class="mt-3 h-11 w-full cursor-pointer rounded-full border-none bg-primary text-sm font-extrabold text-text disabled:opacity-50"
-					>Request booking</button
+					class="m-btn primary mt-3 w-full disabled:opacity-50">Request booking</button
 				>
 			</div>
 		</div>

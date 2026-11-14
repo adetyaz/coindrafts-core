@@ -57,7 +57,7 @@
 	}
 </script>
 
-<div class="rounded-[20px] border border-border bg-surface p-[22px]">
+<div class="m-card">
 	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
 		Word of the day
 	</div>
@@ -82,7 +82,7 @@
 			<button
 				onclick={claim}
 				disabled={claiming}
-				class="mt-3.5 w-full cursor-pointer rounded-full bg-primary py-3 text-sm font-extrabold text-text transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+				class="m-btn primary mt-3.5 w-full disabled:opacity-60"
 			>
 				{claiming ? 'Claiming…' : `Got it — claim +${dailyTerm.xpReward} XP`}
 			</button>

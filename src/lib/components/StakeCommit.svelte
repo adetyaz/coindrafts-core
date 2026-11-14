@@ -88,7 +88,7 @@
 </script>
 
 {#if stake}
-	<div class="rounded-[20px] border border-border bg-surface p-6">
+	<div class="m-card">
 		{#if stake.status === 'locked' || stake.status === 'settled'}
 			<div class="flex items-center gap-2.5">
 				<span class="text-[11px] font-extrabold tracking-[0.12em] text-positive-ink uppercase">
@@ -102,9 +102,7 @@
 				Both players are risking the same. Winner takes {(stake.agreedAmount ?? 0) * 2} XP.
 			</p>
 		{:else if stake.myCommit != null}
-			<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Committed
-			</div>
+			<div class="m-eyebrow text-text-muted">Committed</div>
 			<div class="mt-2 font-mono text-[32px] leading-none font-bold">{stake.myCommit} XP</div>
 			<p class="mt-2 text-[13px] text-text-muted">
 				{stake.opponentCommitted
@@ -112,9 +110,7 @@
 					: 'Waiting for your opponent to commit. Nothing expires — take your time.'}
 			</p>
 		{:else}
-			<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Your stake
-			</div>
+			<div class="m-eyebrow text-text-muted">Your stake</div>
 			<h3 class="mt-2 text-[22px] font-black tracking-[-0.02em]">
 				Matched at {stake.tierAmount} XP
 			</h3>
@@ -155,7 +151,7 @@
 			<button
 				onclick={commit}
 				disabled={submitting || !adult || !canAfford}
-				class="mt-5 h-12 w-full cursor-pointer rounded-full bg-primary text-sm font-extrabold text-text transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+				class="m-btn primary lg mt-5 w-full disabled:opacity-50"
 			>
 				{submitting ? 'Committing…' : `Commit ${amount} XP`}
 			</button>

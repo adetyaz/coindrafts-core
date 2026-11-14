@@ -119,48 +119,35 @@
 <div class="m-page">
 	<div class="mb-6.5 flex flex-wrap items-end justify-between gap-6">
 		<div>
-			<h1 class="text-[40px] leading-none font-black tracking-[-0.04em]">Leagues</h1>
-			<p class="mt-2 text-sm text-text-muted">Private ladders with your own crowd</p>
+			<span class="m-eyebrow">Compete</span>
+			<h1 class="m-title mt-1">Leagues.</h1>
+			<p class="m-lead mt-1">
+				Your own crowd, your home track, a race night every week. A champion every month.
+			</p>
 		</div>
 		<div class="flex gap-2.5">
-			<button
-				onclick={() => (showCreate = true)}
-				class="cursor-pointer rounded-full bg-primary px-[26px] py-3 text-sm font-extrabold text-text transition hover:bg-primary-hover"
-			>
-				Create league
-			</button>
-			<button
-				onclick={() => (showJoin = true)}
-				class="cursor-pointer rounded-full border border-border bg-transparent px-[26px] py-3 text-sm font-bold text-text-muted transition hover:bg-hover"
-			>
-				Join with code
-			</button>
+			<button onclick={() => (showCreate = true)} class="m-btn primary"> Create league </button>
+			<button onclick={() => (showJoin = true)} class="m-btn"> Join with code </button>
 		</div>
 	</div>
 
-	<div class="mb-4.5 flex w-fit gap-1 rounded-full border border-border bg-surface p-1">
+	<div class="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Leagues">
 		<button
+			role="tab"
+			aria-selected={tab === 'mine'}
 			onclick={() => (tab = 'mine')}
-			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab ===
-			'mine'
-				? 'bg-primary text-text'
-				: 'text-text-muted'}"
+			class="m-chip !min-h-11 !px-5 !text-sm">My leagues ({myLeagues.length})</button
 		>
-			My leagues ({myLeagues.length})
-		</button>
 		<button
+			role="tab"
+			aria-selected={tab === 'public'}
 			onclick={() => (tab = 'public')}
-			class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-all {tab ===
-			'public'
-				? 'bg-primary text-text'
-				: 'text-text-muted'}"
+			class="m-chip !min-h-11 !px-5 !text-sm">Browse public</button
 		>
-			Browse public
-		</button>
 	</div>
 
 	{#if loading}
-		<div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3.5">
+		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
 			{#each [0, 1, 2] as i (i)}
 				<div class="h-40 animate-pulse rounded-[20px] bg-surface-alt"></div>
 			{/each}
@@ -176,11 +163,11 @@
 				</p>
 			</div>
 		{:else}
-			<div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3.5">
+			<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
 				{#each list as league (league.id)}
 					<button
 						onclick={() => goto(`/leagues/${league.id}`)}
-						class="cursor-pointer rounded-[20px] border border-border bg-surface p-6 text-left transition-transform hover:-translate-y-1"
+						class="m-card cursor-pointer text-start transition-transform hover:-translate-y-1"
 					>
 						<div class="mb-4 flex items-center justify-between">
 							<span
@@ -202,9 +189,15 @@
 </div>
 
 {#if showCreate}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-		<div class="w-full max-w-sm rounded-[24px] bg-surface p-7">
-			<h2 class="mb-4.5 text-xl font-extrabold tracking-[-0.02em]">Create league</h2>
+	<div
+		class="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:px-4"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class="m-card w-full max-w-sm !p-6 max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+		>
+			<h2 class="mb-4 font-display text-2xl font-extrabold">Create league</h2>
 			<div class="mb-4">
 				<label for="league-name" class="mb-1.5 block text-xs font-bold text-text-muted"
 					>League name</label
@@ -272,12 +265,7 @@
 				</label>
 			</div>
 			<div class="flex gap-2.5">
-				<button
-					onclick={() => (showCreate = false)}
-					class="flex-1 cursor-pointer rounded-full border border-border py-3 text-sm font-bold text-text-muted hover:bg-hover"
-				>
-					Cancel
-				</button>
+				<button onclick={() => (showCreate = false)} class="m-btn flex-1"> Cancel </button>
 				<button
 					onclick={createLeague}
 					disabled={!newLeagueName.trim()}
@@ -293,9 +281,15 @@
 {/if}
 
 {#if showJoin}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-		<div class="w-full max-w-sm rounded-[24px] bg-surface p-7">
-			<h2 class="mb-4.5 text-xl font-extrabold tracking-[-0.02em]">Join league</h2>
+	<div
+		class="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:px-4"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class="m-card w-full max-w-sm !p-6 max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+		>
+			<h2 class="mb-4 font-display text-2xl font-extrabold">Join league</h2>
 			<div class="mb-6">
 				<label for="invite-code" class="mb-1.5 block text-xs font-bold text-text-muted"
 					>Invite code</label
@@ -309,12 +303,7 @@
 				/>
 			</div>
 			<div class="flex gap-2.5">
-				<button
-					onclick={() => (showJoin = false)}
-					class="flex-1 cursor-pointer rounded-full border border-border py-3 text-sm font-bold text-text-muted hover:bg-hover"
-				>
-					Cancel
-				</button>
+				<button onclick={() => (showJoin = false)} class="m-btn flex-1"> Cancel </button>
 				<button
 					onclick={joinLeague}
 					disabled={!inviteCode.trim()}

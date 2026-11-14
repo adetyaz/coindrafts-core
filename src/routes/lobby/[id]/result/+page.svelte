@@ -102,7 +102,7 @@
 	{#if loading}
 		<p class="mb-4 text-sm text-text-muted">Resolving lobby and computing scores…</p>
 	{:else if waiting}
-		<div class="rounded-[24px] border border-border bg-surface p-11 text-center max-sm:p-6">
+		<div class="m-card text-center max-sm:p-6">
 			<div class="anim-blink mx-auto h-2.5 w-2.5 rounded-full bg-primary"></div>
 			<div class="mt-4 text-[28px] font-black tracking-[-0.03em]">
 				Waiting on the rest of the lobby
@@ -111,11 +111,7 @@
 				Not everyone has locked a lineup yet, or the window hasn't closed. This checks again
 				automatically — no need to keep refreshing.
 			</p>
-			<a
-				href="/dashboard"
-				class="mt-6 inline-flex h-12 items-center rounded-full border border-border bg-transparent px-8 text-sm font-bold text-text no-underline"
-				>Back to dashboard</a
-			>
+			<a href="/dashboard" class="m-btn lg mt-6">Back to dashboard</a>
 		</div>
 	{:else if error}
 		<p class="mb-4 text-sm text-negative-ink">{error}</p>
@@ -176,7 +172,7 @@
 					>
 						<div>Place</div>
 						<div>Player</div>
-						<div class="text-right">XP</div>
+						<div class="text-end">XP</div>
 					</div>
 					{#each leaderboard as row (row.username + row.rank)}
 						<div
@@ -191,11 +187,11 @@
 							</span>
 							<span class="truncate text-sm font-bold">
 								{row.username}{#if row.isMe}<span
-										class="ml-2 rounded-full bg-primary px-2 py-0.5 text-[9px] font-extrabold tracking-[0.1em] text-text uppercase"
+										class="ms-2 rounded-full bg-primary px-2 py-0.5 text-[9px] font-extrabold tracking-[0.1em] text-text uppercase"
 										>You</span
 									>{/if}
 							</span>
-							<span class="text-right text-sm font-bold">+{row.xpEarned}</span>
+							<span class="text-end text-sm font-bold">+{row.xpEarned}</span>
 						</div>
 					{/each}
 				</div>
@@ -228,16 +224,8 @@
 						{/each}
 					</div>
 				</div>
-				<a
-					href="/tournament"
-					class="w-full rounded-full bg-primary py-4 text-center text-[15px] font-extrabold text-text no-underline"
-					>Browse tournaments</a
-				>
-				<a
-					href="/dashboard"
-					class="w-full rounded-full border border-border bg-transparent py-4 text-center text-[15px] font-bold text-text no-underline"
-					>Back to dashboard</a
-				>
+				<a href="/tournament" class="m-btn primary lg w-full">Browse tournaments</a>
+				<a href="/dashboard" class="m-btn lg w-full">Back to dashboard</a>
 			</div>
 		</div>
 	{/if}

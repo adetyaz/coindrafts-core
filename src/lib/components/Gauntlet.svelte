@@ -73,7 +73,7 @@
 	}
 </script>
 
-<div class="rounded-[20px] border border-border bg-surface p-[22px]">
+<div class="m-card">
 	<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
 		Daily gauntlet
 	</div>

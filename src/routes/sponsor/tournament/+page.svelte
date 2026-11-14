@@ -82,7 +82,7 @@
 	<a href={resolve('/sponsor')} class="text-sm font-bold text-text-muted no-underline"
 		>&larr; Sponsors</a
 	>
-	<h1 class="mt-3 text-[34px] leading-none font-black tracking-[-0.04em]">Sponsor a tournament</h1>
+	<h1 class="m-title mt-3">Sponsor a tournament</h1>
 
 	<div class="mt-6 grid gap-6 md:grid-cols-2">
 		<div class="flex flex-col gap-4">
@@ -149,10 +149,8 @@
 
 		<div>
 			<div class="text-sm font-black">Preview</div>
-			<div class="mt-2 rounded-[24px] border border-border bg-surface p-5">
-				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-					Tournament
-				</div>
+			<div class="m-card mt-2">
+				<div class="m-eyebrow">Tournament</div>
 				<div class="mt-1 text-2xl font-black">{title || 'Your tournament'}</div>
 				<div class="mt-2 flex items-center gap-2 text-sm">
 					{#if logo}<img src={logo} alt="Your logo" class="h-8 w-auto rounded" />{/if}
@@ -166,7 +164,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="mt-4 rounded-[20px] border border-border bg-surface p-5">
+			<div class="m-card mt-4">
 				<div class="flex items-baseline justify-between">
 					<span class="text-sm font-bold">Flat fee</span>
 					<span class="font-mono text-2xl font-bold">{usd(TOURNAMENT_SPONSOR_CENTS)}</span>
@@ -179,8 +177,7 @@
 					type="button"
 					disabled={busy || !title.trim() || !prize.trim() || !logo}
 					onclick={submit}
-					class="mt-3 h-11 w-full cursor-pointer rounded-full border-none bg-primary text-sm font-extrabold text-text disabled:opacity-50"
-					>Request sponsorship</button
+					class="m-btn primary mt-3 w-full disabled:opacity-50">Request sponsorship</button
 				>
 			</div>
 		</div>

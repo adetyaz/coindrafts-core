@@ -99,14 +99,14 @@
 				type="button"
 				onclick={() => (open = !open)}
 				aria-label="AI Draft Agent"
-				class="grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-text text-lg shadow-[0_8px_24px_rgba(26,36,33,0.28)] transition hover:-translate-y-0.5"
+				class="m-btn dark w-11"
 			>
 				🪄
 			</button>
 
 			{#if open}
 				<div
-					class="absolute top-13 left-0 w-72 rounded-2xl border border-border bg-surface p-4 shadow-[0_16px_40px_rgba(26,36,33,0.2)]"
+					class="flat absolute top-13 left-0 m-card w-72 !p-4 shadow-[0_16px_40px_rgba(26,36,33,0.2)]"
 				>
 					{#if !confirming}
 						<p class="mb-3 text-[13px] font-bold text-text">Need a hand?</p>
@@ -114,7 +114,7 @@
 							<button
 								type="button"
 								onclick={() => (confirming = 'one')}
-								class="cursor-pointer rounded-xl border border-border bg-surface-alt px-3.5 py-2.5 text-left text-xs font-bold text-text"
+								class="cursor-pointer rounded-xl border border-border bg-surface-alt px-3.5 py-2.5 text-start text-xs font-bold text-text"
 							>
 								Fill the next empty slot
 								<span class="block font-mono text-[11px] font-normal text-text-muted">
@@ -128,7 +128,7 @@
 							<button
 								type="button"
 								onclick={() => (confirming = 'all')}
-								class="cursor-pointer rounded-xl border border-border bg-surface-alt px-3.5 py-2.5 text-left text-xs font-bold text-text"
+								class="cursor-pointer rounded-xl border border-border bg-surface-alt px-3.5 py-2.5 text-start text-xs font-bold text-text"
 							>
 								Auto-draft everything left ({emptySectors.length})
 								<span class="block font-mono text-[11px] font-normal text-text-muted">
@@ -151,18 +151,14 @@
 									: ` costs ${costFor(confirming === 'one' ? 1 : emptySectors.length)} XP, charged right away.`}
 						</p>
 						<div class="flex gap-2">
-							<button
-								type="button"
-								onclick={() => (confirming = null)}
-								class="flex-1 cursor-pointer rounded-full border border-border bg-transparent py-2 text-xs font-bold text-text-muted"
-							>
+							<button type="button" onclick={() => (confirming = null)} class="m-btn flex-1">
 								Back
 							</button>
 							<button
 								type="button"
 								disabled={submitting}
 								onclick={() => confirmHelp(confirming!)}
-								class="flex-1 cursor-pointer rounded-full bg-primary py-2 text-xs font-extrabold text-text disabled:opacity-60"
+								class="m-btn primary flex-1 disabled:opacity-60"
 							>
 								{submitting ? 'Thinking…' : 'Go ahead'}
 							</button>

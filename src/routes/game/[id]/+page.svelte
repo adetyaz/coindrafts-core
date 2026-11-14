@@ -502,7 +502,7 @@
 	{#if phase === 'loading'}
 		<div class="h-64 animate-pulse rounded-[24px] bg-surface-alt"></div>
 	{:else if phase === 'waiting'}
-		<div class="rounded-[24px] border border-border bg-surface p-11 text-center max-sm:p-6">
+		<div class="m-card text-center max-sm:p-6">
 			<div class="anim-blink mx-auto h-2.5 w-2.5 rounded-full bg-primary"></div>
 			<div class="mt-4 text-[28px] font-black tracking-[-0.03em]">Waiting for your opponent</div>
 			<p class="mt-3 text-[15px] text-text-muted">
@@ -512,14 +512,10 @@
 			</p>
 		</div>
 	{:else if phase === 'error'}
-		<div class="rounded-[24px] border border-border bg-surface p-11 text-center">
+		<div class="m-card text-center">
 			<div class="text-[28px] font-black tracking-[-0.03em]">Can't load this game</div>
 			<p class="mt-3 text-[15px] text-text-muted">{errorMessage}</p>
-			<a
-				href="/dashboard"
-				class="mt-6 inline-flex h-12 items-center rounded-full bg-primary px-8 text-sm font-extrabold text-text no-underline"
-				>Back to dashboard</a
-			>
+			<a href="/dashboard" class="m-btn primary lg mt-6">Back to dashboard</a>
 		</div>
 
 		<!-- ── RACE SCREEN ──────────────────────────────────────────────── -->
@@ -633,7 +629,7 @@
 				<div class="mb-3"><StakeCommit stakeId={live.stakeId} /></div>
 			{/if}
 			{#if canSwap}
-				<div class="mb-3 rounded-2xl border border-border bg-surface p-3 text-sm">
+				<div class="flat m-card mb-3 !p-4 text-sm">
 					<div class="flex flex-wrap items-center justify-between gap-2">
 						<span class="font-black">🛞 Pit lane open</span>
 						<span class="font-mono text-xs text-text-muted"
@@ -659,8 +655,7 @@
 									type="button"
 									disabled={swapping}
 									onclick={() => doSwap(o)}
-									class="h-8 cursor-pointer rounded-full border border-border bg-bg px-3 text-xs font-bold disabled:opacity-50"
-									>{o.symbol} in</button
+									class="m-btn sm disabled:opacity-50">{o.symbol} in</button
 								>
 							{:else}
 								<span class="text-xs text-text-muted">Finding coins in that sector…</span>
@@ -738,7 +733,7 @@
 										<div class="mt-1 text-xs">
 											{d.side.car.model}
 											<span
-												class="ml-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold text-black uppercase"
+												class="ms-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold text-black uppercase"
 												style="background:{rarityColor(d.side.car.rarity)}"
 												>{d.side.car.rarity}</span
 											>
@@ -819,7 +814,7 @@
 									<li class="flex items-center gap-3 text-sm font-bold">
 										<span class="w-6 text-lg">{['🥇', '🥈', '🥉'][i] ?? i + 1}</span>
 										<span>{c.isMe ? 'You' : c.name}</span>
-										<span class="ml-auto font-mono">{c.pct >= 0 ? '+' : ''}{c.pct.toFixed(2)}%</span
+										<span class="ms-auto font-mono">{c.pct >= 0 ? '+' : ''}{c.pct.toFixed(2)}%</span
 										>
 									</li>
 								{/each}
@@ -844,9 +839,7 @@
 				</ul>
 			{/if}
 		{:else if series.length < 2}
-			<div
-				class="grid h-[380px] place-items-center rounded-[24px] border border-border bg-surface text-center"
-			>
+			<div class="m-card grid h-[380px] place-items-center text-center">
 				<div>
 					<p class="text-sm font-bold text-text">Waiting for the first ticks…</p>
 					<p class="mt-2 text-[13px] text-text-muted">

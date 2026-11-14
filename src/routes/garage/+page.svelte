@@ -199,24 +199,20 @@
 	{#if phase === 'loading'}
 		<div class="h-48 animate-pulse rounded-[24px] bg-surface-alt"></div>
 	{:else if phase === 'signed-out'}
-		<div class="rounded-[24px] border border-border bg-surface p-10 text-center">
+		<div class="m-card text-center">
 			<p class="text-lg font-black">Sign in to see your garage</p>
 			<p class="mt-2 text-sm text-text-muted">
 				Every new player gets a free car and 500 Gears on their first sign-in.
 			</p>
 		</div>
 	{:else if phase === 'error' || !garage}
-		<div class="rounded-[24px] border border-border bg-surface p-10 text-center">
+		<div class="m-card text-center">
 			<p class="text-lg font-black">Couldn't load your garage</p>
-			<button
-				onclick={load}
-				class="mt-4 h-11 cursor-pointer rounded-full border-none bg-primary px-6 text-sm font-extrabold text-text"
-				>Try again</button
-			>
+			<button onclick={load} class="m-btn primary mt-4">Try again</button>
 		</div>
 	{:else}
 		{#if sortedCars.length === 0}
-			<div class="rounded-[24px] border border-border bg-surface p-10 text-center">
+			<div class="m-card text-center">
 				<p class="text-lg font-black">Your garage is empty</p>
 				<p class="mt-2 text-sm text-text-muted">
 					Race to earn Gears, then buy a car below or in the Car Market.
@@ -251,7 +247,7 @@
 											{/if}
 										</div>
 									</div>
-									<div class="text-right font-mono text-xs text-text-muted">
+									<div class="text-end font-mono text-xs text-text-muted">
 										<div>{car.races} races</div>
 										<div>{car.wins} wins</div>
 									</div>
@@ -269,16 +265,9 @@
 						</div>
 
 						<div class="mt-4 flex flex-wrap gap-1.5">
-							<button
-								onclick={() => openPanel(car, 'customise')}
-								class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-3 text-xs font-bold"
-								>Customise</button
+							<button onclick={() => openPanel(car, 'customise')} class="m-btn sm">Customise</button
 							>
-							<button
-								onclick={() => openPanel(car, 'history')}
-								class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-3 text-xs font-bold"
-								>History</button
-							>
+							<button onclick={() => openPanel(car, 'history')} class="m-btn sm">History</button>
 							{#if !car.stakedInRace}
 								{#if car.listing}
 									<button
@@ -289,20 +278,13 @@
 												{ action: 'cancel', listingId: car.listing!.id },
 												() => 'Listing removed'
 											)}
-										class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-3 text-xs font-bold text-text-muted disabled:opacity-50"
-										>Take off sale</button
+										class="m-btn sm disabled:opacity-50">Take off sale</button
 									>
 								{:else}
-									<button
-										onclick={() => openPanel(car, 'sell')}
-										class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-3 text-xs font-bold"
-										>Sell</button
-									>
+									<button onclick={() => openPanel(car, 'sell')} class="m-btn sm">Sell</button>
 								{/if}
 								{#if car.sellNow}
-									<button
-										onclick={() => openPanel(car, 'sellNow')}
-										class="h-9 cursor-pointer rounded-full border border-border bg-transparent px-3 text-xs font-bold"
+									<button onclick={() => openPanel(car, 'sellNow')} class="m-btn sm"
 										>Sell now · ⚙️ {car.sellNow.value}</button
 									>
 								{/if}
@@ -332,8 +314,7 @@
 												{ action: 'list', carId: car.id, price },
 												() => `Listed for ${price} Gears`
 											)}
-										class="h-10 cursor-pointer rounded-full border-none bg-primary px-4 text-xs font-extrabold text-text disabled:opacity-50"
-										>List in the Car Market</button
+										class="m-btn primary sm disabled:opacity-50">List in the Car Market</button
 									>
 								</div>
 							</div>
@@ -356,7 +337,7 @@
 											(d: { buyer: string; price: number }) =>
 												`${d.buyer} bought your ${car.model} for ${d.price} Gears`
 										)}
-									class="mt-3 h-10 cursor-pointer rounded-full border-none bg-primary px-5 text-xs font-extrabold text-text disabled:opacity-50"
+									class="m-btn primary sm mt-3 disabled:opacity-50"
 									>Sell for ⚙️ {car.sellNow.value}</button
 								>
 							</div>
@@ -390,10 +371,7 @@
 												type="button"
 												aria-pressed={draft.decal === d.id}
 												onclick={() => (draft.decal = d.id)}
-												class="h-8 cursor-pointer rounded-full border px-3 text-xs font-bold {draft.decal ===
-												d.id
-													? 'border-text bg-text text-surface'
-													: 'border-border bg-transparent'}">{d.label}</button
+												class="m-chip text-xs">{d.label}</button
 											>
 										{/each}
 									</div>
@@ -422,7 +400,7 @@
 												{ action: 'customise', carId: car.id, ...delta },
 												() => `Done. ${cost} Gears spent.`
 											)}
-										class="h-10 cursor-pointer rounded-full border-none bg-primary px-5 text-xs font-extrabold text-text disabled:opacity-50"
+										class="m-btn primary sm disabled:opacity-50"
 										>{cost ? `Apply for ⚙️ ${cost}` : 'Pick a change'}</button
 									>
 									<span class="text-xs text-text-muted">
@@ -470,10 +448,12 @@
 					</p>
 				</div>
 			</div>
-			<div class="mt-4 grid grid-cols-4 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+			<div
+				class="mt-4 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))] gap-4"
+			>
 				{#each garage.showroom as tier (tier.rarity)}
 					{@const soldOut = tier.left === 0}
-					<div class="flex flex-col rounded-[20px] border border-border bg-surface p-4">
+					<div class="flat m-card flex flex-col !p-4">
 						<span
 							class="self-start rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
 							style="background:{rarityColor(tier.rarity)}">{tier.rarity}</span
@@ -500,7 +480,7 @@
 									{ action: 'showroom', rarity: tier.rarity, model: showroomModel[tier.rarity] },
 									() => `Your new ${showroomModel[tier.rarity]} is in the garage`
 								)}
-							class="mt-3 h-10 cursor-pointer rounded-full border-none bg-primary text-xs font-extrabold text-text disabled:opacity-50"
+							class="m-btn primary sm mt-3 disabled:opacity-50"
 						>
 							{soldOut ? 'Sold out' : garage.gears < tier.price ? 'Not enough Gears' : 'Buy new'}
 						</button>
@@ -514,7 +494,7 @@
 		{#if garage.near}
 			<div
 				id="on-near"
-				class="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-border bg-surface-alt p-5 text-xs"
+				class="m-card mt-8 flex flex-wrap items-center justify-between gap-3 !bg-surface-alt text-xs"
 			>
 				<div>
 					<div class="font-extrabold">Your cars and Gears are recorded on NEAR</div>
@@ -538,11 +518,7 @@
 				</div>
 				<!-- External NEAR explorer link: resolve() is for app routes only -->
 				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				<a
-					href={garage.near.contractUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="rounded-full border border-border bg-surface px-3.5 py-1.5 font-bold text-text no-underline"
+				<a href={garage.near.contractUrl} target="_blank" rel="noopener noreferrer" class="m-btn sm"
 					>View the garage contract ↗</a
 				>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->

@@ -44,11 +44,9 @@
 </script>
 
 {#if inv && ownedKinds.length}
-	<div class="rounded-[20px] border border-border bg-surface p-[18px]">
+	<div class="m-card">
 		<div class="flex items-center justify-between">
-			<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Item for this race
-			</div>
+			<div class="m-eyebrow text-text-muted">Item for this race</div>
 			<div class="font-mono text-[11px] text-text-muted">
 				{inv.usedThisWeek}/{inv.weeklyCap} this week
 			</div>
@@ -63,9 +61,7 @@
 						aria-pressed={value?.kind === k}
 						title={ITEMS[k].does}
 						onclick={() => choose(k)}
-						class="h-9 cursor-pointer rounded-full border px-3 text-xs font-bold {value?.kind === k
-							? 'border-text bg-text text-surface'
-							: 'border-border bg-bg'}"
+						class="m-chip"
 					>
 						{ITEMS[k].icon}
 						{ITEMS[k].label} ×{inv.owned[k]}
@@ -97,10 +93,7 @@
 								type="button"
 								aria-pressed={value.symbol === p.symbol}
 								onclick={() => (value = { ...value!, symbol: p.symbol })}
-								class="h-8 cursor-pointer rounded-full border px-3 text-xs font-bold {value.symbol ===
-								p.symbol
-									? 'border-text bg-text text-surface'
-									: 'border-border'}">{p.symbol}</button
+								class="m-chip text-xs">{p.symbol}</button
 							>
 						{/each}
 					</div>

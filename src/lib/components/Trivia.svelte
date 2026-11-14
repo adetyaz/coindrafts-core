@@ -108,22 +108,18 @@
 	}
 </script>
 
-<div class="rounded-[24px] border border-border bg-surface p-6">
+<div class="m-card">
 	<div class="flex items-center justify-between gap-3">
 		<div>
-			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-text-muted uppercase">
-				Daily trivia
-			</div>
+			<div class="m-eyebrow">Daily trivia</div>
 			<div class="mt-1 text-lg font-black">
 				{s ? `${s.total} questions · about a minute` : 'Today’s questions'}
 			</div>
 		</div>
 		{#if s}
-			<div class="text-right">
+			<div class="text-end">
 				<div class="font-mono text-2xl font-bold">🔥 {s.streak}</div>
-				<div class="text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
-					day streak
-				</div>
+				<div class="m-eyebrow !text-[10px] text-text-muted">day streak</div>
 			</div>
 		{/if}
 	</div>
@@ -141,8 +137,7 @@
 			type="button"
 			disabled={busy}
 			onclick={start}
-			class="mt-4 h-11 cursor-pointer rounded-full border-none bg-primary px-6 text-sm font-extrabold text-text disabled:opacity-50"
-			>{busy ? 'Loading…' : 'Start'}</button
+			class="m-btn primary mt-4 disabled:opacity-50">{busy ? 'Loading…' : 'Start'}</button
 		>
 	{:else if !run.finished && question}
 		<div class="mt-4 flex items-center justify-between font-mono text-xs text-text-muted">
@@ -166,7 +161,7 @@
 					type="button"
 					disabled={busy}
 					onclick={() => answer(o.value)}
-					class="min-h-11 cursor-pointer rounded-2xl border px-4 py-2 text-left text-sm font-bold disabled:cursor-default {isAnswer
+					class="min-h-11 cursor-pointer rounded-2xl border px-4 py-2 text-start text-sm font-bold disabled:cursor-default {isAnswer
 						? 'border-positive bg-positive text-text'
 						: isPicked
 							? 'border-negative bg-negative text-text'

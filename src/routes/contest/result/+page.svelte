@@ -203,7 +203,7 @@
 	{/if}
 
 	{#if !loading && !hasResult}
-		<div class="rounded-[24px] border border-border bg-surface p-11 text-center max-sm:p-6">
+		<div class="m-card text-center max-sm:p-6">
 			<div class="text-[28px] font-black tracking-[-0.03em]">
 				{error ? 'Result unavailable' : 'No contest selected'}
 			</div>
@@ -213,16 +213,8 @@
 					: 'Open a result from your contest list — results are tied to a specific contest.'}
 			</p>
 			<div class="mt-7 flex flex-wrap justify-center gap-3">
-				<a
-					href="/dashboard"
-					class="inline-flex h-12 items-center rounded-full bg-primary px-8 text-sm font-extrabold text-text no-underline"
-					>Go to dashboard</a
-				>
-				<a
-					href="/matchmaking"
-					class="inline-flex h-12 items-center rounded-full border border-border px-8 text-sm font-bold text-text-muted no-underline"
-					>Find a match</a
-				>
+				<a href="/dashboard" class="m-btn primary lg">Go to dashboard</a>
+				<a href="/matchmaking" class="m-btn lg">Find a match</a>
 			</div>
 		</div>
 	{:else if hasResult}
@@ -350,7 +342,7 @@
 					<ul class="mb-6 flex flex-col gap-2">
 						{#each calls as c (c.symbol)}
 							<li
-								class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-sm"
+								class="flat m-card flex flex-wrap items-center justify-between gap-2 !p-4 text-sm"
 							>
 								<span class="font-black"
 									>{c.right ? '✓' : '✗'}
@@ -375,9 +367,9 @@
 					>
 						<div>Sector</div>
 						<div>Your pick</div>
-						<div class="text-right">Ret</div>
+						<div class="text-end">Ret</div>
 						<div>Opponent</div>
-						<div class="text-right">Pts</div>
+						<div class="text-end">Pts</div>
 					</div>
 					{#each breakdown as row, i (`${row.sector}-${row.pick}-${i}`)}
 						<div
@@ -388,7 +380,7 @@
 							>
 							<span class="text-sm font-bold">{row.pick}</span>
 							<span
-								class="text-right font-mono text-[13px] font-bold"
+								class="text-end font-mono text-[13px] font-bold"
 								style="color:{row.pct >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
 								>{row.pct >= 0 ? '+' : ''}{row.pct}%</span
 							>
@@ -408,7 +400,7 @@
 							{:else}
 								<span class="text-sm text-text-muted">—</span>
 							{/if}
-							<span class="text-right text-sm font-bold">+{row.points}</span>
+							<span class="text-end text-sm font-bold">+{row.points}</span>
 						</div>
 					{/each}
 				</div>
@@ -472,8 +464,7 @@
 						href={`/share/${contestId}?u=${page.data.user.id}`}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="w-full rounded-full bg-primary py-4 text-center text-[15px] font-extrabold text-text no-underline"
-						>Share result</a
+						class="m-btn primary lg w-full">Share result</a
 					>
 				{/if}
 				{#if canRematch}
@@ -481,16 +472,12 @@
 					<button
 						onclick={rematch}
 						disabled={rematching}
-						class="w-full cursor-pointer rounded-full bg-text py-4 text-center text-[15px] font-extrabold text-primary transition hover:-translate-y-0.5 disabled:opacity-60"
+						class="m-btn dark lg w-full disabled:opacity-60"
 					>
 						{rematching ? 'Setting up…' : `Rematch ${opponentName ?? 'them'}`}
 					</button>
 				{/if}
-				<a
-					href="/matchmaking"
-					class="w-full rounded-full border border-border bg-transparent py-4 text-center text-[15px] font-bold text-text no-underline"
-					>New opponent</a
-				>
+				<a href="/matchmaking" class="m-btn lg w-full">New opponent</a>
 			</div>
 		</div>
 	{/if}

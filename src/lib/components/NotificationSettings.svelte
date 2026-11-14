@@ -79,9 +79,8 @@
 				disabled={busy || denied}
 				aria-pressed={on}
 				onclick={toggleDevice}
-				class="h-9 cursor-pointer rounded-full border px-4 text-xs font-bold disabled:opacity-50 {on
-					? 'border-text bg-text text-surface'
-					: 'border-border bg-bg'}">{on ? 'On' : 'Turn on'}</button
+				class="m-chip !min-h-11 !px-5 !text-sm text-xs disabled:opacity-50"
+				>{on ? 'On' : 'Turn on'}</button
 			>
 		{/if}
 	</div>

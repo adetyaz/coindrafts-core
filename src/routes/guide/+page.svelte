@@ -114,7 +114,7 @@
 </script>
 
 <div class="mx-auto flex max-w-2xl flex-col gap-3">
-	<section class="rounded-[20px] border border-border bg-surface px-5 py-6">
+	<section class="m-card">
 		<span
 			class="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest text-primary uppercase"
 		>
@@ -128,16 +128,12 @@
 			walks through every screen in the order you'll actually hit them.
 		</p>
 		<div class="mt-5 flex flex-wrap gap-2">
-			<a
-				href="/dashboard"
-				class="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-bold text-text no-underline transition hover:bg-primary-hover"
-				>Open the app →</a
-			>
+			<a href="/dashboard" class="m-btn primary sm">Open the app →</a>
 		</div>
 	</section>
 
 	{#each STEPS as group (group.group)}
-		<section class="rounded-[20px] border border-border bg-surface px-5 py-5">
+		<section class="m-card">
 			<div class="mb-1">
 				<span class="text-[11px] font-bold tracking-widest text-primary uppercase"
 					>{group.group}</span
@@ -188,7 +184,7 @@
 		</section>
 	{/each}
 
-	<section class="rounded-[20px] border border-border bg-surface px-5 py-5">
+	<section class="m-card">
 		<span class="text-[11px] font-bold tracking-widest text-primary uppercase">Reference</span>
 		<h2 class="mt-1 mb-2 text-lg font-black text-text">Common questions</h2>
 		<div class="flex flex-col divide-y divide-border">

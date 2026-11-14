@@ -162,18 +162,19 @@
 
 {#snippet seatRow(s: Seat, i: number, stageIndex: number)}
 	<li
-		class="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm {s.isMe
-			? 'bg-text text-surface'
-			: 'bg-bg'} {animateDraw ? 'draw-in' : ''}"
+		class="flex items-center justify-between gap-2 rounded-[12px] border-2 px-3 py-2 text-sm {s.isMe
+			? 'border-border bg-primary'
+			: s.isBot
+				? 'border-dashed border-border bg-surface-alt'
+				: 'border-border bg-surface-alt'} {animateDraw ? 'draw-in' : ''}"
 		style={animateDraw ? `animation-delay:${(i * groups.length + stageIndex) * 140}ms` : ''}
 	>
 		<span class="flex min-w-0 items-center gap-2">
 			{#if s.rank}<span class="w-5 font-mono text-xs font-bold">{s.rank}</span>{/if}
 			<PlayerLink id={s.userId} name={s.isMe ? 'You' : s.username} class="truncate font-bold" />
 			{#if s.isBot}<span
-					class="rounded px-1.5 py-0.5 text-[9px] font-extrabold {s.isMe
-						? 'bg-surface text-text'
-						: 'bg-text text-surface'}">BOT</span
+					class="rounded-md border-2 border-border bg-lavender px-1.5 py-0.5 text-[9px] font-extrabold"
+					>BOT</span
 				>{/if}
 		</span>
 		<span class="shrink-0 font-mono text-[10px] opacity-70"
@@ -193,20 +194,22 @@
 	{:else}
 		<div class="mt-4 flex flex-wrap items-start justify-between gap-4">
 			<div>
-				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-					{t.cup ? 'Cup' : t.accessType === 'private' ? 'Private tournament' : 'Tournament'} ·
-					{t.status === 'open'
-						? 'Registration open'
-						: t.status === 'active'
-							? 'Racing'
-							: t.status === 'resolved'
-								? 'Finished'
-								: 'Cancelled'}
+				<div class="m-plate">
+					<span
+						>{t.cup ? 'Cup' : t.accessType === 'private' ? 'Private tournament' : 'Tournament'} ·
+						{t.status === 'open'
+							? 'Registration open'
+							: t.status === 'active'
+								? 'Racing'
+								: t.status === 'resolved'
+									? 'Finished'
+									: 'Cancelled'}</span
+					>
 				</div>
-				<h1 class="mt-1 text-[38px] leading-none font-black tracking-[-0.04em] max-sm:text-[28px]">
+				<h1 class="m-title mt-2">
 					{t.name}
 				</h1>
-				<p class="mt-2 text-sm text-text-muted">
+				<p class="m-lead mt-1">
 					Groups at {t.groupTrack} · final at {t.finalTrack} · {t.durationMinutes} min races
 					{#if t.sectorRestriction}· {t.sectorRestriction.toUpperCase()} only{/if}
 				</p>
@@ -221,8 +224,9 @@
 					</div>
 				{/if}
 			</div>
-			<div class="text-right">
-				<div class="text-sm font-bold">
+			<div class="flat m-card !bg-butter !p-4">
+				<div class="m-eyebrow">Prizes</div>
+				<div class="m-num mt-1 text-lg font-bold">
 					🏆 ⚙️ {t.prizes.map((p) => p.toLocaleString()).join(' / ')}
 				</div>
 				{#if t.sponsor?.prize}<div class="text-sm font-bold">+ {t.sponsor.prize}</div>{/if}
@@ -232,22 +236,17 @@
 				{#if t.entryFee}<div class="text-xs text-text-muted">
 						Entry ⚙️ {t.entryFee} · pot ⚙️ {t.pot}
 					</div>{/if}
-				<button
-					type="button"
-					onclick={share}
-					class="mt-2 h-9 cursor-pointer rounded-full border border-border bg-surface px-4 text-xs font-bold"
-					>Share</button
-				>
+				<button type="button" onclick={share} class="m-btn sm mt-2">Share</button>
 			</div>
 		</div>
 
 		{#if t.myStage && t.status === 'active'}
 			<div
-				class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-text p-5 text-surface"
+				class="halftone m-card mt-6 flex flex-wrap items-center justify-between gap-3 !bg-primary"
 			>
 				<div>
-					<div class="font-black">You're in {t.myStage.label}</div>
-					<div class="text-sm opacity-80">
+					<div class="font-display text-2xl font-extrabold">You're in {t.myStage.label}</div>
+					<div class="text-sm font-semibold">
 						{#if t.myStage.status === 'drafting' && !t.myStage.drafted}
 							Draft your lineup: auto-draft in {countdown(t.myStage.draftClosesAt)}
 						{:else if t.myStage.status === 'drafting'}
@@ -262,16 +261,12 @@
 				{#if t.myStage.status === 'drafting' && !t.myStage.drafted}
 					<!-- resolve() can't carry a query string; the path itself is resolved. -->
 					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={`${resolve('/draft')}?lobbyId=${t.myStage.lobbyId}`}
-						class="inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-extrabold text-text no-underline"
+					<a href={`${resolve('/draft')}?lobbyId=${t.myStage.lobbyId}`} class="m-btn primary"
 						>Draft now &rarr;</a
 					>
 					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				{:else}
-					<a
-						href={resolve('/race/[id]', { id: t.myStage.lobbyId })}
-						class="inline-flex h-11 items-center rounded-full bg-surface px-6 text-sm font-extrabold text-text no-underline"
+					<a href={resolve('/race/[id]', { id: t.myStage.lobbyId })} class="m-btn"
 						>{t.myStage.status === 'resolved' ? 'Standings' : 'Watch'} &rarr;</a
 					>
 				{/if}
@@ -279,10 +274,12 @@
 		{/if}
 
 		{#if t.status === 'open'}
-			<div class="mt-6 rounded-[24px] border border-border bg-surface p-6">
+			<div class="m-card mt-6">
 				<div class="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<div class="font-mono text-3xl font-bold">{countdown(t.registrationClosesAt)}</div>
+						<div class="m-num text-4xl font-bold" role="timer">
+							{countdown(t.registrationClosesAt)}
+						</div>
 						<div class="text-xs text-text-muted">until the draw and the start</div>
 					</div>
 					<div class="flex flex-wrap gap-2">
@@ -291,28 +288,18 @@
 								type="button"
 								disabled={busy}
 								onclick={join}
-								class="h-11 cursor-pointer rounded-full border-none bg-primary px-6 text-sm font-extrabold text-text disabled:opacity-50"
+								class="m-btn primary disabled:opacity-50"
 								>Join{t.entryFee ? ` · ⚙️ ${t.entryFee}` : ''}</button
 							>
 						{:else}
-							<span class="inline-flex h-11 items-center rounded-full bg-bg px-5 text-sm font-bold"
-								>You're in</span
-							>
+							<span class="m-tag !min-h-11 bg-brand-tint !px-4 !text-sm">You're in</span>
 						{/if}
 						{#if t.isCreator}
-							<button
-								type="button"
-								disabled={busy}
-								onclick={startNow}
-								class="h-11 cursor-pointer rounded-full border border-border bg-transparent px-5 text-sm font-bold"
+							<button type="button" disabled={busy} onclick={startNow} class="m-btn"
 								>Draw now</button
 							>
 							{#if t.accessType === 'private'}
-								<button
-									type="button"
-									disabled={busy}
-									onclick={invite}
-									class="h-11 cursor-pointer rounded-full border border-border bg-transparent px-5 text-sm font-bold"
+								<button type="button" disabled={busy} onclick={invite} class="m-btn"
 									>Invite link</button
 								>
 							{/if}
@@ -323,7 +310,7 @@
 					<p class="mt-3 font-mono text-xs break-all">{inviteLink}</p>
 					<p class="text-xs text-text-muted">Each link lets one person in.</p>
 				{/if}
-				<h2 class="mt-6 text-sm font-black tracking-[0.06em] uppercase">
+				<h2 class="m-eyebrow mt-6">
 					Registered ({t.entrants.length})
 				</h2>
 				<p class="mt-1 text-xs text-text-muted">
@@ -349,11 +336,11 @@
 
 		{#if t.results}
 			<section class="mt-8">
-				<h2 class="text-2xl font-black tracking-[-0.03em]">Podium</h2>
+				<h2 class="font-display text-2xl font-extrabold">Podium</h2>
 				<p class="mt-1 text-xs text-text-muted">Prizes go to the best-placed humans.</p>
 				<ol class="mt-3 grid gap-3 sm:grid-cols-3">
 					{#each t.results.slice(0, 3) as r (r.place)}
-						<li class="rounded-[20px] border border-border bg-surface p-5">
+						<li class="m-card">
 							<div class="text-3xl">{PLACE[r.place - 1]}</div>
 							<div class="mt-1 font-black">{r.username}</div>
 							<div class="font-mono text-sm">+⚙️ {r.gears.toLocaleString()}</div>
@@ -367,7 +354,7 @@
 		{#if final}
 			<section class="mt-8">
 				<div class="flex flex-wrap items-end justify-between gap-2">
-					<h2 class="text-2xl font-black tracking-[-0.03em]">Final · {final.circuit}</h2>
+					<h2 class="font-display text-2xl font-extrabold">Final · {final.circuit}</h2>
 					<a href={resolve('/race/[id]', { id: final.lobbyId })} class="text-sm font-bold text-text"
 						>{final.status === 'resolved' ? 'Standings' : 'Watch'} &rarr;</a
 					>
@@ -381,7 +368,7 @@
 		{#if groups.length}
 			<section class="mt-8">
 				<div class="flex flex-wrap items-end justify-between gap-2">
-					<h2 class="text-2xl font-black tracking-[-0.03em]">The draw</h2>
+					<h2 class="font-display text-2xl font-extrabold">The draw</h2>
 					<span class="text-xs text-text-muted"
 						>{potCount}
 						{potCount === 1 ? 'pot' : 'pots'} · {groups.length}
@@ -393,7 +380,7 @@
 				</div>
 				<div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
 					{#each groups as g, gi (g.lobbyId)}
-						<div class="rounded-[20px] border border-border bg-surface p-4">
+						<div class="flat m-card !p-4">
 							<div class="flex items-center justify-between">
 								<div class="font-black">{g.label}</div>
 								<a

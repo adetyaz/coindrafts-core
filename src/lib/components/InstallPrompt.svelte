@@ -39,11 +39,7 @@
 </script>
 
 {#if show}
-	<div
-		class="rounded-[20px] border border-border bg-surface p-5"
-		role="region"
-		aria-label="Install CoinDraft"
-	>
+	<div class="m-card" role="region" aria-label="Install CoinDraft">
 		<div class="flex flex-wrap items-start justify-between gap-3">
 			<div class="min-w-0">
 				<div class="font-black">Add CoinDraft to your home screen</div>
@@ -61,19 +57,9 @@
 			</div>
 			<div class="flex gap-2">
 				{#if !ios}
-					<button
-						type="button"
-						onclick={install}
-						class="h-10 cursor-pointer rounded-full border-none bg-primary px-5 text-sm font-extrabold text-text"
-						>Install</button
-					>
+					<button type="button" onclick={install} class="m-btn primary sm">Install</button>
 				{/if}
-				<button
-					type="button"
-					onclick={dismiss}
-					class="h-10 cursor-pointer rounded-full border border-border bg-transparent px-4 text-sm font-bold text-text-muted"
-					>Not now</button
-				>
+				<button type="button" onclick={dismiss} class="m-btn sm">Not now</button>
 			</div>
 		</div>
 	</div>

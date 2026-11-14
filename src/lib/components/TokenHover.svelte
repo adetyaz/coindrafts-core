@@ -161,7 +161,7 @@
 				easing: backOut
 			}}
 			out:fade={{ duration: prefersReducedMotion.current ? 0 : 120, easing: cubicOut }}
-			class="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_18px_50px_rgba(26,36,33,0.22)]"
+			class="m-card overflow-hidden shadow-[0_18px_50px_rgba(26,36,33,0.22)]"
 			style="transform-origin:{flipped ? 'right' : 'left'} top"
 		>
 			<div class="flex items-center gap-2.5 border-b border-border px-4 py-3">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import WorldThumb from '$lib/components/race/WorldThumb.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Toast from '$lib/components/Toast.svelte';
@@ -155,183 +156,130 @@
 	}
 </script>
 
-<div class="m-page narrow">
+<div class="m-page mid">
 	{#if status === 'idle'}
-		<div class="rounded-[24px] border border-border bg-surface p-11 max-sm:p-6">
-			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-				Versus
-			</div>
-			<h1 class="mt-3 text-[38px] leading-none font-black tracking-[-0.04em] max-sm:text-[28px]">
-				How long should it run?
-			</h1>
-			<p class="mt-3 text-[15px] text-text-muted">
-				You'll be matched with someone who picked the same length, so prices are read over the same
-				window. Shorter games fill more slowly — there are fewer people waiting on them.
-			</p>
+		<a href={resolve('/play')} class="text-sm font-bold text-text no-underline">← All races</a>
+		<div
+			class="mt-3 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-center gap-6"
+		>
+			<header class="flex flex-col gap-3">
+				<span class="m-plate w-fit"><span>Versus · Golden hour</span></span>
+				<h1 class="m-title">One rival. Five coins each.</h1>
+				<p class="m-lead">
+					We match you with a real driver who picked the same race length, so both engines run on
+					the same market window.
+				</p>
+			</header>
+			<WorldThumb theme="golden" paint="var(--color-blue)" />
+		</div>
 
-			<div class="mt-7 flex flex-wrap gap-2.5">
+		<section class="m-card mt-6" aria-labelledby="vs-length">
+			<h2 id="vs-length" class="font-display text-xl font-extrabold">How long should it run?</h2>
+			<p class="text-sm text-text-muted">
+				Shorter races fill more slowly: fewer people wait on them.
+			</p>
+			<div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Race length">
 				{#each DURATION_OPTIONS as opt (opt.minutes)}
 					<button
 						type="button"
 						onclick={() => (durationMinutes = opt.minutes)}
 						aria-pressed={durationMinutes === opt.minutes}
-						class="cursor-pointer rounded-full border-[1.5px] px-5 py-3 text-sm font-bold transition"
-						style={durationMinutes === opt.minutes
-							? 'background:var(--color-text);color:var(--color-primary);border-color:var(--color-text)'
-							: 'background:transparent;color:var(--color-text-muted);border-color:var(--color-border)'}
+						class="m-chip !min-h-11 !px-5 !text-sm">{opt.label}</button
 					>
-						{opt.label}
-					</button>
 				{/each}
 			</div>
 
-			<div class="mt-7">
-				<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-					Play for something?
-				</div>
-				<div class="flex flex-wrap gap-2.5">
-					{#each STAKE_TIERS as tier (tier)}
-						{@const tooRich = tier > 0 && xpBalance != null && xpBalance < tier}
-						<button
-							type="button"
-							disabled={tooRich}
-							onclick={() => (stakeTier = tier)}
-							aria-pressed={stakeTier === tier}
-							title={tooRich ? `You have ${xpBalance} XP` : undefined}
-							class="cursor-pointer rounded-full border-[1.5px] px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-35"
-							style={stakeTier === tier
-								? 'background:var(--color-text);color:var(--color-primary);border-color:var(--color-text)'
-								: 'background:transparent;color:var(--color-text-muted);border-color:var(--color-border)'}
-						>
-							{tier === 0 ? 'No stake' : `${tier} XP`}
-						</button>
-					{/each}
-				</div>
-				{#if stakeTier > 0}
-					<p class="mt-3 text-[13px] text-text-muted">
-						You'll be matched with someone who chose the same stake. Before the game starts you can
-						raise — but it always settles at the <strong class="text-text">lower</strong> of the two,
-						so you can never be pushed above your own number.
-					</p>
-				{/if}
-				{#if xpBalance != null}
-					<p class="mt-2 font-mono text-[12px] text-text-muted">Balance: {xpBalance} XP</p>
-				{/if}
+			<h2 class="mt-6 font-display text-xl font-extrabold">
+				Play for XP? <span class="text-sm font-semibold text-text-muted">(optional)</span>
+			</h2>
+			<div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Stake">
+				{#each STAKE_TIERS as tier (tier)}
+					{@const tooRich = tier > 0 && xpBalance != null && xpBalance < tier}
+					<button
+						type="button"
+						disabled={tooRich}
+						onclick={() => (stakeTier = tier)}
+						aria-pressed={stakeTier === tier}
+						title={tooRich ? `You have ${xpBalance} XP` : undefined}
+						class="m-chip !min-h-11 !px-5 !text-sm disabled:cursor-not-allowed disabled:opacity-40"
+						>{tier === 0 ? 'No stake' : `${tier} XP`}</button
+					>
+				{/each}
 			</div>
-
-			<button
-				onclick={startSearch}
-				class="mt-8 h-13 w-full cursor-pointer rounded-full bg-primary text-sm font-extrabold text-text transition hover:bg-primary-hover"
-			>
-				Find an opponent · {durationLabel(durationMinutes)}{stakeTier > 0
-					? ` · ${stakeTier} XP`
-					: ''}
-			</button>
-
-			<!-- Offered up front, not just after 20s of waiting. Someone who'd rather
-			     not wait for a real opponent shouldn't have to wait to find that out. -->
-			<div class="mt-5 border-t border-border pt-5 text-center">
-				<p class="text-[13px] text-text-muted">Don't want to wait for a real opponent?</p>
-				<button
-					onclick={startScrimmage}
-					disabled={startingScrimmage}
-					class="mt-2.5 cursor-pointer rounded-full border-[1.5px] border-border bg-transparent px-6 py-2.5 text-sm font-bold text-text transition hover:border-primary disabled:opacity-60"
-				>
-					{startingScrimmage ? 'Starting…' : 'Play a Scrimmage instead'}
-				</button>
-			</div>
-		</div>
-	{:else if status === 'searching'}
-		<div
-			class="hero-coral dot-grid relative flex min-h-[440px] flex-col justify-between overflow-hidden rounded-[24px] p-11"
-		>
-			<div
-				class="pointer-events-none absolute top-[70px] right-[-70px] flex h-80 w-80 items-center justify-center"
-			>
-				<div
-					class="anim-pulse absolute h-52 w-52 rounded-full border-2 border-[rgba(26,36,33,0.28)]"
-				></div>
-				<div
-					class="anim-pulse absolute h-52 w-52 rounded-full border-2 border-[rgba(26,36,33,0.28)]"
-					style="animation-delay:0.85s"
-				></div>
-				<div
-					class="anim-pulse absolute h-52 w-52 rounded-full border-2 border-[rgba(26,36,33,0.28)]"
-					style="animation-delay:1.7s"
-				></div>
-				<div class="h-[74px] w-[74px] rounded-full bg-text"></div>
-			</div>
-			<div class="relative flex items-start justify-between">
-				<span
-					class="flex items-center gap-2 rounded-full bg-text px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] text-primary uppercase"
-				>
-					<span class="anim-blink h-1.5 w-1.5 rounded-full bg-primary"></span>Searching
-				</span>
-			</div>
-			<div class="relative">
-				<div class="text-[54px] leading-[0.94] font-black tracking-[-0.045em]">
-					Finding your rival
-				</div>
-				<p class="mt-4 text-[15px] opacity-80">
-					Scanning for a real, currently-available opponent. No bots here — if no one's around,
-					you'll get the option to Scrimmage instead while we keep looking.
+			{#if stakeTier > 0}
+				<p class="mt-3 text-sm text-text-body">
+					You'll meet someone who chose the same stake. It always settles at the
+					<strong>lower</strong> of your two numbers, so you're never pushed above yours.
 				</p>
-			</div>
-			<div class="relative flex items-end justify-between gap-6">
-				<div class="font-mono text-[42px] leading-none font-bold tracking-[-0.03em]">
-					{elapsedStr}
-				</div>
-				<button
-					onclick={cancelSearch}
-					class="cursor-pointer rounded-full border-[1.5px] border-text bg-transparent px-[26px] py-3.5 text-sm font-bold text-text"
-				>
-					Cancel search
+			{/if}
+			{#if xpBalance != null}
+				<p class="m-num mt-2 text-xs text-text-muted">Balance: {xpBalance} XP</p>
+			{/if}
+
+			<button onclick={startSearch} class="m-btn primary lg mt-6 block">
+				Find a rival · {durationLabel(durationMinutes)}{stakeTier > 0 ? ` · ${stakeTier} XP` : ''} →
+			</button>
+			<div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
+				<span class="text-text-muted">Rather not wait?</span>
+				<button onclick={startScrimmage} disabled={startingScrimmage} class="m-btn sm">
+					{startingScrimmage ? 'Starting…' : 'Practice against a bot'}
 				</button>
 			</div>
-		</div>
-		{#if noOpponentYet}
+		</section>
+	{:else if status === 'searching'}
+		<section class="halftone relative m-card overflow-hidden !bg-butter" aria-live="polite">
 			<div
-				class="mt-4.5 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-border bg-surface p-5"
+				class="pointer-events-none absolute -end-16 top-10 grid h-72 w-72 place-items-center max-sm:-end-28"
+				aria-hidden="true"
 			>
+				{#each [0, 0.85, 1.7] as d (d)}
+					<div
+						class="anim-pulse absolute h-48 w-48 rounded-full border-2 border-border"
+						style="animation-delay:{d}s"
+					></div>
+				{/each}
+				<div class="h-16 w-16 rounded-full border-2 border-border bg-primary"></div>
+			</div>
+			<span class="m-tag relative bg-surface"
+				><span class="anim-blink h-2 w-2 rounded-full border border-border bg-primary"
+				></span>Searching</span
+			>
+			<h1 class="m-title relative mt-6 max-w-[14ch]">Finding your rival…</h1>
+			<p class="relative mt-3 max-w-[40ch] text-sm font-semibold">
+				Looking for a real driver who's online now. If no one turns up, you can practice against a
+				bot while we keep looking.
+			</p>
+			<div class="relative mt-8 flex flex-wrap items-end justify-between gap-4">
 				<div>
-					<div class="text-sm font-extrabold text-text">No one's online right now</div>
-					<p class="mt-1 text-[13px] text-text-muted">
-						We'll keep searching in the background — or jump into Scrimmage while you wait.
-					</p>
+					<div class="m-num text-4xl font-bold" role="timer">{elapsedStr}</div>
+					<div class="m-eyebrow mt-1">waiting</div>
 				</div>
-				<button
-					onclick={startScrimmage}
-					disabled={startingScrimmage}
-					class="cursor-pointer rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-text disabled:opacity-60"
-				>
-					{startingScrimmage ? 'Starting…' : 'Try Scrimmage instead'}
+				<button onclick={cancelSearch} class="m-btn">Cancel search</button>
+			</div>
+		</section>
+		{#if noOpponentYet}
+			<div class="m-card mt-4 flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<div class="font-bold">No one's online right now</div>
+					<p class="text-sm text-text-muted">We'll keep searching in the background.</p>
+				</div>
+				<button onclick={startScrimmage} disabled={startingScrimmage} class="m-btn primary">
+					{startingScrimmage ? 'Starting…' : 'Practice while you wait'}
 				</button>
 			</div>
 		{/if}
 	{:else if status === 'matched'}
-		<div
-			class="hero-coral dot-grid flex min-h-[300px] flex-col justify-between rounded-[24px] p-11"
-		>
-			<span
-				class="w-fit rounded-full bg-text px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] text-primary uppercase"
-				>Matched</span
-			>
-			<div>
-				<div class="text-[44px] leading-none font-black tracking-[-0.045em]">Opponent found</div>
-				<p class="mt-3 text-[15px] opacity-80">Redirecting to the draft…</p>
-			</div>
-		</div>
+		<section class="m-card !bg-primary text-center" aria-live="polite">
+			<span class="m-tag anim-stamp bg-surface">Matched</span>
+			<h1 class="m-title mt-5">Rival found!</h1>
+			<p class="mt-2 font-semibold">Taking you to the draft…</p>
+		</section>
 	{:else if status === 'error'}
-		<div class="rounded-[24px] border border-border bg-surface p-11 text-center">
-			<div class="text-[28px] font-black tracking-[-0.03em]">Something went wrong</div>
-			<p class="mt-3 text-[15px] text-text-muted">{errorMessage}</p>
-			<button
-				onclick={startSearch}
-				class="mt-6 cursor-pointer rounded-full bg-primary px-9 py-3.5 text-sm font-extrabold text-text"
-			>
-				Try again
-			</button>
-		</div>
+		<section class="m-card text-center">
+			<h1 class="font-display text-2xl font-extrabold">Something went wrong</h1>
+			<p class="mt-2 text-sm text-text-body">{errorMessage}</p>
+			<button onclick={startSearch} class="m-btn primary mt-5">Try again</button>
+		</section>
 	{/if}
 </div>
 

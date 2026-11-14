@@ -48,7 +48,7 @@
 </script>
 
 {#snippet row(b: Booking)}
-	<li class="rounded-2xl border border-border bg-surface p-4 text-sm">
+	<li class="flat m-card !p-4 text-sm">
 		<div class="flex flex-wrap items-start justify-between gap-2">
 			<div>
 				<div class="font-black">
@@ -77,12 +77,8 @@
 {/snippet}
 
 <div class="m-page mid">
-	<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-		Sponsors
-	</div>
-	<h1 class="mt-2 text-[40px] leading-none font-black tracking-[-0.04em] max-sm:text-[30px]">
-		Put your brand on the grid
-	</h1>
+	<div class="m-eyebrow">Sponsors</div>
+	<h1 class="m-title mt-1">Put your brand on the grid</h1>
 	<p class="mt-3 max-w-[60ch] text-sm text-text-muted">
 		Sponsor a tournament, with your livery on every car, or book trackside ads on a real circuit.
 		Every booking is reviewed before it goes live.
@@ -91,7 +87,7 @@
 	<div class="mt-8 grid gap-4 sm:grid-cols-2">
 		<a
 			href={resolve('/sponsor/tournament')}
-			class="rounded-[24px] border border-border bg-surface p-6 text-text no-underline transition hover:border-text"
+			class="m-card text-text no-underline transition hover:border-text"
 		>
 			<div class="text-2xl">🏆</div>
 			<div class="mt-2 text-lg font-black">Sponsor a tournament</div>
@@ -101,7 +97,7 @@
 		</a>
 		<a
 			href={resolve('/sponsor/ads')}
-			class="rounded-[24px] border border-border bg-surface p-6 text-text no-underline transition hover:border-text"
+			class="m-card text-text no-underline transition hover:border-text"
 		>
 			<div class="text-2xl">🪧</div>
 			<div class="mt-2 text-lg font-black">Book trackside ads</div>
@@ -122,7 +118,7 @@
 		{/if}
 		{#if data.sponsor}
 			<section class="mt-10">
-				<h2 class="text-sm font-black tracking-[0.06em] uppercase">
+				<h2 class="m-eyebrow">
 					{data.sponsor.name} · active and upcoming
 				</h2>
 				<ul class="mt-3 flex flex-col gap-2">
@@ -131,7 +127,7 @@
 						</li>{/each}
 				</ul>
 				{#if past.length}
-					<h2 class="mt-8 text-sm font-black tracking-[0.06em] uppercase">Past</h2>
+					<h2 class="m-eyebrow mt-8">Past</h2>
 					<ul class="mt-3 flex flex-col gap-2">
 						{#each past as b (b.id)}{@render row(b)}{/each}
 					</ul>
