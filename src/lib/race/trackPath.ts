@@ -64,8 +64,71 @@ function smoothLoop(pts: [number, number][]): [number, number][] {
 	});
 }
 
-export function buildTrackPath(circuit: Circuit): TrackPath {
-	const raw = smoothLoop(circuit.points);
+/**
+ * Closest approach between two parts of the lap that are far apart along it.
+ * Stretches near the bridge are skipped: there the roads cross at different
+ * heights, and the approaches converge by design.
+ */
+function closestSections(points: { x: number; z: number; y: number }[], cumulative: number[]) {
+	const n = points.length;
+	const length = cumulative[n];
+	const lifted = points.map((p) => p.y > 0);
+	const nearBridge = points.map((_, i) => {
+		for (let k = -60; k <= 60; k++) if (lifted[(i + k + n) % n]) return true;
+		return false;
+	});
+	const stride = Math.max(1, Math.floor(n / 500));
+	let min = Infinity;
+	for (let i = 0; i < n; i += stride) {
+		if (nearBridge[i]) continue;
+		for (let j = i + stride; j < n; j += stride) {
+			if (nearBridge[j]) continue;
+			const along = Math.abs(cumulative[j] - cumulative[i]);
+			if (Math.min(along, length - along) < 40) continue;
+			const d = Math.hypot(points[i].x - points[j].x, points[i].z - points[j].z);
+			if (d < min) min = d;
+		}
+	}
+	return min;
+}
+
+/** Tightest corner radius on the lap, measured over ~6 units of road. */
+function tightestRadius(path: TrackPath) {
+	const N = Math.round(path.length / 1.5);
+	let min = Infinity;
+	for (let i = 0; i < N; i++) {
+		const a = path.at(i / N);
+		const b = path.at((i + 4) / N);
+		let turn = Math.abs(Math.atan2(b.dz, b.dx) - Math.atan2(a.dz, a.dx));
+		if (turn > Math.PI) turn = 2 * Math.PI - turn;
+		if (turn > 1e-4) min = Math.min(min, (4 * path.length) / N / turn);
+	}
+	return min;
+}
+
+/**
+ * The 3D track draws the road far wider than scale. On tight circuits two
+ * things went wrong: neighbouring stretches merged into one slab, and the
+ * inside of hairpins and chicanes folded over itself. `minGap` (centre to
+ * centre between separate stretches) and `minRadius` (tightest corner) scale
+ * the circuit up just enough to avoid both. The shape is unchanged.
+ */
+export function buildTrackPath(
+	circuit: Circuit,
+	opts: { minGap?: number; minRadius?: number } = {}
+): TrackPath {
+	const base = buildAtScale(circuit, 1);
+	let scale = 1;
+	if (opts.minGap)
+		scale = Math.max(scale, opts.minGap / closestSections(base.points, base.cumulative));
+	if (opts.minRadius) scale = Math.max(scale, opts.minRadius / tightestRadius(base));
+	return scale > 1.001 ? buildAtScale(circuit, scale) : base;
+}
+
+function buildAtScale(circuit: Circuit, scale: number): TrackPath & { cumulative: number[] } {
+	const raw = smoothLoop(circuit.points).map(
+		([x, z]) => [x * scale, z * scale] as [number, number]
+	);
 	const n = raw.length;
 
 	// ── Bridges where the lap crosses itself ─────────────────────────────────
@@ -154,6 +217,7 @@ export function buildTrackPath(circuit: Circuit): TrackPath {
 	const zs = points.map((p) => p.z);
 	return {
 		length,
+		cumulative,
 		at,
 		corner,
 		points,

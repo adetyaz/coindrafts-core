@@ -98,7 +98,18 @@
 	const FOLLOW_VIEW = 62;
 	// The circuit is fixed for the life of a race, so it is read once.
 	// svelte-ignore state_referenced_locally
-	const path = buildTrackPath(circuitById(circuit));
+	// Separate stretches of road keep at least 4 units of grass between them,
+	// and no corner is tighter than the road is wide (or its inside folds over).
+	const path = buildTrackPath(circuitById(circuit), {
+		minGap: ROAD_WIDTH + 4,
+		minRadius: ROAD_WIDTH / 2 + 1
+	});
+	// A circuit scaled up to fit the wide road keeps the same car speed on
+	// screen (about 15 units a second): its lap just takes longer. Gaps are in
+	// laps, so the race maths is unchanged.
+	const lapSeconds = Math.max(LAP_SECONDS, path.length / 15);
+	// Scenery per lap scales with the circuit, so a bigger one isn't emptier.
+	const density = Math.min(3, Math.max(1, path.length / 420));
 
 	let host: HTMLDivElement;
 	let canvas: HTMLCanvasElement;
@@ -435,7 +446,8 @@
 			path,
 			clearance: makeClearance(path),
 			rand,
-			roadHalf: ROAD_WIDTH / 2
+			roadHalf: ROAD_WIDTH / 2,
+			density
 		});
 
 		// ── Cars ──────────────────────────────────────────────────────────
@@ -615,7 +627,7 @@
 
 			// The finish: everyone rolls to a stop.
 			speedScale = finished ? Math.max(0, speedScale - dt * 0.6) : holding ? 0 : 1;
-			const base = (dt / (reduceMotion ? LAP_SECONDS * 1.6 : LAP_SECONDS)) * speedScale;
+			const base = (dt / (reduceMotion ? lapSeconds * 1.6 : lapSeconds)) * speedScale;
 
 			const leaderPct = cars.length ? Math.max(...cars.map((c) => c.pct)) : 0;
 			leaderS += base;

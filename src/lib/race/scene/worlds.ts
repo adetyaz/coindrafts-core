@@ -49,6 +49,8 @@ export type WorldCtx = {
 	clearance: (x: number, z: number) => number;
 	rand: () => number;
 	roadHalf: number;
+	/** Scenery multiplier for bigger circuits (1 = a ~400-unit lap). */
+	density?: number;
 };
 
 type Item = {
@@ -103,6 +105,7 @@ function instanced(
 function scatter(ctx: WorldCtx, count: number, near: number, far: number): [number, number][] {
 	const { minX, maxX, minZ, maxZ } = ctx.path.bounds;
 	const out: [number, number][] = [];
+	count = Math.round(count * (ctx.density ?? 1));
 	for (let tries = 0; tries < count * 12 && out.length < count; tries++) {
 		const x = minX - far + ctx.rand() * (maxX - minX + far * 2);
 		const z = minZ - far + ctx.rand() * (maxZ - minZ + far * 2);
