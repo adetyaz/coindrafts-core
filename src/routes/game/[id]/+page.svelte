@@ -12,6 +12,7 @@
 	import { ITEMS, SPARE_WINDOW, itemFactors, type LineupItem } from '$lib/race/items';
 	import { binaryPace, callRight, isBinaryMode } from '$lib/race/binary';
 	import type { TrackAd } from '$lib/sponsors';
+	import { TRACK_THEMES, trackThemeFor } from '$lib/race/trackTheme';
 	import { circuitById, circuitForRace } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
 	import {
@@ -53,6 +54,7 @@
 		stakeId?: string | null;
 		circuit?: string | null;
 		mode?: string | null;
+		carRace?: boolean;
 		ads?: TrackAd[];
 		rival?: {
 			username: string;
@@ -269,6 +271,10 @@
 	});
 
 	const binary = $derived(isBinaryMode(live?.mode));
+	// The world this race runs in: a different place for each kind of race.
+	const theme = $derived(
+		trackThemeFor({ mode: live?.mode, isPaper: live?.isPaper, carRace: live?.carRace })
+	);
 	const priceNow = (p: Pick) => livePrices[p.symbol.toUpperCase()] ?? p.currentPrice;
 	// Binary mode (F9): one gate per call, green while it's right.
 	const myCalls = $derived(
@@ -492,7 +498,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18">
+<div class="m-page">
 	{#if phase === 'loading'}
 		<div class="h-64 animate-pulse rounded-[24px] bg-surface-alt"></div>
 	{:else if phase === 'waiting'}
@@ -590,9 +596,12 @@
 		</div>
 
 		{#if view === 'race'}
-			<p class="mb-2 text-xs font-bold text-text-muted">
-				{circuit.name}, {circuit.place} · {circuit.lengthKm} km · {circuit.character}
-			</p>
+			<div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+				<span class="m-plate"><span>{TRACK_THEMES[theme].label}</span></span>
+				<p class="text-xs font-bold text-text-muted">
+					{circuit.name}, {circuit.place} · {circuit.lengthKm} km · {circuit.character}
+				</p>
+			</div>
 			{#if live?.stakeId}
 				<div class="mb-3"><StakeCommit stakeId={live.stakeId} /></div>
 			{/if}
@@ -634,8 +643,10 @@
 				</div>
 			{/if}
 			<div class="relative">
-				{#key circuit.id}
+				{#key `${circuit.id}|${theme}`}
 					<RaceTrack3D
+						{theme}
+						tall
 						circuit={circuit.id}
 						cars={raceCars}
 						{holding}

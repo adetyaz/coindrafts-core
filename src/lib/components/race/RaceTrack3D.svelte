@@ -16,6 +16,7 @@
 	import { circuitById, DEFAULT_CIRCUIT } from '$lib/race/circuits';
 	import { buildTrackPath } from '$lib/race/trackPath';
 	import { AD_SLOTS, type TrackAd } from '$lib/sponsors';
+	import type { TrackTheme } from '$lib/race/trackTheme';
 
 	let {
 		cars,
@@ -25,7 +26,9 @@
 		onOvertake,
 		onUnsupported,
 		checkpoints,
-		ads = []
+		ads = [],
+		theme = 'meadow',
+		tall = false
 	}: {
 		cars: RaceCar[];
 		/** Circuit id from $lib/race/circuits (real layouts). Fixed for the life of the component. */
@@ -43,6 +46,10 @@
 		checkpoints?: (boolean | null)[];
 		/** Sponsors' trackside ads running today on this circuit (GAMEPLAY_FLOWS.md, F12). */
 		ads?: TrackAd[];
+		/** The world this race runs in (layout.css `.track-*`). Fixed for the life of the component. */
+		theme?: TrackTheme;
+		/** Fill more of the screen (the live race page). */
+		tall?: boolean;
 	} = $props();
 
 	// ── Tuning ───────────────────────────────────────────────────────────────
@@ -93,9 +100,10 @@
 
 	function cssColor(value: string): THREE.Color {
 		// Resolve `var(--token)` (and any other CSS colour) through the browser.
+		// Appended to the track's own element, so the world class on it applies.
 		const probe = document.createElement('span');
 		probe.style.color = value;
-		document.body.appendChild(probe);
+		(host ?? document.body).appendChild(probe);
 		const rgb = getComputedStyle(probe).color;
 		probe.remove();
 		return new THREE.Color(rgb);
@@ -125,9 +133,20 @@
 			keep(new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, ...extra }));
 
 		// ── Light ─────────────────────────────────────────────────────────
+		// Each world sets its own light level (`--race-light`): night worlds are
+		// dim, and the cars carry headlights instead.
+		const lightLevel = parseFloat(getComputedStyle(host).getPropertyValue('--race-light')) || 1;
+		const night = lightLevel < 0.8;
 		const white = token('surface');
-		scene.add(new THREE.HemisphereLight(white, token('race-grass-dark'), 1.4));
-		const sun = new THREE.DirectionalLight(white, 1.6);
+		const sunColour = token('race-sun');
+		scene.add(
+			new THREE.HemisphereLight(
+				night ? sunColour : white,
+				token('race-grass-dark'),
+				1.4 * lightLevel
+			)
+		);
+		const sun = new THREE.DirectionalLight(sunColour, 1.6 * lightLevel);
 		sun.position.set(60, 120, 40);
 		sun.castShadow = true;
 		sun.shadow.mapSize.set(1024, 1024);
@@ -356,6 +375,31 @@
 			planted++;
 		}
 
+		// Flowers in the grass (lamps, at night): small dots of the world's accent colour.
+		const flowerGeo = keep(new THREE.SphereGeometry(night ? 0.42 : 0.3, 6, 5));
+		const flowerColour = token('race-flower');
+		const flowerMat = keep(
+			new THREE.MeshStandardMaterial({
+				color: flowerColour,
+				emissive: flowerColour,
+				emissiveIntensity: night ? 1.4 : 0.15,
+				flatShading: true
+			})
+		);
+		const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, 160);
+		const fm = new THREE.Matrix4();
+		let grown = 0;
+		for (let tries = 0; tries < 900 && grown < 160; tries++) {
+			const x = minX - 20 + rand() * (maxX - minX + 40);
+			const z = minZ - 20 + rand() * (maxZ - minZ + 40);
+			const off = path.points.every((p) => Math.hypot(p.x - x, p.z - z) > ROAD_WIDTH / 2 + 1.5);
+			if (!off) continue;
+			fm.setPosition(x, night ? 1.1 : 0.25, z);
+			flowers.setMatrixAt(grown++, fm);
+		}
+		flowers.count = grown;
+		scene.add(flowers);
+
 		// ── Cars ──────────────────────────────────────────────────────────
 		const bodyGeo = keep(new THREE.BoxGeometry(2.4, 0.6, 1.2));
 		const cabinGeo = keep(new THREE.BoxGeometry(1.2, 0.5, 1.0));
@@ -396,6 +440,12 @@
 				group.add(wheel);
 			}
 			group.traverse((o) => (o.castShadow = true));
+			// Night worlds: headlights that light the road ahead.
+			if (night) {
+				const lamp = new THREE.PointLight(sunColour, 28, 16, 1.6);
+				lamp.position.set(2.6, 1.2, 0);
+				group.add(lamp);
+			}
 
 			const flame = new THREE.Mesh(flameGeo, flameMat);
 			flame.rotation.z = Math.PI / 2;
@@ -626,14 +676,17 @@
 
 <div
 	bind:this={host}
-	class="relative h-[440px] w-full overflow-hidden rounded-[24px] border border-border bg-surface-alt max-sm:h-[340px]"
+	class="track-{theme} relative w-full overflow-hidden rounded-[22px] border-2 border-border {tall
+		? 'h-[min(62vh,620px)] min-h-[320px]'
+		: 'h-[440px] max-sm:h-[320px]'}"
+	style="background:var(--race-sky)"
 >
 	<canvas bind:this={canvas} class="block h-full w-full"></canvas>
 
 	{#each cars as car (car.id)}
 		<div
 			bind:this={labels[car.id]}
-			class="pointer-events-none absolute top-0 left-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap shadow-sm transition-opacity"
+			class="pointer-events-none absolute top-0 left-0 rounded-full border-2 border-border px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap transition-opacity"
 			style="background:{car.isMe
 				? 'var(--color-primary)'
 				: 'var(--color-surface)'};color:var(--color-text)"
@@ -647,7 +700,8 @@
 
 	<!-- Standings strip -->
 	<ol
-		class="absolute top-3 left-3 flex flex-col gap-1 rounded-2xl bg-surface/90 p-2 text-[11px] font-bold shadow-sm backdrop-blur"
+		class="absolute top-3 left-3 flex flex-col gap-1 rounded-[14px] border-2 border-border bg-surface p-2 pe-3 text-[11px] font-bold shadow-[3px_3px_0_var(--color-ink)]"
+		aria-label="Race order"
 	>
 		{#each standings as car, i (car.id)}
 			<li class="flex items-center gap-2">
@@ -658,14 +712,17 @@
 		{/each}
 	</ol>
 
-	<div class="absolute top-3 right-3 flex gap-1 rounded-full bg-surface/90 p-1 shadow-sm">
+	<div
+		class="absolute top-3 right-3 flex gap-1 rounded-[14px] border-2 border-border bg-surface p-1 shadow-[3px_3px_0_var(--color-ink)]"
+	>
 		{#each [['iso', 'Overview'], ['chase', 'Chase']] as [mode, label] (mode)}
 			<button
 				type="button"
 				onclick={() => (camera = mode as 'iso' | 'chase')}
-				class="cursor-pointer rounded-full border-none px-3 py-1 text-[11px] font-extrabold transition {camera ===
+				aria-pressed={camera === mode}
+				class="min-h-8 cursor-pointer rounded-[9px] border-none px-3 text-[11px] font-extrabold transition {camera ===
 				mode
-					? 'bg-text text-surface'
+					? 'bg-butter text-text'
 					: 'bg-transparent text-text-muted'}"
 			>
 				{label}

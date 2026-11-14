@@ -93,7 +93,7 @@
 		m >= 1440 ? '24 hours' : m >= 60 ? `${m / 60} hour` : `${m} min`;
 </script>
 
-<div class="mx-auto max-w-[760px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page narrow">
 	{#if !card}
 		{#if error}<p class="text-sm text-negative-ink">{error}</p>{:else}<div
 				class="h-64 animate-pulse rounded-[24px] bg-surface-alt"

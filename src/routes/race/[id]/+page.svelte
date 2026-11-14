@@ -146,7 +146,7 @@
 	const pct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 </script>
 
-<div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page">
 	{#if !race}
 		{#if error}
 			<p class="text-sm text-negative-ink">{error}</p>
@@ -225,6 +225,8 @@
 							{holding}
 							finished={race.status === 'resolved' || (endMs > 0 && now >= endMs)}
 							onUnsupported={() => (live3d = false)}
+							theme="village"
+							tall
 							ads={race.ads ?? []}
 						/>
 					{/key}

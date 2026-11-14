@@ -116,7 +116,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	<div class="mb-6.5 flex flex-wrap items-end justify-between gap-6">
 		<div>
 			<h1 class="text-[40px] leading-none font-black tracking-[-0.04em]">Leagues</h1>

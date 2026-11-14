@@ -2,7 +2,10 @@
 	let { items }: { items: string[] } = $props();
 </script>
 
-<div class="overflow-hidden bg-primary py-[7px] whitespace-nowrap text-text">
+<div
+	class="mx-auto mt-3 max-w-[76rem] overflow-hidden rounded-full border-2 border-border bg-butter py-1.5 whitespace-nowrap text-text"
+	aria-hidden="true"
+>
 	<div class="anim-marquee flex w-max">
 		{#each [0, 1] as rep (rep)}
 			<div class="flex">

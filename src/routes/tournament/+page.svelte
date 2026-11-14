@@ -191,7 +191,7 @@
 	</div>
 {/snippet}
 
-<div class="mx-auto max-w-[1100px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page">
 	<div class="flex flex-wrap items-end justify-between gap-4">
 		<div>
 			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">

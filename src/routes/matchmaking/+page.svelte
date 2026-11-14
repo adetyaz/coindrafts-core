@@ -155,7 +155,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[720px] px-7 py-14">
+<div class="m-page narrow">
 	{#if status === 'idle'}
 		<div class="rounded-[24px] border border-border bg-surface p-11 max-sm:p-6">
 			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">

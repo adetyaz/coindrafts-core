@@ -185,7 +185,7 @@
 	const earnedBadges = $derived(BADGES.filter((b) => earned.includes(b.code)));
 </script>
 
-<div class="mx-auto max-w-[1000px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page mid">
 	{#if phase === 'loading'}
 		<div class="h-64 animate-pulse rounded-[24px] bg-surface-alt"></div>
 	{:else if phase === 'signed-out'}

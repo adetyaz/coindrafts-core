@@ -396,7 +396,7 @@
 	const TILTS = ['-1.6deg', '1.2deg', '-0.8deg', '1.6deg', '-1.2deg'];
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	{#if !setup}
 		<!-- Lobby drafts take the tournament's track; head-to-head races choose one. -->
 		<RaceSetup

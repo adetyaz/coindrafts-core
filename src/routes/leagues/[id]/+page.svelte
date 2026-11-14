@@ -87,7 +87,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	{#if loading}
 		<div class="h-32 animate-pulse rounded-[20px] bg-surface-alt"></div>
 	{:else if league}

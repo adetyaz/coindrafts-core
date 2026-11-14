@@ -59,7 +59,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1000px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page mid">
 	<h1 class="text-[32px] leading-none font-black tracking-[-0.04em]">Sponsor bookings</h1>
 	{#if denied}
 		<p class="mt-6 text-sm text-text-muted">Not found.</p>

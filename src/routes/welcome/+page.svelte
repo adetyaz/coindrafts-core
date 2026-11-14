@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { appKit } from '$lib/appkit';
 	import { rarityColor } from '$lib/economy/rarity';
+	import CarPreview from '$lib/components/garage/CarPreview.svelte';
 
 	type Car = { id: string; model: string; rarity: string };
 
@@ -88,45 +89,55 @@
 	const emailOk = $derived(EMAIL.test(email.trim()));
 </script>
 
-<div class="mx-auto max-w-[640px] px-6 py-14 text-center">
+<div class="m-page narrow">
 	{#if loading}
-		<div class="mx-auto h-64 animate-pulse rounded-[24px] bg-surface-alt"></div>
+		<div class="h-64 animate-pulse rounded-[22px] bg-surface-alt"></div>
 	{:else}
-		<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-text-muted uppercase">
-			Welcome to CoinDraft
-		</div>
-		<h1 class="mt-3 text-[40px] leading-none font-black tracking-[-0.04em]">
-			{first ? 'Your first car' : 'A couple of details'}
-		</h1>
+		<header class="text-center">
+			<span class="m-eyebrow">Welcome to CoinDraft</span>
+			<h1 class="m-title mt-2">{first ? 'Meet your first car.' : 'A couple of details.'}</h1>
+		</header>
 
 		{#if first}
 			{#if car}
-				<div class="mt-8 rounded-[24px] border border-border bg-surface p-8">
-					<div class="text-4xl font-black tracking-[-0.03em]">{car.model}</div>
-					<span
-						class="mt-2 inline-block rounded-full px-3 py-1 text-[11px] font-extrabold tracking-[0.08em] uppercase"
-						style="background:{rarityColor(car.rarity)}">{car.rarity}</span
-					>
-					<div class="mt-5 font-mono text-2xl font-bold">+⚙️ {gears} Gears</div>
-					<p class="mx-auto mt-4 max-w-[40ch] text-sm text-text-muted">
-						It's yours. Recorded on NEAR. You'll never need a wallet.
+				<!-- The reveal: your car drives in over the grass. -->
+				<div class="m-card mt-6 overflow-hidden !p-0">
+					<div class="m-sky relative px-4 pt-8">
+						<div class="anim-drive mx-auto w-fit"><CarPreview size={260} /></div>
+					</div>
+					<div class="m-ground h-5"></div>
+					<div class="flex flex-wrap items-center justify-between gap-3 p-5">
+						<div>
+							<div class="font-display text-3xl font-extrabold tracking-[-0.03em]">{car.model}</div>
+							<span
+								class="anim-stamp mt-1 inline-block rounded-lg border-2 border-border px-2.5 py-0.5 text-[11px] font-extrabold tracking-[0.08em] uppercase"
+								style="background:{rarityColor(car.rarity)}">{car.rarity}</span
+							>
+						</div>
+						<div class="text-end">
+							<div class="m-num text-2xl font-bold">+⚙️ {gears}</div>
+							<div class="m-eyebrow">Gears to spend</div>
+						</div>
+					</div>
+					<p class="border-t-2 border-border bg-butter px-5 py-3 text-sm font-semibold">
+						It's yours, recorded on NEAR. You'll never need a wallet.
 					</p>
 				</div>
 			{:else}
-				<p class="mt-6 text-sm text-text-muted">
+				<div class="dashed m-card mt-6 text-center text-sm font-semibold">
 					Your car is still being prepared. It'll be waiting in your garage.
-				</p>
+				</div>
 			{/if}
 		{:else}
-			<p class="mx-auto mt-4 max-w-[44ch] text-sm text-text-muted">
+			<p class="m-lead mx-auto mt-3 text-center">
 				So we can tell you when your race result is in, a bot challenges you, or your car sells.
 			</p>
 		{/if}
 
-		<div class="mt-8 flex flex-col gap-5 text-left">
+		<div class="m-card mt-6 flex flex-col gap-5">
 			<div>
-				<label for="racing-name" class="text-sm font-black">Your racing name</label>
-				<p class="mt-1 text-xs text-text-muted">
+				<label for="racing-name" class="text-sm font-extrabold">Your racing name</label>
+				<p class="mt-0.5 text-xs text-text-muted">
 					Bots and other drivers will call you this. You can change it later.
 				</p>
 				<input
@@ -135,12 +146,12 @@
 					maxlength="20"
 					placeholder="e.g. NitroNova"
 					autocomplete="nickname"
-					class="mt-2 h-12 w-full rounded-2xl border border-border bg-surface px-4 text-base"
+					class="mt-2 h-12 w-full rounded-[14px] border-2 border-border bg-surface-alt px-4 text-base"
 				/>
 			</div>
 			<div>
-				<label for="email" class="text-sm font-black">Your email</label>
-				<p class="mt-1 text-xs text-text-muted">
+				<label for="email" class="text-sm font-extrabold">Your email</label>
+				<p class="mt-0.5 text-xs text-text-muted">
 					For race results and notifications. Never shown to other players.
 				</p>
 				<input
@@ -149,38 +160,38 @@
 					bind:value={email}
 					autocomplete="email"
 					placeholder="you@example.com"
-					class="mt-2 h-12 w-full rounded-2xl border border-border bg-surface px-4 text-base"
+					class="mt-2 h-12 w-full rounded-[14px] border-2 border-border bg-surface-alt px-4 text-base"
 				/>
 			</div>
-			{#if error}<p class="text-sm font-bold text-negative-ink">{error}</p>{/if}
-		</div>
+			{#if error}<p class="m-tag w-fit bg-pink" role="alert">{error}</p>{/if}
 
-		<div class="mt-6 flex flex-col gap-2">
-			<button
-				type="button"
-				disabled={starting || !name.trim() || !emailOk}
-				onclick={() => start(true)}
-				class="h-13 cursor-pointer rounded-full border-none bg-text text-sm font-extrabold text-surface disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{starting
-					? first
-						? 'Getting the car to the grid…'
-						: 'Saving…'
-					: first
-						? 'Start your first race →'
-						: 'Save and continue →'}
-			</button>
-			<button
-				type="button"
-				disabled={starting || !emailOk}
-				onclick={() => start(false)}
-				class="h-11 cursor-pointer rounded-full border border-border bg-transparent text-sm font-bold text-text-muted disabled:opacity-50"
-			>
-				Keep my current name
-			</button>
+			<div class="flex flex-col gap-3">
+				<button
+					type="button"
+					disabled={starting || !name.trim() || !emailOk}
+					onclick={() => start(true)}
+					class="m-btn primary lg block"
+				>
+					{starting
+						? first
+							? 'Getting the car to the grid…'
+							: 'Saving…'
+						: first
+							? 'Start your first race →'
+							: 'Save and continue →'}
+				</button>
+				<button
+					type="button"
+					disabled={starting || !emailOk}
+					onclick={() => start(false)}
+					class="m-btn ghost block">Keep my current name</button
+				>
+			</div>
+			{#if first}
+				<p class="text-center text-xs text-text-muted">
+					A 1-minute race against a bot. Nothing to lose.
+				</p>
+			{/if}
 		</div>
-		{#if first}
-			<p class="mt-4 text-xs text-text-muted">A 1-minute race against a bot. Nothing to lose.</p>
-		{/if}
 	{/if}
 </div>

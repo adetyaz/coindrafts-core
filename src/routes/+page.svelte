@@ -13,6 +13,7 @@
 	import { CIRCUITS } from '$lib/race/circuits';
 	import { streamPrices } from '$lib/race/priceStream';
 	import RaceTrack3D, { type RaceCar } from '$lib/components/race/RaceTrack3D.svelte';
+	import WorldThumb from '$lib/components/race/WorldThumb.svelte';
 
 	const appkitReady = Boolean(appKit);
 
@@ -48,11 +49,12 @@
 	const DEMO_DRIVERS = ['CryptoWhale_99', 'SatoshiKnight', 'DegenScout', 'ChartWizard']
 		.map((u) => PERSONALITIES.find((p) => p.username === u))
 		.filter((p): p is (typeof PERSONALITIES)[number] => Boolean(p));
+	// Car paints (saturated), so the cars read against the grass.
 	const DEMO_COLORS = [
-		'var(--color-sector-meme)',
-		'var(--color-sector-l1)',
-		'var(--color-sector-l2)',
-		'var(--color-sector-defi)'
+		'var(--color-coral)',
+		'var(--color-blue)',
+		'var(--color-amber)',
+		'var(--color-sky)'
 	];
 	const demoCircuit = CIRCUITS[Math.floor(Math.random() * CIRCUITS.length)];
 	let live3d = $state(true);
@@ -262,310 +264,350 @@
 </script>
 
 <div>
-	<!-- ── Hero ─────────────────────────────────────────────────────────── -->
-	<section class="dot-grid relative overflow-hidden bg-bg px-6 pt-16 pb-12 max-md:pt-10">
-		<div class="relative mx-auto flex max-w-6xl flex-wrap items-center gap-12">
-			<div class="min-w-0 flex-[1_1_380px]">
-				<div
-					class="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-[0.1em] text-text-muted uppercase"
-				>
-					<span class="anim-blink h-1.5 w-1.5 rounded-full bg-positive"></span>
-					{stats ? `${fmt(stats.liveContests)} races live` : 'Live market racing'}
-				</div>
-				<h1
-					class="text-[68px] leading-[0.9] font-black tracking-[-0.05em] max-lg:text-[52px] max-md:text-[38px]"
-				>
-					Draft coins.
-				</h1>
-				<h1
-					class="text-[68px] leading-[0.9] font-black tracking-[-0.05em] text-primary-ink max-lg:text-[52px] max-md:text-[38px]"
-				>
-					Race them.
-				</h1>
-				<p class="mt-6 text-lg leading-relaxed text-text-muted max-md:text-base">
-					Your five coins are your engine. Real prices move your car around real circuits, against
-					bots with grudges and drivers like you. Your first car is free and it's yours, recorded on
-					NEAR.
-				</p>
-
-				<div class="mt-8 flex flex-wrap items-center gap-3">
-					{#if page.data.user}
-						<a
-							href={resolve('/dashboard')}
-							class="inline-flex h-13 items-center rounded-full bg-primary px-8 text-sm font-extrabold text-text no-underline transition hover:-translate-y-0.5 hover:bg-primary-hover"
-						>
-							Go race &rarr;
-						</a>
-					{:else if appkitReady}
-						<div class="*:h-13 *:rounded-full *:px-8">
-							<appkit-button label="Sign in to race"></appkit-button>
-						</div>
-						<span class="text-xs text-text-muted">Email or Google. No wallet needed.</span>
-					{:else}
-						<button
-							class="inline-flex h-13 cursor-not-allowed items-center rounded-full bg-primary/50 px-8 text-sm font-extrabold text-text/50"
-							disabled>Loading…</button
-						>
-					{/if}
-				</div>
-				{#if page.url.searchParams.get('auth') === 'required'}
-					<p class="mt-4 text-xs text-negative-ink">Sign in with email or Google to race.</p>
-				{/if}
-				{#if stats && stats.players > 0}
-					<p class="mt-6 text-[13px] text-text-muted">
-						{fmt(stats.players)}
-						{stats.players === 1 ? 'driver has' : 'drivers have'} joined
-					</p>
-				{/if}
-			</div>
-
-			<div class="relative min-w-0 flex-[1_1_480px]">
-				<div class="overflow-hidden rounded-3xl border border-border bg-surface">
+	<!-- ── Hero: the sky, the grass, and a race that's really running ────── -->
+	<section class="m-sky relative overflow-hidden">
+		<div class="m-page !pb-0">
+			<!-- Pinned tags: three facts, hanging off the nav -->
+			<div class="flex flex-wrap gap-x-5 gap-y-2 ps-4 max-sm:hidden" aria-hidden="true">
+				{#each [{ t: stats ? `${fmt(stats.liveContests)} races live` : 'Live market racing', c: 'bg-pink', dot: true }, { t: 'Free to start · no wallet', c: 'bg-butter' }, { t: 'Your car is yours, on NEAR', c: 'bg-sky-tint' }] as pin, i (pin.t)}
 					<div
-						class="flex items-center justify-between gap-3 border-b border-border px-4 py-3 font-mono text-[11px] font-bold tracking-[0.08em] text-text-muted uppercase"
+						class="anim-rise flex flex-col items-center"
+						style="animation-delay:{0.3 + i * 0.1}s"
 					>
-						<span>{demoCircuit.name} · {demoCircuit.place}</span>
-						<span class="flex items-center gap-1.5">
-							<span class="anim-blink h-1.5 w-1.5 rounded-full bg-positive"></span>
-							Live prices
+						<span class="h-4 w-0.5 bg-text"></span>
+						<span class="h-2 w-2 rounded-full bg-text"></span>
+						<span class="m-tag {pin.c} {i % 2 ? 'rotate-[1.5deg]' : '-rotate-2'}">
+							{#if pin.dot}<span
+									class="anim-blink h-2 w-2 rounded-full border border-border bg-primary"
+								></span>{/if}
+							{pin.t}
 						</span>
 					</div>
-					{#if demoCars.length >= 2 && live3d}
-						<div class="aspect-[4/3] w-full">
-							<RaceTrack3D
-								cars={demoCars}
-								circuit={demoCircuit.id}
-								onUnsupported={() => (live3d = false)}
-							/>
-						</div>
-					{:else if demoCars.length >= 2}
-						<ol class="flex flex-col gap-2 p-5">
-							{#each [...demoCars].sort((a, b) => b.pct - a.pct) as car, i (car.id)}
-								<li class="flex items-center gap-3 text-sm">
-									<span class="w-5 font-mono font-bold text-text-muted">{i + 1}</span>
-									<span class="h-3 w-3 rounded-full" style="background:{car.color}"></span>
-									<span class="flex-1 font-bold">{car.name}</span>
-									<span class="font-mono">{pctFmt(car.pct)}</span>
-								</li>
-							{/each}
-						</ol>
-					{:else}
-						<div class="aspect-[4/3] w-full animate-pulse bg-surface-alt"></div>
-					{/if}
-					<div class="border-t border-border px-4 py-3 text-xs text-text-muted">
-						Four bots, each drafting its own way. Positions are their lineups' real moves today.
-					</div>
-				</div>
+				{/each}
 			</div>
-		</div>
-	</section>
 
-	<!-- ── Run your game ───────────────────────────────────────────────── -->
-	<section class="bg-bg px-6 py-20 max-md:py-14">
-		<div class="mx-auto max-w-6xl">
-			<div class="flex flex-wrap items-end justify-between gap-4">
-				<div>
-					<h2 class="text-[38px] font-black tracking-[-0.03em] max-md:text-[28px]">
-						Run your game
-					</h2>
-					<p class="mt-2 max-w-[52ch] text-[15px] text-text-muted">
-						What's on track right now, and the coins drivers are putting in their engines.
+			<div
+				class="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))] items-center gap-x-12 gap-y-8 pt-10 pb-12 max-sm:pt-6"
+			>
+				<div class="flex flex-col gap-6">
+					<div class="flex flex-col gap-3">
+						<span class="m-eyebrow anim-rise">A racing game the market drives</span>
+						<h1
+							class="m-display anim-rise text-[clamp(3.25rem,9vw,6.5rem)]"
+							style="animation-delay:.08s"
+						>
+							Draft coins.<br />Race them.
+						</h1>
+					</div>
+					<p class="m-lead anim-rise" style="animation-delay:.16s">
+						Pick five coins. They're your engine. Live prices push your car around real circuits,
+						against bots with grudges and drivers like you.
 					</p>
+
+					<div class="anim-rise flex flex-wrap items-center gap-3" style="animation-delay:.24s">
+						{#if page.data.user}
+							<a href={resolve('/play')} class="m-btn primary lg">Go race →</a>
+							<a href={resolve('/garage')} class="m-btn lg">My garage</a>
+						{:else if appkitReady}
+							<div class="*:h-14 *:rounded-[14px] *:px-7">
+								<appkit-button label="Sign in to race"></appkit-button>
+							</div>
+							<a href={resolve('/guide')} class="m-btn lg">How it works</a>
+						{:else}
+							<button class="m-btn lg" disabled>Loading…</button>
+						{/if}
+					</div>
+					{#if !page.data.user}
+						<p class="text-sm font-semibold text-text-body">
+							Email or Google. No wallet, no gas. Your first car is free.
+						</p>
+					{/if}
+					{#if page.url.searchParams.get('auth') === 'required'}
+						<p class="m-tag w-fit bg-pink" role="status">Sign in with email or Google to race.</p>
+					{/if}
+					{#if stats && stats.players > 0}
+						<p class="text-sm text-text-body">
+							<span class="m-num font-bold">{fmt(stats.players)}</span>
+							{stats.players === 1 ? 'driver has' : 'drivers have'} joined
+						</p>
+					{/if}
 				</div>
-				<span
-					class="flex items-center gap-1.5 font-mono text-[11px] font-bold tracking-[0.08em] text-text-muted uppercase"
+
+				<!-- The live demo race -->
+				<div class="anim-rise min-w-0" style="animation-delay:.2s">
+					<div class="m-card overflow-hidden !p-0">
+						<div
+							class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-border bg-butter px-4 py-2.5"
+						>
+							<span class="font-display text-sm font-extrabold tracking-[-0.01em]"
+								>{demoCircuit.name} · {demoCircuit.place}</span
+							>
+							<span class="m-tag">
+								<span class="anim-blink h-2 w-2 rounded-full border border-border bg-primary"
+								></span>
+								Live prices
+							</span>
+						</div>
+						{#if demoCars.length >= 2 && live3d}
+							<div class="[&>div]:rounded-none [&>div]:border-0">
+								<RaceTrack3D
+									cars={demoCars}
+									circuit={demoCircuit.id}
+									theme="meadow"
+									onUnsupported={() => (live3d = false)}
+								/>
+							</div>
+						{:else if demoCars.length >= 2}
+							<ol class="flex flex-col gap-2 p-5">
+								{#each [...demoCars].sort((a, b) => b.pct - a.pct) as car, i (car.id)}
+									<li class="flex items-center gap-3 text-sm">
+										<span class="m-num w-5 font-bold text-text-muted">{i + 1}</span>
+										<span
+											class="h-3.5 w-3.5 rounded-full border-2 border-border"
+											style="background:{car.color}"
+										></span>
+										<span class="flex-1 font-bold">{car.name}</span>
+										<span class="m-chg {car.pct >= 0 ? 'up' : 'down'}">{pctFmt(car.pct)}</span>
+									</li>
+								{/each}
+							</ol>
+						{:else}
+							<div class="h-[440px] animate-pulse bg-surface-alt max-sm:h-[320px]"></div>
+						{/if}
+						<p class="border-t-2 border-border px-4 py-3 text-xs text-text-body">
+							Four bots, each drafting its own way. Their positions are their coins' real moves
+							today.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="m-ground h-10"></div>
+	</section>
+
+	<!-- ── How it works: three steps ─────────────────────────────────── -->
+	<section class="m-page !pt-14 !pb-4">
+		<span class="m-eyebrow">How it works</span>
+		<h2 class="m-title mt-2">Three steps, one race.</h2>
+		<ol
+			class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-5"
+		>
+			{#each [{ n: '1', c: 'bg-brand-tint', t: 'Pick a car and a track', d: 'Your first car is free. The circuits are real: Monza, Suzuka, Spa, Interlagos.' }, { n: '2', c: 'bg-butter', t: 'Draft five coins', d: 'One per sector. They are your engine: when they pump, you speed up.' }, { n: '3', c: 'bg-pink', t: 'Race, win Gears', d: 'Beat your rival to earn Gears. Spend them on cars, paint, and power-ups.' }] as s (s.n)}
+				<li class="m-card flex flex-col gap-3">
+					<span
+						class="grid h-11 w-11 place-items-center rounded-full border-2 border-border font-display text-lg font-extrabold {s.c}"
+						>{s.n}</span
+					>
+					<h3 class="font-display text-[22px] leading-tight font-extrabold tracking-[-0.02em]">
+						{s.t}
+					</h3>
+					<p class="text-[15px] text-text-body">{s.d}</p>
+				</li>
+			{/each}
+		</ol>
+	</section>
+
+	<!-- ── Run your game: what's live right now ───────────────────────── -->
+	<section class="m-page !pt-14 !pb-4">
+		<div class="flex flex-wrap items-end justify-between gap-3">
+			<div>
+				<span class="m-eyebrow">Run your game</span>
+				<h2 class="m-title mt-2">On track right now.</h2>
+			</div>
+			<span class="m-tag bg-surface">
+				<span class="anim-blink h-2 w-2 rounded-full border border-border bg-primary"></span>
+				Live · {updatedLabel}
+			</span>
+		</div>
+
+		<h3 class="m-eyebrow mt-8 mb-2">Racing now</h3>
+		{#if liveRaces.length}
+			<div class="m-rail">
+				{#each liveRaces as race (race.id)}
+					<div class="flat m-card w-[15rem] !p-4">
+						<div class="m-num text-[11px] font-bold text-text-muted uppercase">
+							{race.circuit.name} · {lengthLabel(race.durationMinutes)}
+						</div>
+						<div class="mt-2 truncate font-display text-lg font-extrabold">
+							{race.drivers[0] ?? '—'}
+						</div>
+						<div class="text-xs text-text-muted">vs</div>
+						<div class="truncate font-display text-lg font-extrabold">
+							{race.drivers[1] ?? 'a bot'}
+						</div>
+						<div class="mt-3 flex items-center justify-between gap-2 text-xs">
+							<span class="m-num font-bold">{timeLeft(race)}</span>
+							{#if race.scrimmage}
+								<span class="m-chg up">Scrimmage</span>
+							{:else if race.vsBot}
+								<span class="m-chg">vs bot</span>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="dashed m-card text-sm font-semibold">
+				{updatedAt == null ? 'Checking the track…' : 'The track is quiet. Be the first out.'}
+			</div>
+		{/if}
+
+		<div class="mt-8 mb-2 flex flex-wrap items-center justify-between gap-3">
+			<h3 class="m-eyebrow">
+				{shownCoins.length ? 'Most drafted today' : 'Biggest movers today'}
+			</h3>
+			<div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Sector">
+				<button
+					type="button"
+					role="tab"
+					aria-selected={sectorTab === 'all'}
+					onclick={() => (sectorTab = 'all')}
+					class="m-chip">All</button
 				>
-					<span class="anim-blink h-1.5 w-1.5 rounded-full bg-positive"></span>
-					Live · {updatedLabel}
-				</span>
+				{#each SECTOR_LIST as s (s.id)}
+					<button
+						type="button"
+						role="tab"
+						aria-selected={sectorTab === s.id}
+						onclick={() => (sectorTab = s.id)}
+						class="m-chip">{s.label}</button
+					>
+				{/each}
 			</div>
-
-			<h3 class="mt-10 text-sm font-black tracking-[0.06em] uppercase">Racing now</h3>
-			{#if liveRaces.length}
-				<div class="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
-					{#each liveRaces as race (race.id)}
-						<div
-							class="w-[240px] shrink-0 snap-start rounded-2xl border border-border bg-surface p-4"
+		</div>
+		<div class="m-rail">
+			{#if shownCoins.length}
+				{#each shownCoins as coin (coin.symbol + coin.sector)}
+					<div
+						class="flat m-card flex w-[10.5rem] flex-col items-center gap-2 !p-4 text-center"
+						style="background:{sectorTheme(coin.sector).color}"
+					>
+						<span class="m-eyebrow">{sectorTheme(coin.sector).label}</span>
+						<span
+							class="grid h-14 w-14 place-items-center rounded-full border-2 border-border bg-surface-alt font-display text-sm font-extrabold"
+							>{coin.symbol}</span
 						>
-							<div class="font-mono text-[11px] font-bold text-text-muted uppercase">
-								{race.circuit.name} · {lengthLabel(race.durationMinutes)}
-							</div>
-							<div class="mt-2 truncate font-black">{race.drivers[0] ?? '—'}</div>
-							<div class="text-xs text-text-muted">vs</div>
-							<div class="truncate font-black">{race.drivers[1] ?? 'a bot'}</div>
-							<div class="mt-3 flex items-center justify-between text-xs">
-								<span class="font-mono">{timeLeft(race)}</span>
-								{#if race.scrimmage}
-									<span class="rounded-full bg-surface-alt px-2 py-0.5 font-bold">Scrimmage</span>
-								{:else if race.vsBot}
-									<span class="rounded-full bg-surface-alt px-2 py-0.5 font-bold">vs bot</span>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
+						<span class="m-num text-sm font-bold">{priceFmt(coin.price)}</span>
+						<span class="m-chg {(coin.change24h ?? 0) >= 0 ? 'up' : 'down'}"
+							>{pctFmt(coin.change24h)}</span
+						>
+						<span class="text-xs font-semibold"
+							>In {coin.drafts} {coin.drafts === 1 ? 'lineup' : 'lineups'}</span
+						>
+					</div>
+				{/each}
+			{:else if movers.length}
+				{#each movers as t (t.symbol)}
+					{@const sec = classifySector([t.symbol ?? ''])}
+					<div
+						class="flat m-card flex w-[10.5rem] flex-col items-center gap-2 !p-4 text-center"
+						style="background:{sectorTheme(sec).color}"
+					>
+						<span class="m-eyebrow">{sectorTheme(sec).label}</span>
+						<span
+							class="grid h-14 w-14 place-items-center rounded-full border-2 border-border bg-surface-alt font-display text-sm font-extrabold"
+							>{t.symbol?.toUpperCase()}</span
+						>
+						<span class="m-num text-sm font-bold">{priceFmt(t.price)}</span>
+						<span class="m-chg {(t.change24h ?? 0) >= 0 ? 'up' : 'down'}"
+							>{pctFmt(t.change24h)}</span
+						>
+					</div>
+				{/each}
 			{:else}
-				<p class="mt-3 text-sm text-text-muted">
-					{updatedAt == null ? 'Checking the track…' : 'The track is quiet. Be the first out.'}
-				</p>
+				<div class="dashed m-card text-sm font-semibold">Prices are loading.</div>
 			{/if}
+		</div>
+	</section>
 
-			<div class="mt-10 flex flex-wrap items-center justify-between gap-3">
-				<h3 class="text-sm font-black tracking-[0.06em] uppercase">
-					{shownCoins.length ? 'Most drafted today' : 'Biggest movers today'}
-				</h3>
-				<div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Sector">
-					<button
-						type="button"
-						role="tab"
-						aria-selected={sectorTab === 'all'}
-						onclick={() => (sectorTab = 'all')}
-						class="h-8 cursor-pointer rounded-full border border-border px-3 text-xs font-bold {sectorTab ===
-						'all'
-							? 'bg-text text-surface'
-							: 'bg-surface text-text-muted'}">All</button
-					>
-					{#each SECTOR_LIST as s (s.id)}
-						<button
-							type="button"
-							role="tab"
-							aria-selected={sectorTab === s.id}
-							onclick={() => (sectorTab = s.id)}
-							class="h-8 cursor-pointer rounded-full border border-border px-3 text-xs font-bold {sectorTab ===
-							s.id
-								? 'bg-text text-surface'
-								: 'bg-surface text-text-muted'}">{s.label}</button
-						>
+	<!-- ── Back your takes: a different world for each kind of race ───── -->
+	<section class="m-page !pt-14">
+		<span class="m-eyebrow">Back your takes</span>
+		<h2 class="m-title mt-2">Think SOL outruns ETH this hour? Find out.</h2>
+
+		<div class="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Race mode">
+			{#each MODES as m (m.id)}
+				<button
+					type="button"
+					role="tab"
+					aria-selected={modeTab === m.id}
+					onclick={() => (modeTab = m.id)}
+					class="m-chip !min-h-11 !px-5 !text-sm">{m.label}</button
+				>
+			{/each}
+		</div>
+
+		<div
+			class="m-card mt-5 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-center gap-6"
+		>
+			<div class="max-w-md">
+				<WorldThumb
+					theme={modeTab === 'scrimmage' ? 'meadow' : modeTab === 'versus' ? 'golden' : 'village'}
+				/>
+			</div>
+			<div>
+				<p class="font-display text-2xl leading-tight font-extrabold tracking-[-0.02em]">
+					{curMode.pitch}
+				</p>
+				<ol class="mt-4 flex flex-col gap-3">
+					{#each curMode.steps as [title, desc], i (title)}
+						<li class="flex gap-3">
+							<span
+								class="grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-border bg-butter font-display text-sm font-extrabold"
+								>{i + 1}</span
+							>
+							<div>
+								<div class="font-bold">{title}</div>
+								<p class="text-sm text-text-body">{desc}</p>
+							</div>
+						</li>
 					{/each}
+				</ol>
+				<div class="mt-5">
+					{#if page.data.user}
+						<a href={resolve('/play')} class="m-btn primary">Start a {curMode.label} race →</a>
+					{:else if appkitReady}
+						<div class="*:h-12 *:rounded-[14px] *:px-6">
+							<appkit-button label="Sign in and get your free car"></appkit-button>
+						</div>
+					{/if}
 				</div>
 			</div>
-			<div class="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
-				{#if shownCoins.length}
-					{#each shownCoins as coin (coin.symbol + coin.sector)}
-						<div
-							class="w-[170px] shrink-0 snap-start rounded-2xl border border-border bg-surface p-4"
-							style="border-top:4px solid {sectorTheme(coin.sector).color}"
-						>
-							<div class="text-lg font-black">{coin.symbol}</div>
-							<div class="font-mono text-sm">{priceFmt(coin.price)}</div>
-							<div
-								class="font-mono text-sm font-bold {(coin.change24h ?? 0) >= 0
-									? 'text-positive-ink'
-									: 'text-negative-ink'}"
-							>
-								{pctFmt(coin.change24h)}
-							</div>
-							<div class="mt-2 text-xs text-text-muted">
-								In {coin.drafts}
-								{coin.drafts === 1 ? 'lineup' : 'lineups'}
-							</div>
-						</div>
-					{/each}
-				{:else if movers.length}
-					{#each movers as t (t.symbol)}
-						<div
-							class="w-[170px] shrink-0 snap-start rounded-2xl border border-border bg-surface p-4"
-							style="border-top:4px solid {sectorTheme(classifySector([t.symbol ?? ''])).color}"
-						>
-							<div class="text-lg font-black">{t.symbol?.toUpperCase()}</div>
-							<div class="font-mono text-sm">{priceFmt(t.price)}</div>
-							<div
-								class="font-mono text-sm font-bold {(t.change24h ?? 0) >= 0
-									? 'text-positive-ink'
-									: 'text-negative-ink'}"
-							>
-								{pctFmt(t.change24h)}
-							</div>
-						</div>
-					{/each}
-				{:else}
-					<p class="text-sm text-text-muted">Prices are loading.</p>
-				{/if}
-			</div>
 		</div>
 	</section>
 
-	<!-- ── Back your takes ─────────────────────────────────────────────── -->
-	<section class="bg-surface px-6 py-20 max-md:py-14">
-		<div class="mx-auto max-w-5xl">
-			<h2 class="text-[38px] font-black tracking-[-0.03em] max-md:text-[28px]">Back your takes</h2>
-			<p class="mt-2 max-w-[52ch] text-[15px] text-text-muted">
-				Think SOL outruns ETH this hour? Put it in your engine and find out.
-			</p>
-
-			<div class="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Race mode">
-				{#each MODES as m (m.id)}
-					<button
-						type="button"
-						role="tab"
-						aria-selected={modeTab === m.id}
-						onclick={() => (modeTab = m.id)}
-						class="h-10 cursor-pointer rounded-full border border-border px-5 text-sm font-extrabold {modeTab ===
-						m.id
-							? 'bg-text text-surface'
-							: 'bg-bg text-text-muted'}">{m.label}</button
-					>
-				{/each}
-			</div>
-
-			<p class="mt-6 text-lg font-bold">{curMode.pitch}</p>
-			<ol class="mt-5 grid gap-4 md:grid-cols-3">
-				{#each curMode.steps as [title, desc], i (title)}
-					<li class="rounded-2xl border border-border bg-bg p-5">
-						<div class="font-mono text-xs font-bold text-text-muted">0{i + 1}</div>
-						<div class="mt-2 font-black">{title}</div>
-						<p class="mt-1.5 text-sm text-text-muted">{desc}</p>
-					</li>
-				{/each}
-			</ol>
-
-			<div class="mt-8">
-				{#if page.data.user}
-					<a
-						href={resolve('/dashboard')}
-						class="inline-flex h-12 items-center rounded-full bg-primary px-7 text-sm font-extrabold text-text no-underline transition hover:bg-primary-hover"
-						>Start a {curMode.label} race &rarr;</a
-					>
-				{:else if appkitReady}
-					<div class="*:h-12 *:rounded-full *:px-7">
-						<appkit-button label="Sign in and get your free car"></appkit-button>
-					</div>
-				{/if}
-			</div>
-		</div>
-	</section>
-
-	<footer class="bg-bg px-6 pt-16 pb-8">
-		<div class="mx-auto max-w-5xl">
-			<div class="flex flex-wrap gap-8 border-b border-border pb-9">
-				<div class="min-w-0 flex-[1_1_280px]">
-					<div class="mb-3.5 flex items-center gap-2.5">
-						<span class="relative h-6 w-6 shrink-0">
-							<span class="absolute inset-0 rounded-md bg-primary" style="transform:rotate(45deg)"
-							></span>
-							<span
-								class="absolute top-2 left-2 h-2 w-2 rounded-[2px] bg-text"
-								style="transform:rotate(45deg)"
-							></span>
+	<footer class="m-ground">
+		<div class="m-page !pt-10 !pb-8">
+			<div
+				class="m-card grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-8"
+			>
+				<div class="[grid-column:span_2] max-sm:[grid-column:auto]">
+					<div class="flex items-center gap-2.5">
+						<span
+							class="grid h-9 w-9 place-items-center rounded-xl border-2 border-border bg-primary"
+							aria-hidden="true"
+						>
+							<svg width="18" height="18" viewBox="0 0 24 24"
+								><path
+									d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"
+									fill="var(--color-ink)"
+								/></svg
+							>
 						</span>
-						<span class="text-lg font-black tracking-[-0.03em]">CoinDraft</span>
+						<span class="font-display text-xl font-extrabold tracking-[-0.04em]">coindraft</span>
 					</div>
-					<p class="text-[13px] text-text-muted">
+					<p class="mt-3 max-w-[36ch] text-sm text-text-body">
 						Draft coins, race them on real circuits. Cars you own, recorded on NEAR.
 					</p>
 				</div>
 				{#each FOOTER_COLS as col (col.title)}
-					<div class="min-w-0 flex-[1_1_140px]">
-						<div
-							class="mb-3.5 text-[11px] font-extrabold tracking-[0.1em] text-text-muted uppercase"
-						>
-							{col.title}
-						</div>
-						<div class="flex flex-col gap-2.5">
+					<div>
+						<div class="m-eyebrow mb-3">{col.title}</div>
+						<div class="flex flex-col gap-2">
 							{#each col.links as link (link.href)}
 								<a
 									href={resolve(link.href)}
-									class="text-[13px] text-text-muted no-underline transition hover:text-primary-ink"
+									class="text-sm font-semibold text-text no-underline hover:underline"
 									>{link.label}</a
 								>
 							{/each}
@@ -573,16 +615,9 @@
 					</div>
 				{/each}
 			</div>
-			<div class="flex flex-wrap justify-between gap-3 pt-6">
-				<span class="font-mono text-[11px] text-text-muted"
-					>&copy; 2026 COINDRAFT &middot; NOT INVESTMENT ADVICE</span
-				>
-				<a
-					href={resolve('/guide')}
-					class="font-mono text-[11px] text-text-muted no-underline hover:text-primary-ink"
-					>HOW IT WORKS &rarr;</a
-				>
-			</div>
+			<p class="m-num mt-5 text-center text-[11px] font-bold">
+				© 2026 COINDRAFT · NOT INVESTMENT ADVICE
+			</p>
 		</div>
 	</footer>
 </div>

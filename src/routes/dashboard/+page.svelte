@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import Trivia from '$lib/components/Trivia.svelte';
 	import TokenIcon from '$lib/components/TokenIcon.svelte';
-	import StatBlock from '$lib/components/ui/StatBlock.svelte';
-	import Bar from '$lib/components/ui/Bar.svelte';
+	import WorldThumb from '$lib/components/race/WorldThumb.svelte';
+	import { resolve } from '$app/paths';
+	import { trackThemeFor, type TrackTheme } from '$lib/race/trackTheme';
 	import type { BadgeDef } from '$lib/badges';
 
 	let contests = $state<Array<Record<string, unknown>>>([]);
@@ -169,389 +169,312 @@
 		for (const c of sym) h = (h * 31 + c.charCodeAt(0)) >>> 0;
 		return colors[h % colors.length];
 	}
+
+	// ── What to do next ─────────────────────────────────────────────────────
+	// The dashboard's one job: point at the race that needs you, or at starting one.
+	type Row = {
+		id: string;
+		name: string;
+		state: string;
+		href: string;
+		cta: string;
+		primary: boolean;
+	};
+
+	const raceName = (c: Record<string, unknown>) =>
+		c.mode === 'binary' || c.mode === 'binary_solo'
+			? 'Binary race'
+			: c.isPaper
+				? 'Scrimmage'
+				: c.type === 'weekly'
+					? 'Weekly Versus'
+					: 'Versus';
+
+	const raceRows = $derived.by<Row[]>(() => {
+		const rows: Row[] = [];
+		for (const l of myLobbies) {
+			rows.push({
+				id: `l-${l.id}`,
+				name: `${l.tournamentName ?? 'Tournament'} · ${l.tournamentStage === 1 ? 'Final' : 'Group'}`,
+				state: l.myLineupLocked ? (l.status === 'live' ? 'Live' : 'Waiting') : 'Draft',
+				href: l.myLineupLocked ? `/race/${l.id}` : `/draft?lobbyId=${l.id}`,
+				cta: l.myLineupLocked ? 'Watch' : 'Draft now',
+				primary: !l.myLineupLocked || l.status === 'live'
+			});
+		}
+		const order = { open: 0, live: 1, resolved: 2 } as Record<string, number>;
+		const sorted = [...contests].sort(
+			(a, b) => (order[String(a.status)] ?? 3) - (order[String(b.status)] ?? 3)
+		);
+		for (const c of sorted) {
+			const done = c.status === 'resolved';
+			const locked = Boolean(c.myLineupLocked);
+			rows.push({
+				id: `c-${c.id}`,
+				name: raceName(c),
+				state: done
+					? c.winnerId === user?.id
+						? 'Won'
+						: 'Finished'
+					: locked
+						? c.status === 'live'
+							? 'Live'
+							: 'Waiting'
+						: 'Draft',
+				href: done
+					? `/contest/result?contestId=${c.id}`
+					: locked
+						? `/game/${c.id}`
+						: `/draft?contestId=${c.id}&type=${c.type ?? 'daily'}${c.isPaper ? '&mode=paper' : ''}`,
+				cta: done ? 'Result' : locked ? 'Watch' : 'Draft now',
+				primary: !done
+			});
+		}
+		return rows;
+	});
+
+	const nextRace = $derived.by<{
+		title: string;
+		body: string;
+		href: string;
+		cta: string;
+		theme: TrackTheme;
+	} | null>(() => {
+		const row =
+			raceRows.find((r) => r.state === 'Draft') ?? raceRows.find((r) => r.state === 'Live');
+		if (!row) return null;
+		const c = contests.find((x) => `c-${x.id}` === row.id);
+		const theme = c
+			? trackThemeFor({ mode: c.mode as string, isPaper: Boolean(c.isPaper) })
+			: 'village';
+		return row.state === 'Draft'
+			? {
+					title: `Your ${row.name} is waiting`,
+					body: 'Pick your five coins and lock them in. The race starts once everyone has.',
+					href: row.href,
+					cta: 'Draft now',
+					theme
+				}
+			: {
+					title: `Your ${row.name} is live`,
+					body: 'Your car is on track right now. Go and watch it.',
+					href: row.href,
+					cta: 'Watch the race',
+					theme
+				};
+	});
+
+	const hotTokens = $derived(
+		[...tokens]
+			.filter((t) => t.change24h != null)
+			.sort((a, b) => Math.abs(b.change24h ?? 0) - Math.abs(a.change24h ?? 0))
+			.slice(0, 5)
+	);
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
-	<div class="mb-4.5 flex flex-wrap items-start gap-4.5">
-		<div
-			class="hero-coral dot-grid flex min-w-0 flex-[1_1_520px] flex-col gap-7 rounded-[24px] p-9"
-		>
-			<div class="flex flex-wrap items-start justify-between gap-4">
-				<span
-					class="rounded-full bg-text px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.14em] text-primary uppercase"
-				>
-					{resolvedContests.length > 0 ? `${winRate}% win rate` : 'New player'}
-				</span>
-				{#if contests.filter((c) => c.status !== 'resolved').length > 0}
-					<span class="font-mono text-[13px] font-bold"
-						>{contests.filter((c) => c.status !== 'resolved').length} active</span
-					>
-				{/if}
-			</div>
-			<div>
-				<div class="text-[46px] leading-[0.95] font-black tracking-[-0.045em] max-sm:text-[34px]">
-					{contests.length === 0 ? 'Draft your first lineup' : 'Ready for your next contest'}
+<div class="m-page">
+	<!-- 1 · Your next move. One obvious action, sized to be the first thing you see. -->
+	<section
+		class="m-card grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-center gap-x-8 gap-y-5"
+		aria-labelledby="next-move"
+	>
+		<div class="flex flex-col gap-3">
+			<span class="m-eyebrow">Hi {user?.username ?? 'driver'}</span>
+			{#if nextRace}
+				<h1 id="next-move" class="m-title">{nextRace.title}</h1>
+				<p class="m-lead">{nextRace.body}</p>
+				<div class="flex flex-wrap gap-3">
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					<a href={nextRace.href} class="m-btn primary lg">{nextRace.cta} →</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					<a href={resolve('/play')} class="m-btn lg">Start another</a>
 				</div>
-				<p class="mt-3.5 text-[15px] opacity-80">
-					{contests.length === 0
-						? 'Five sectors, one token each, twenty-four hours to prove your read.'
-						: `${resolvedContests.length} contest${resolvedContests.length === 1 ? '' : 's'} resolved so far this season.`}
+			{:else}
+				<h1 id="next-move" class="m-title">Ready to race?</h1>
+				<p class="m-lead">
+					Pick five coins, and live prices drive your car. A practice race takes a minute.
 				</p>
-			</div>
-			<div class="flex flex-wrap gap-2.5">
-				<button
-					class="cursor-pointer rounded-full bg-text px-[26px] py-3.5 text-sm font-extrabold text-primary transition hover:-translate-y-0.5"
-					onclick={() => goto('/matchmaking')}
-				>
-					Find an opponent
-				</button>
-				<button
-					class="cursor-pointer rounded-full border-[1.5px] border-text bg-transparent px-[26px] py-3.5 text-sm font-bold text-text"
-					onclick={() => goto('/tournament')}
-				>
-					Tournaments
-				</button>
-				<button
-					class="cursor-pointer rounded-full border-[1.5px] border-text bg-transparent px-[26px] py-3.5 text-sm font-bold text-text"
-					onclick={() => goto('/draft')}
-				>
-					Open draft
-				</button>
-				<!-- Always shown, and routes to the Scrimmage page rather than creating a
-				     contest inline — so the duration choice applies here too. -->
-				<button
-					class="cursor-pointer rounded-full border-[1.5px] border-text bg-transparent px-[26px] py-3.5 text-sm font-bold text-text"
-					onclick={() => goto('/scrimmage')}
-				>
-					{contests.length === 0 ? 'Try Scrimmage' : 'Scrimmage'}
-				</button>
-			</div>
-			<p class="text-[13px] opacity-70">
-				Scrimmage — draft against bots and earn XP, without touching your real rank.
-			</p>
+				<div class="flex flex-wrap gap-3">
+					<a href={resolve('/play')} class="m-btn primary lg">Choose a race →</a>
+					<button type="button" class="m-btn lg" onclick={() => createContest('daily', 'paper')}
+						>Quick practice</button
+					>
+				</div>
+			{/if}
+			{#if actionError}
+				<p class="m-tag w-fit bg-pink" role="alert">{actionError}</p>
+			{/if}
 		</div>
+		<div class="max-w-sm justify-self-end max-sm:hidden">
+			<WorldThumb theme={nextRace?.theme ?? 'meadow'} />
+		</div>
+	</section>
 
-		<div class="flex min-w-0 flex-[1_1_280px] flex-col gap-3.5">
-			<div class="grid grid-cols-2 gap-4.5 rounded-[20px] border border-border bg-surface p-[22px]">
-				<StatBlock
-					value={resolvedContests.length > 0 ? `${winRate}%` : '—'}
-					label="Win rate"
-					color="var(--color-mint-ink)"
-				/>
-				<StatBlock value={String(resolvedContests.length)} label="Resolved" />
+	<!-- 2 · Where you stand -->
+	<section class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))] gap-4">
+		{#each [{ label: 'XP', value: (user?.xpTotal ?? 0).toLocaleString(), tone: 'bg-brand-tint' }, { label: 'Win streak', value: `${user?.streak ?? 0}`, tone: 'bg-butter' }, { label: 'Win rate', value: realResolvedContests.length ? `${winRate}%` : '—', tone: 'bg-lavender' }, { label: 'Races run', value: `${resolvedContests.length}`, tone: 'bg-sky-tint' }] as s (s.label)}
+			<div class="flat m-card !p-4 {s.tone}">
+				<div class="m-num text-3xl font-bold">{s.value}</div>
+				<div class="m-eyebrow mt-1">{s.label}</div>
 			</div>
-		</div>
-	</div>
+		{/each}
+	</section>
 
-	<div class="mb-4.5 flex flex-wrap gap-4.5">
-		<div class="min-w-0 flex-[1_1_340px]">
-			<Trivia />
-		</div>
-		<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-[22px]">
-			<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Sector performance
+	<div
+		class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))] items-start gap-6"
+	>
+		<!-- 3 · Daily trivia -->
+		<Trivia />
+
+		<!-- 4 · Your races -->
+		<section class="m-card" aria-labelledby="your-races">
+			<div class="flex items-center justify-between gap-3">
+				<h2 id="your-races" class="font-display text-xl font-extrabold">Your races</h2>
+				<a href={resolve('/play')} class="m-btn sm">New race</a>
 			</div>
 			{#if loading}
-				<p class="text-xs text-text-muted">Loading sector data…</p>
-			{:else if sectors.length === 0}
-				<p class="text-xs text-text-muted">Sector feed unavailable.</p>
+				<div class="mt-4 h-24 animate-pulse rounded-2xl bg-surface-alt"></div>
+			{:else if raceRows.length === 0}
+				<p class="mt-4 text-sm text-text-muted">No races yet. Your first one is a minute away.</p>
 			{:else}
-				<div class="flex flex-col gap-3">
+				<ul class="mt-3 flex flex-col gap-2">
+					{#each raceRows.slice(0, 6) as r (r.id)}
+						<li
+							class="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border-2 border-border bg-surface-alt px-3 py-2.5"
+						>
+							<span class="flex min-w-0 items-center gap-2">
+								<span
+									class="m-chg {r.state === 'Live' ? 'up' : ''} {r.state === 'Draft'
+										? 'bg-butter'
+										: ''}">{r.state}</span
+								>
+								<span class="truncate text-sm font-bold">{r.name}</span>
+							</span>
+							<!-- eslint-disable svelte/no-navigation-without-resolve -->
+							<a href={r.href} class="m-btn sm {r.primary ? 'primary' : ''}">{r.cta}</a>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
+	</div>
+
+	<!-- 5 · The market today: what might be worth drafting -->
+	<h2 class="m-eyebrow mt-10 mb-3">The market today</h2>
+	<div
+		class="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6"
+	>
+		<section class="m-card" aria-labelledby="sectors">
+			<h3 id="sectors" class="font-display text-lg font-extrabold">Sector form</h3>
+			<p class="text-xs text-text-muted">How each sector has moved in 24 hours.</p>
+			{#if loading}
+				<div class="mt-4 h-28 animate-pulse rounded-2xl bg-surface-alt"></div>
+			{:else if sectors.length === 0}
+				<p class="mt-4 text-sm text-text-muted">Sector data is unavailable right now.</p>
+			{:else}
+				<ul class="mt-4 flex flex-col gap-2.5">
 					{#each sectors as sector, i (sector?.sector ?? sector?.name ?? i)}
 						{@const chg = Number(sector.change ?? 0)}
-						<div class="flex items-center gap-2.5">
-							<span class="w-14 text-xs font-bold">{sector.sector ?? sector.name ?? 'Sector'}</span>
-							<div class="flex-1">
-								<Bar
-									pct={Math.max(8, Math.min(100, Math.abs(chg) * 8))}
-									color={chg >= 0 ? 'var(--color-mint)' : 'var(--color-red)'}
-									height="6px"
-								/>
-							</div>
+						<li class="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
+							<span class="truncate text-xs font-bold"
+								>{sector.sector ?? sector.name ?? 'Sector'}</span
+							>
 							<span
-								class="w-12 text-right font-mono text-xs font-bold"
-								style="color:{chg >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
-								>{formatPct(chg)}</span
+								class="h-3.5 overflow-hidden rounded-full border-2 border-border bg-surface-alt"
+								aria-hidden="true"
 							>
-						</div>
+								<span
+									class="block h-full {chg >= 0 ? 'bg-primary' : 'bg-negative'}"
+									style="width:{Math.max(8, Math.min(100, Math.abs(chg) * 8))}%"
+								></span>
+							</span>
+							<span class="m-chg {chg >= 0 ? 'up' : 'down'}">{formatPct(chg)}</span>
+						</li>
 					{/each}
-				</div>
+				</ul>
 			{/if}
-		</div>
+		</section>
 
-		<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-[22px]">
-			<div class="mb-4.5 flex items-center gap-2">
-				<span class="anim-blink h-[7px] w-[7px] rounded-full bg-negative"></span>
-				<span class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase"
-					>Whale flow</span
-				>
-			</div>
-			{#if alerts.length === 0}
-				<p class="text-xs text-text-muted">No active alerts right now.</p>
+		<section class="m-card" aria-labelledby="hot">
+			<h3 id="hot" class="font-display text-lg font-extrabold">Hot coins</h3>
+			<p class="text-xs text-text-muted">The biggest movers in the draft pool.</p>
+			{#if loading}
+				<div class="mt-4 h-28 animate-pulse rounded-2xl bg-surface-alt"></div>
+			{:else if tokens.length === 0}
+				<p class="mt-4 text-sm text-text-muted">Prices are unavailable right now.</p>
 			{:else}
-				<div class="flex flex-col gap-3.5">
-					{#each alerts.slice(0, 3) as alert, i (alert?.date ?? `${alert?.type ?? 'alert'}-${i}`)}
-						<div class="flex items-start justify-between gap-3">
-							<div class="min-w-0">
-								<p class="text-[13px] font-bold">{alert.type} streak detected</p>
-								<p class="font-mono text-[11px] text-text-muted">{alert.streak} days</p>
-							</div>
-							<span class="shrink-0 font-mono text-[13px] font-bold text-primary-ink"
-								>${Math.round(Number(alert.amount)).toLocaleString()}</span
-							>
-						</div>
+				<ul class="mt-3 flex flex-col gap-2">
+					{#each hotTokens as token (token.currency_id)}
+						<li class="flex items-center gap-3">
+							<TokenIcon symbol={token.symbol} size={32} bg={avatarBg(token.symbol ?? '')} />
+							<span class="min-w-0 flex-1">
+								<span class="block truncate text-sm font-bold"
+									>{(token.symbol ?? '').toUpperCase()}</span
+								>
+								<span class="block truncate text-xs text-text-muted">{token.name ?? ''}</span>
+							</span>
+							{#if token.change24h != null}
+								<span class="m-chg {token.change24h >= 0 ? 'up' : 'down'}"
+									>{formatPct(token.change24h)}</span
+								>
+							{/if}
+						</li>
 					{/each}
-				</div>
+				</ul>
 			{/if}
-		</div>
+		</section>
+
+		<section class="m-card" aria-labelledby="news">
+			<h3 id="news" class="font-display text-lg font-extrabold">Headlines</h3>
+			{#if alerts.length}
+				<ul class="mt-3 flex flex-col gap-2">
+					{#each alerts.slice(0, 2) as alert, i (alert?.date ?? i)}
+						<li class="rounded-[14px] border-2 border-border bg-butter px-3 py-2 text-sm">
+							<span class="font-bold">🐋 {alert.type} streak, {alert.streak} days</span>
+							<span class="m-num block text-xs"
+								>${Math.round(Number(alert.amount)).toLocaleString()} into BTC ETFs</span
+							>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if loading}
+				<div class="mt-4 h-28 animate-pulse rounded-2xl bg-surface-alt"></div>
+			{:else if news.length === 0}
+				<p class="mt-4 text-sm text-text-muted">No headlines right now.</p>
+			{:else}
+				<ul class="mt-3 flex flex-col gap-3">
+					{#each news.slice(0, 4) as item, i (i)}
+						<li>
+							<p class="text-sm leading-snug font-bold">{item.title ?? 'Market update'}</p>
+							<p class="text-xs text-text-muted">
+								{item.source ?? 'SoSoValue'}{item.date ? ` · ${item.date}` : ''}
+							</p>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
 	</div>
 
-	<div class="mb-4.5 rounded-[20px] border border-border bg-surface p-[22px]">
-		<div class="mb-4.5 flex items-center justify-between">
-			<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Badges
-			</div>
-			<span class="font-mono text-xs text-text-muted"
-				>{badges.filter((b) => b.earned).length}/{badges.length} unlocked</span
-			>
-		</div>
-		<div class="flex flex-wrap gap-2.5">
-			{#each badges as badge (badge.code)}
+	<!-- 6 · Badges -->
+	{#if badges.length}
+		<h2 class="m-eyebrow mt-10 mb-3">
+			Badges · {badges.filter((b) => b.earned).length} of {badges.length}
+		</h2>
+		<div class="m-rail">
+			{#each badges as b (b.code)}
 				<div
-					class="flex items-center gap-2.5 rounded-full border px-3.5 py-2"
-					style={badge.earned
-						? 'border-color:var(--color-primary);background:var(--color-primary-muted)'
-						: 'border-color:var(--color-border);background:var(--color-surface-alt);opacity:0.55'}
-					title={badge.description}
+					class="flat m-card flex w-[9rem] flex-col items-center gap-1 !p-3 text-center {b.earned
+						? ''
+						: 'opacity-45'}"
+					title={b.description}
 				>
-					<span class="text-base {badge.earned ? '' : 'grayscale'}">{badge.emoji}</span>
-					<span
-						class="text-xs font-bold"
-						style={badge.earned
-							? 'color:var(--color-primary-ink)'
-							: 'color:var(--color-text-muted)'}>{badge.name}</span
-					>
+					<span class="text-2xl" aria-hidden="true">{b.emoji}</span>
+					<span class="text-xs font-bold">{b.name}</span>
 				</div>
 			{/each}
-		</div>
-	</div>
-
-	<div class="mb-4.5 flex flex-wrap gap-4.5">
-		<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-[22px]">
-			<div class="mb-4.5 flex items-center justify-between">
-				<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-					Hot tokens
-				</div>
-			</div>
-			{#if loading}
-				<p class="text-xs text-text-muted">Loading tokens…</p>
-			{:else if tokens.length === 0}
-				<p class="text-xs text-text-muted">Token data unavailable.</p>
-			{:else}
-				<div class="flex flex-col divide-y divide-border">
-					{#each tokens.slice(0, 5) as token (token.currency_id)}
-						<div class="flex items-center justify-between py-2.5">
-							<div class="flex items-center gap-2.5">
-								<TokenIcon
-									symbol={token.symbol}
-									size={28}
-									bg={avatarBg(token.symbol ?? '')}
-									fg="var(--color-ink)"
-								/>
-								<div>
-									<p class="text-[13px] font-bold">{(token.symbol ?? '').toUpperCase()}</p>
-									<p class="text-[11px] text-text-muted">{token.name}</p>
-								</div>
-							</div>
-							<div class="text-right">
-								<p class="font-mono text-[13px] font-bold">
-									{token.price != null
-										? token.price >= 1000
-											? `$${token.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-											: `$${token.price.toFixed(token.price < 1 ? 4 : 2)}`
-										: '—'}
-								</p>
-								{#if token.change24h != null}
-									<span
-										class="font-mono text-[11px] font-bold"
-										style="color:{token.change24h >= 0
-											? 'var(--color-mint-ink)'
-											: 'var(--color-red-ink)'}">{formatPct(token.change24h)}</span
-									>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-			<div class="mt-2.5 border-t border-border pt-2.5">
-				<a href="/draft" class="text-xs font-bold text-primary-ink no-underline hover:underline"
-					>Draft a token from this list &rarr;</a
-				>
-			</div>
-		</div>
-
-		<div class="min-w-0 flex-[1_1_340px] rounded-[20px] border border-border bg-surface p-[22px]">
-			<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				Scout report
-			</div>
-			{#if loading}
-				<p class="text-xs text-text-muted">Loading news…</p>
-			{:else if news.length === 0}
-				<p class="text-xs text-text-muted">No news available.</p>
-			{:else}
-				<div class="flex flex-col divide-y divide-border">
-					{#each news as item, i (i)}
-						<div class="flex gap-2.5 py-2.5">
-							<div class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></div>
-							<div class="min-w-0">
-								<p class="text-[13px] leading-snug font-bold">{item.title ?? 'Market update'}</p>
-								<p class="text-[11px] text-text-muted">
-									{item.source ?? 'SoSoValue'}{item.date ? ` · ${item.date}` : ''}
-								</p>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</div>
-	</div>
-
-	<div class="rounded-[20px] border border-border bg-surface p-[22px]">
-		<div class="mb-4.5 flex flex-wrap items-center justify-between gap-3">
-			<div class="text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				My contests
-			</div>
-			<div class="flex gap-2">
-				<button
-					class="cursor-pointer rounded-full bg-primary-muted px-3.5 py-1.5 text-xs font-bold text-primary-ink"
-					onclick={() => createContest('daily')}>+ Daily</button
-				>
-				<button
-					class="cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold"
-					style="background:rgba(247,201,120,0.16);color:var(--color-warning-ink)"
-					onclick={() => createContest('weekly')}>+ Weekly</button
-				>
-				<button
-					class="cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold"
-					style="background:rgba(104,194,168,0.14);color:var(--color-mint-ink)"
-					onclick={() => createContest('daily', 'paper')}>+ Scrimmage</button
-				>
-			</div>
-		</div>
-		{#if actionError}
-			<p class="mb-2.5 text-xs text-negative-ink">{actionError}</p>
-		{/if}
-		{#if loading}
-			<p class="text-xs text-text-muted">Loading…</p>
-		{:else if contests.length === 0}
-			<p class="text-xs text-text-muted">No contests yet — start a draft above.</p>
-		{:else}
-			<div class="flex flex-col divide-y divide-border">
-				{#each contests as c, i (c.id ?? i)}
-					<div class="flex flex-wrap items-center justify-between gap-2.5 py-3">
-						<div class="flex flex-wrap items-center gap-2.5">
-							{#if c.status === 'resolved'}
-								<span
-									class="rounded-full bg-surface-alt px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase"
-									>Resolved</span
-								>
-							{:else if c.status === 'live'}
-								<span
-									class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
-									style="background:rgba(104,194,168,0.14);color:var(--color-mint-ink)">Live</span
-								>
-							{:else}
-								<span
-									class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
-									style="background:rgba(247,201,120,0.16);color:var(--color-warning-ink)"
-									>Open</span
-								>
-							{/if}
-							<span class="text-[13px] font-bold"
-								>{c.type === 'weekly' ? 'Weekly' : 'Daily'} Contest</span
-							>
-							{#if c.isPaper}
-								<span
-									class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
-									style="background:rgba(104,194,168,0.14);color:var(--color-mint-ink)"
-									>Scrimmage</span
-								>
-							{/if}
-							<span class="font-mono text-[11px] text-text-muted"
-								>{String(c.id ?? '').slice(0, 8)}…</span
-							>
-						</div>
-						{#if c.status === 'resolved'}
-							<a
-								href={`/contest/result?contestId=${c.id}`}
-								class="rounded-full bg-primary-muted px-3.5 py-1.5 text-xs font-bold text-primary-ink no-underline"
-								>View result</a
-							>
-						{:else if c.myLineupLocked}
-							<a
-								href={`/game/${c.id}`}
-								class="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-text no-underline"
-								>{c.status === 'live' ? 'Watch race' : 'Waiting for opponent'}</a
-							>
-						{:else}
-							<a
-								href={`/draft?contestId=${c.id}&type=${c.type ?? 'daily'}${c.isPaper ? '&mode=paper' : ''}`}
-								class="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-text no-underline"
-								>Continue draft</a
-							>
-						{/if}
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</div>
-
-	{#if myLobbies.length > 0}
-		<div class="mt-4.5 rounded-[20px] border border-border bg-surface p-[22px]">
-			<div class="mb-4.5 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
-				My tournaments
-			</div>
-			<div class="flex flex-col divide-y divide-border">
-				{#each myLobbies as l, i (String(l.id ?? i))}
-					<div class="flex flex-wrap items-center justify-between gap-2.5 py-3">
-						<div class="flex flex-wrap items-center gap-2.5">
-							<span
-								class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
-								style={l.status === 'live'
-									? 'background:rgba(104,194,168,0.14);color:var(--color-mint-ink)'
-									: 'background:rgba(247,201,120,0.16);color:var(--color-warning-ink)'}
-								>{l.status}</span
-							>
-							<span class="text-[13px] font-bold">
-								{#if l.tournamentId}
-									{l.tournamentName ?? 'Tournament'} &middot; {l.tournamentStage === 1
-										? 'Final'
-										: 'Qualifier'}
-								{:else}
-									Multiplayer lobby
-								{/if}
-							</span>
-							<span class="font-mono text-[11px] text-text-muted"
-								>{String(l.id ?? '').slice(0, 8)}…</span
-							>
-						</div>
-						{#if l.myLineupLocked}
-							<a
-								href={`/race/${l.id}`}
-								class="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-text no-underline"
-								>{l.status === 'live' ? 'Watch' : 'Waiting for others'}</a
-							>
-						{:else}
-							<a
-								href={`/draft?lobbyId=${l.id}`}
-								class="rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-text no-underline"
-								>Continue draft</a
-							>
-						{/if}
-					</div>
-				{/each}
-			</div>
 		</div>
 	{/if}
 </div>

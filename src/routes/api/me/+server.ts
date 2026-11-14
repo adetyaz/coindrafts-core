@@ -25,6 +25,7 @@ export async function GET({ cookies }) {
 		walletAddress: user.walletAddress,
 		xpTotal: user.xpTotal,
 		paperXpTotal: user.paperXpTotal,
+		gears: user.gears,
 		streak: user.streak,
 		researchStreak: user.researchStreak,
 		freeHitsAvailable: user.freeHitsAvailable,

@@ -78,7 +78,7 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1000px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page mid">
 	<a href={resolve('/sponsor')} class="text-sm font-bold text-text-muted no-underline"
 		>&larr; Sponsors</a
 	>

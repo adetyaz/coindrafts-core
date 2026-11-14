@@ -43,10 +43,12 @@
 	<Nav user={data.user} />
 
 	{#if tickerItems.length > 0}
-		<Ticker items={tickerItems} />
+		<!-- Decorative: desktop only, so a phone's first screen is all content. -->
+		<div class="max-nav:hidden"><Ticker items={tickerItems} /></div>
 	{/if}
 
-	<main>
+	<!-- Phone: keep the last of every page clear of the tab bar. -->
+	<main class={data.user ? 'max-nav:pb-24' : ''}>
 		{@render children()}
 	</main>
 </div>

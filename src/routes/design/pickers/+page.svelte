@@ -60,7 +60,7 @@
 	const faderTotal = $derived(faders.reduce((a, b) => a + b * 25, 0));
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	<div class="mb-6.5">
 		<div
 			class="mb-2.5 font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase"

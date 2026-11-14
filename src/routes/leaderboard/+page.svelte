@@ -34,7 +34,7 @@
 	});
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	<div class="mb-6.5">
 		<h1 class="text-[40px] leading-none font-black tracking-[-0.04em]">Leaderboard</h1>
 		<p class="mt-2 text-sm text-text-muted">Top players ranked by XP</p>

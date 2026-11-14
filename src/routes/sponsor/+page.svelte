@@ -76,7 +76,7 @@
 	</li>
 {/snippet}
 
-<div class="mx-auto max-w-[1000px] px-7 pt-7 pb-18 max-sm:px-4">
+<div class="m-page mid">
 	<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
 		Sponsors
 	</div>

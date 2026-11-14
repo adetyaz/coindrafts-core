@@ -1,37 +1,62 @@
 @import 'tailwindcss';
 
-/* ─── Design tokens — CoinDraft design handoff (light-only, Aug 2026) ──────
-   Every color used anywhere in the app is defined ONCE here. Change a value
-   in this block and it propagates everywhere — nothing below this file
-   should ever hardcode a hex value. */
+/* ─── Design tokens — "Meadow" (Design System/meadow, Nov 2026) ─────────────
+   Sticker-sheet arcade: ink outlines, hard offset shadows, a mint page, cream
+   cards, loud display type. The race tracks borrow Truckful's painterly worlds
+   (sunny meadow, golden wheat, night forest, neon town, village festival).
+
+   Every colour used anywhere in the app is defined ONCE here. Change a value
+   in this block and it propagates everywhere — nothing below this file should
+   hardcode a hex value. Token NAMES are kept from the previous system because
+   code reads them (RaceTrack3D, car paints, rarity badges); only values moved. */
 
 :root {
 	/* Raw palette */
-	--color-ink: #1a2421;
-	--color-page: #f5fafa;
-	--color-surface: #ffffff;
-	--color-surface-alt: #edf3f2;
-	--color-border: #e1e8e6;
-	--color-border-strong: #cfdcd8;
-	--color-text-muted: #5c6b66;
-	--color-text-body: #3b4a45;
+	--color-ink: #111111;
+	--color-page: #d4eee6;
+	--color-surface: #fffdf2;
+	--color-surface-alt: #ffffff;
+	--color-border: #111111;
+	--color-border-strong: #111111;
+	--color-border-soft: #e4e2d6;
+	--color-text-muted: #5e625c;
+	--color-text-body: #2a2d29;
+	--color-table-head: #f6f8d8;
 
-	--color-coral: #f78e79;
-	--color-coral-ink: #b04a32;
-	--color-mint: #68c2a8;
-	--color-mint-ink: #1f7a63;
-	--color-red: #e87070;
-	--color-red-ink: #b23a3a;
-	--color-amber: #f7c978;
-	--color-amber-ink: #8a5b12;
-	--color-blue: #5fa8d8;
-	--color-sky: #81bbe3;
-	--color-blue-ink: #2a6e96;
+	--color-brand: #2ad15f;
+	--color-brand-ink: #127a37;
+	--color-brand-tint: #d9f7e2;
+	--color-pink: #ffd3d3;
+	--color-butter: #eef29a;
+	--color-lavender: #cfccf7;
+	--color-sky-tint: #bfe6f2;
+	--color-peach: #ffe1c2;
+	--color-grass: #9ed86a;
 
-	--color-hover: rgba(26, 36, 33, 0.04);
+	/* Saturated colours: car paints (src/lib/economy/rules.ts → PAINTS) and
+	   anything that has to read at a distance on the 3D track. */
+	--color-coral: #ff7a59;
+	--color-coral-ink: #a8402a;
+	--color-mint: #2ad15f;
+	--color-mint-ink: #127a37;
+	--color-red: #f0696c;
+	--color-red-ink: #a82a2e;
+	--color-amber: #f2c230;
+	--color-amber-ink: #6b5e00;
+	--color-blue: #6f68e0;
+	--color-sky: #3aa6c9;
+	--color-blue-ink: #4a42c9;
+	--color-sky-ink: #185c74;
 
-	/* Rock-paper-scissors tiebreaker — its own dark, full-screen moment, so it
-	   carries a separate palette rather than reusing the light app surfaces. */
+	--color-hover: rgba(17, 17, 17, 0.06);
+
+	/* Sticker shadows: hard, offset, never blurred. */
+	--shadow-hard: 5px 5px 0 var(--color-ink);
+	--shadow-hard-sm: 3px 3px 0 var(--color-ink);
+	--shadow-press: 0 4px 0 var(--color-ink);
+	--shadow-brand: 4px 4px 0 var(--color-brand);
+
+	/* Rock-paper-scissors tiebreaker — its own dark, full-screen moment. */
 	--color-rps-bg-top: #1f3756;
 	--color-rps-bg-bottom: #141539;
 	--color-rps-outline: #606e85;
@@ -45,51 +70,129 @@
 	--color-rps-paper-shade: #2a45c2;
 	--color-rps-rock: #dd405d;
 	--color-rps-rock-shade: #9d1634;
-	--color-rps-lizard: #8c5de5;
+	--color-rps-lizard: #b9a5f5;
 	--color-rps-lizard-shade: #5f37a8;
 	--color-rps-spock: #52bed1;
 	--color-rps-spock-shade: #2d8da0;
 
-	/* 3D race track. Read at runtime by RaceTrack3D (Three.js needs real colour
-	   values), so the scene follows the palette like every other screen. */
-	--color-race-grass: #9fd3a8;
-	--color-race-grass-dark: #7fbf8c;
-	--color-race-road: #3d4a46;
-	--color-race-line: #f5fafa;
-	--color-race-kerb: #e87070;
-	--color-race-tree: #4f9a6e;
-	--color-race-trunk: #8a6a4f;
-	--color-race-flame: #f7c978;
-	--color-race-wheel: #1a2421;
+	/* 3D race track — the default world (sunny meadow). RaceTrack3D reads these
+	   at runtime from its own element, so a `.track-*` class below re-themes one
+	   race without touching the rest of the page. */
+	--color-race-grass: #62c258;
+	--color-race-grass-dark: #3f9a41;
+	--color-race-road: #8f9bb0;
+	--color-race-line: #fffdf2;
+	--color-race-kerb: #f0696c;
+	--color-race-tree: #2f7a38;
+	--color-race-trunk: #7a5236;
+	--color-race-flame: #ffb23e;
+	--color-race-wheel: #111111;
+	--color-race-flower: #ff5a4e;
+	--color-race-sun: #fff7e6;
+	--race-sky: linear-gradient(180deg, #6fc1ec 0%, #d6eef4 46%, #9ed86a 46.2%, #62c258 100%);
+	--race-light: 1;
+}
+
+/* ─── Track worlds: a different place for each kind of race ───────────────── */
+
+/* Scrimmage: a sunny meadow. Bright, friendly, nothing on the line. */
+.track-meadow {
+	--color-race-grass: #62c258;
+	--color-race-grass-dark: #3f9a41;
+	--color-race-road: #8f9bb0;
+	--color-race-line: #fffdf2;
+	--color-race-kerb: #f0696c;
+	--color-race-tree: #2f7a38;
+	--color-race-trunk: #7a5236;
+	--color-race-flower: #ff5a4e;
+	--color-race-sun: #fff7e6;
+	--race-sky: linear-gradient(180deg, #6fc1ec 0%, #d6eef4 46%, #9ed86a 46.2%, #62c258 100%);
+	--race-light: 1;
+}
+/* Versus: golden hour over the wheat fields. */
+.track-golden {
+	--color-race-grass: #e8cf5a;
+	--color-race-grass-dark: #c9a93c;
+	--color-race-road: #b9a48c;
+	--color-race-line: #fff4d6;
+	--color-race-kerb: #e0563a;
+	--color-race-tree: #6e9e3e;
+	--color-race-trunk: #7e4f33;
+	--color-race-flower: #f08a2c;
+	--color-race-sun: #ffd7a0;
+	--race-sky: linear-gradient(180deg, #86a9da 0%, #ffddb4 46%, #f2de7c 46.2%, #e8cf5a 100%);
+	--race-light: 0.95;
+}
+/* Car race: the night forest. Headlights, and something red in the trees. */
+.track-night {
+	--color-race-grass: #1f3a2a;
+	--color-race-grass-dark: #14271c;
+	--color-race-road: #5a4636;
+	--color-race-line: #ffd27a;
+	--color-race-kerb: #c9342f;
+	--color-race-tree: #0f2a1c;
+	--color-race-trunk: #2a2018;
+	--color-race-flower: #ff3b30;
+	--color-race-sun: #ffb65e;
+	--race-sky: linear-gradient(180deg, #0c1512 0%, #182a20 55%, #14271c 100%);
+	--race-light: 0.55;
+}
+/* Binary: neon town at night. Every call lights a gate. */
+.track-neon {
+	--color-race-grass: #24402c;
+	--color-race-grass-dark: #17301f;
+	--color-race-road: #3d4a3a;
+	--color-race-line: #7dffb0;
+	--color-race-kerb: #ff4fa3;
+	--color-race-tree: #173824;
+	--color-race-trunk: #2b2a22;
+	--color-race-flower: #5ad7ff;
+	--color-race-sun: #b6ffd0;
+	--race-sky: linear-gradient(180deg, #101a14 0%, #1d3324 60%, #17301f 100%);
+	--race-light: 0.62;
+}
+/* Tournaments and league nights: the village on race day. */
+.track-village {
+	--color-race-grass: #7cc35a;
+	--color-race-grass-dark: #5aa244;
+	--color-race-road: #c9b48f;
+	--color-race-line: #fffdf2;
+	--color-race-kerb: #2f6fd0;
+	--color-race-tree: #3b8c3f;
+	--color-race-trunk: #8a5a3b;
+	--color-race-flower: #f2a03a;
+	--color-race-sun: #fff1c9;
+	--race-sky: linear-gradient(180deg, #4f9be0 0%, #cfe9f2 46%, #a7dc74 46.2%, #7cc35a 100%);
+	--race-light: 1.05;
 }
 
 @theme {
 	/* Brand */
-	--color-primary: var(--color-coral);
-	--color-primary-ink: var(--color-coral-ink);
-	--color-primary-hover: #ff8a5f;
-	--color-primary-muted: rgba(247, 142, 121, 0.14);
+	--color-primary: var(--color-brand);
+	--color-primary-ink: var(--color-brand-ink);
+	--color-primary-hover: #3bdc6e;
+	--color-primary-muted: var(--color-brand-tint);
 
 	/* Semantic */
-	--color-positive: var(--color-mint);
-	--color-positive-ink: var(--color-mint-ink);
+	--color-positive: var(--color-brand);
+	--color-positive-ink: var(--color-brand-ink);
 	--color-negative: var(--color-red);
 	--color-negative-ink: var(--color-red-ink);
-	--color-warning: var(--color-amber);
+	--color-warning: var(--color-butter);
 	--color-warning-ink: var(--color-amber-ink);
 
-	/* Sector palette — L1/DeFi double as positive/warning; Meme intentionally
-	   shares the brand coral (see design handoff README). */
-	--color-sector-l1: var(--color-mint);
-	--color-sector-l1-ink: var(--color-mint-ink);
-	--color-sector-l2: var(--color-blue);
-	--color-sector-l2-ink: var(--color-blue-ink);
-	--color-sector-defi: var(--color-amber);
-	--color-sector-defi-ink: var(--color-amber-ink);
-	--color-sector-meme: var(--color-coral);
-	--color-sector-meme-ink: var(--color-coral-ink);
-	--color-sector-wildcard: var(--color-sky);
-	--color-sector-wildcard-ink: var(--color-blue-ink);
+	/* Sector palette: pale "tone" fills that carry ink text, with a darker
+	   "-ink" (the dashed echo colour) for when the sector colour is the text. */
+	--color-sector-l1: var(--color-brand-tint);
+	--color-sector-l1-ink: #22a04b;
+	--color-sector-l2: var(--color-lavender);
+	--color-sector-l2-ink: #6f68e0;
+	--color-sector-defi: var(--color-butter);
+	--color-sector-defi-ink: #7d8214;
+	--color-sector-meme: var(--color-pink);
+	--color-sector-meme-ink: #e0565a;
+	--color-sector-wildcard: var(--color-sky-tint);
+	--color-sector-wildcard-ink: #3aa6c9;
 
 	/* Surfaces */
 	--color-bg: var(--color-page);
@@ -98,7 +201,16 @@
 	--color-surface-raised: var(--color-surface);
 	--color-border: var(--color-border);
 	--color-border-strong: var(--color-border-strong);
+	--color-border-soft: var(--color-border-soft);
 	--color-hover: var(--color-hover);
+	--color-butter: var(--color-butter);
+	--color-pink: var(--color-pink);
+	--color-lavender: var(--color-lavender);
+	--color-sky-tint: var(--color-sky-tint);
+	--color-peach: var(--color-peach);
+	--color-grass: var(--color-grass);
+	--color-brand-tint: var(--color-brand-tint);
+	--color-table-head: var(--color-table-head);
 
 	/* Text */
 	--color-text: var(--color-ink);
@@ -107,53 +219,379 @@
 	--color-text-body: var(--color-text-body);
 
 	/* Fonts */
-	--font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 	--font-rps: 'Barlow Semi Condensed', var(--font-sans);
 
 	/* Type scale — semantic sizes layered on top of Tailwind's default scale */
-	--font-size-display: 2.5rem; /* 40px — hero numbers, big win/loss states */
+	--font-size-display: 2.5rem;
 	--font-size-display--line-height: 1.1;
-	--font-size-title: 1.5rem; /* 24px — page/section titles */
+	--font-size-title: 1.5rem;
 	--font-size-title--line-height: 1.2;
-	--font-size-body: 0.875rem; /* 14px — default body text */
-	--font-size-caption: 0.75rem; /* 12px — labels, metadata */
-	--font-size-micro: 0.6875rem; /* 11px — uppercase eyebrow labels */
+	--font-size-body: 0.875rem;
+	--font-size-caption: 0.75rem;
+	--font-size-micro: 0.6875rem;
 
 	/* Spacing scale — semantic gaps used across card/section layouts */
-	--spacing-card: 1rem; /* 16px */
-	--spacing-section: 0.75rem; /* 12px */
+	--spacing-card: 1rem;
+	--spacing-section: 0.75rem;
+
+	/* Where the layout really changes: phone tab bar ↔ desktop top nav. */
+	--breakpoint-nav: 60rem;
+}
+
+html {
+	/* Room for the phone tab bar and the notch when installed. */
+	scroll-padding-bottom: 6rem;
 }
 
 body {
 	background: var(--color-bg);
 	color: var(--color-text);
 	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
 }
 
-/* ─── Recurring composite treatments ────────────────────────────────────── */
+h1,
+h2,
+.font-black {
+	font-family: var(--font-display);
+	letter-spacing: -0.035em;
+}
+/* Numbers stay in mono even inside a display heading. */
+.font-mono,
+.font-mono.font-black {
+	font-family: var(--font-mono);
+	letter-spacing: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+	outline: 3px solid var(--color-blue);
+	outline-offset: 3px;
+}
+
+/* ─── Meadow components ───────────────────────────────────────────────────
+   Used by every rebuilt screen. Compose with Tailwind utilities for layout. */
+
+/* Page container: one set of margins for the whole app. */
+.m-page {
+	width: 100%;
+	max-width: 76rem;
+	margin-inline: auto;
+	padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 4.5rem;
+}
+.m-page.mid {
+	max-width: 62rem;
+}
+.m-page.narrow {
+	max-width: 46rem;
+}
+
+.m-card {
+	background: var(--color-surface);
+	border: 2px solid var(--color-ink);
+	border-radius: 22px;
+	box-shadow: var(--shadow-hard);
+	padding: clamp(1rem, 2.5vw, 1.5rem);
+	position: relative;
+}
+.m-card.flat {
+	box-shadow: none;
+}
+.m-card.ink {
+	background: var(--color-ink);
+	color: #fff;
+	box-shadow: 5px 5px 0 var(--color-brand);
+}
+.m-card.dashed {
+	border-style: dashed;
+	box-shadow: none;
+	background: transparent;
+}
+
+.m-btn {
+	min-height: 48px;
+	padding: 0 1.25rem;
+	border-radius: 14px;
+	border: 2px solid var(--color-ink);
+	box-shadow: var(--shadow-press);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font: 700 15px/1.2 var(--font-sans);
+	color: var(--color-ink);
+	background: var(--color-surface-alt);
+	cursor: pointer;
+	text-decoration: none;
+	text-align: center;
+	transition:
+		transform 0.12s ease,
+		box-shadow 0.12s ease,
+		background 0.15s;
+}
+.m-btn:hover:not(:disabled) {
+	background: var(--color-butter);
+}
+.m-btn:active:not(:disabled) {
+	transform: translateY(4px);
+	box-shadow: none;
+}
+.m-btn.primary {
+	background: var(--color-brand);
+}
+.m-btn.primary:hover:not(:disabled) {
+	background: #3bdc6e;
+}
+.m-btn.dark {
+	background: var(--color-ink);
+	color: #fff;
+	box-shadow: 0 4px 0 var(--color-brand);
+}
+.m-btn.dark:hover:not(:disabled) {
+	background: #2a2d29;
+}
+.m-btn.danger {
+	background: var(--color-pink);
+}
+.m-btn.ghost {
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+	font-weight: 600;
+}
+.m-btn.lg {
+	min-height: 56px;
+	font-size: 17px;
+	font-weight: 800;
+	padding: 0 1.75rem;
+}
+.m-btn.sm {
+	min-height: 40px;
+	padding: 0 0.875rem;
+	font-size: 13px;
+	border-radius: 12px;
+}
+.m-btn.block {
+	display: flex;
+	width: 100%;
+}
+.m-btn:disabled {
+	background: var(--color-border-soft);
+	border-style: dashed;
+	border-color: #9a9d96;
+	box-shadow: none;
+	color: var(--color-text-muted);
+	cursor: not-allowed;
+}
+
+.m-chip {
+	min-height: 38px;
+	padding: 0 0.875rem;
+	border-radius: 999px;
+	border: 2px solid var(--color-ink);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	font: 600 13px/1 var(--font-sans);
+	color: var(--color-ink);
+	background: var(--color-surface-alt);
+	cursor: pointer;
+	white-space: nowrap;
+	transition:
+		background 0.15s,
+		box-shadow 0.15s;
+}
+.m-chip[aria-pressed='true'],
+.m-chip[aria-selected='true'],
+.m-chip.active {
+	background: var(--color-brand);
+	box-shadow: 2px 2px 0 var(--color-ink);
+	font-weight: 700;
+}
+
+/* A pinned status tag: the small tilted label that hangs off the nav. */
+.m-tag {
+	min-height: 30px;
+	padding: 0 0.75rem;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font: 700 12px/1 var(--font-sans);
+	background: var(--color-surface-alt);
+	color: var(--color-ink);
+	border: 2px solid var(--color-ink);
+	box-shadow: 2px 3px 0 var(--color-ink);
+	white-space: nowrap;
+}
+
+/* The slanted plate from the garage HUD: a loud label on a tilted strip. */
+.m-plate {
+	display: inline-block;
+	padding: 0.2rem 0.75rem;
+	background: var(--color-butter);
+	border: 2px solid var(--color-ink);
+	font: 800 12px/1.3 var(--font-display);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	transform: skewX(-10deg);
+}
+.m-plate > * {
+	display: inline-block;
+	transform: skewX(10deg);
+}
+
+.m-eyebrow {
+	font: 700 12px/1.3 var(--font-sans);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--color-ink);
+}
+.m-display {
+	font-family: var(--font-display);
+	font-weight: 800;
+	letter-spacing: -0.045em;
+	line-height: 0.95;
+	text-wrap: balance;
+}
+.m-title {
+	font: 800 clamp(1.75rem, 4vw, 2.5rem) / 1.05 var(--font-display);
+	letter-spacing: -0.035em;
+	text-wrap: balance;
+}
+.m-lead {
+	font-size: clamp(0.95rem, 1.6vw, 1.125rem);
+	line-height: 1.55;
+	color: var(--color-text-body);
+	text-wrap: pretty;
+	max-width: 60ch;
+}
+.m-num {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Up / down change pill. */
+.m-chg {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	border: 1.5px solid var(--color-ink);
+	font: 700 12px/1.3 var(--font-mono);
+	white-space: nowrap;
+}
+.m-chg.up {
+	background: var(--color-brand-tint);
+	color: var(--color-brand-ink);
+}
+.m-chg.down {
+	background: #ffe0e0;
+	color: var(--color-red-ink);
+}
+
+/* Halftone: the comic dot texture behind HUD panels. */
+.halftone {
+	background-image: radial-gradient(rgba(17, 17, 17, 0.16) 1.3px, transparent 1.3px);
+	background-size: 9px 9px;
+}
+
+/* A horizontal row that scrolls, with the next item peeking so it's findable. */
+.m-rail {
+	display: flex;
+	gap: 0.75rem;
+	overflow-x: auto;
+	scroll-snap-type: x proximity;
+	padding: 0.25rem 0.5rem 0.75rem 0.25rem;
+	margin-inline: -0.25rem;
+	scrollbar-width: thin;
+}
+.m-rail > * {
+	scroll-snap-align: start;
+	flex-shrink: 0;
+}
+
+/* Sky over a strip of grass: the world the app sits in. */
+.m-sky {
+	background: linear-gradient(180deg, #8fd0f0 0%, #d6eef4 62%, var(--color-page) 100%);
+}
+.m-ground {
+	background: var(--color-grass);
+	border-top: 2px solid var(--color-ink);
+}
+
+/* ─── Bridge: screens not yet rebuilt pick up the Meadow look ──────────────
+   Older screens are written in utilities (`rounded-[20px] border border-border
+   bg-surface`, `rounded-full bg-primary`…). These rules, unlayered so they win
+   over utilities, give those patterns the sticker treatment until each screen
+   is rebuilt on the components above. Delete a rule when nothing matches it. */
+
+.border {
+	border-width: 2px;
+}
+:is(.border-t, .border-b, .border-y).border-border {
+	border-color: var(--color-border-soft);
+}
+/* Cards */
+.border.bg-surface:is(
+		[class*='rounded-[20px]'],
+		[class*='rounded-[24px]'],
+		[class*='rounded-[18px]']
+	) {
+	box-shadow: var(--shadow-hard);
+}
+/* Pill buttons → press-down buttons */
+:is(button, a).rounded-full:is(.bg-primary, .bg-text) {
+	border: 2px solid var(--color-ink);
+	border-radius: 14px;
+	box-shadow: var(--shadow-press);
+	transition:
+		transform 0.12s ease,
+		box-shadow 0.12s ease;
+}
+:is(button, a).rounded-full.bg-text {
+	box-shadow: 0 4px 0 var(--color-brand);
+}
+:is(button, a).rounded-full:is(.bg-primary, .bg-text):active:not(:disabled) {
+	transform: translateY(4px);
+	box-shadow: none;
+}
+:is(button, a).rounded-full:is(.bg-primary, .bg-text):disabled {
+	box-shadow: none;
+}
+/* Outline pills and form fields */
+:is(button, a).rounded-full.border {
+	border-radius: 12px;
+}
+:is(input, select, textarea).border {
+	background: var(--color-surface-alt);
+}
 
 .frost-panel {
-	background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48));
-	backdrop-filter: blur(18px) saturate(1.35);
-	-webkit-backdrop-filter: blur(18px) saturate(1.35);
-	border: 1px solid rgba(225, 232, 230, 0.95);
+	background: var(--color-surface);
+	border: 2px solid var(--color-ink);
+	box-shadow: var(--shadow-hard-sm);
 }
 
 .dot-grid {
-	background-image: radial-gradient(rgba(10, 10, 10, 0.13) 1.2px, transparent 1.2px);
-	background-size: 22px 22px;
+	background-image: radial-gradient(rgba(17, 17, 17, 0.14) 1.3px, transparent 1.3px);
+	background-size: 12px 12px;
 }
 
 .hero-coral {
-	background: var(--color-coral);
+	background-color: var(--color-butter);
 	color: var(--color-ink);
-	box-shadow: 0 0 90px rgba(247, 142, 121, 0.3);
+	border: 2px solid var(--color-ink);
+	box-shadow: var(--shadow-hard);
 }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────
-   Reduced-motion users get opacity fades only; marquee/pulse/float/bounce
-   are disabled below. */
+   Reduced-motion users get opacity fades only. */
 
 @keyframes cd-marquee {
 	from {
@@ -230,6 +668,64 @@ body {
 		transform: translateY(-10px) rotate(4deg);
 	}
 }
+/* Meadow motion */
+@keyframes m-deal {
+	0% {
+		opacity: 0;
+		transform: translateY(60px) rotate(var(--r0, 0deg)) scale(0.9);
+	}
+	70% {
+		opacity: 1;
+		transform: translateY(-6px) rotate(var(--r, 0deg));
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) rotate(var(--r, 0deg));
+	}
+}
+@keyframes m-pop {
+	0% {
+		transform: scale(0.6) rotate(var(--r, 0deg));
+		opacity: 0;
+	}
+	60% {
+		transform: scale(1.08) rotate(var(--r, 0deg));
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1) rotate(var(--r, 0deg));
+	}
+}
+@keyframes m-stamp {
+	0% {
+		transform: scale(2.4) rotate(-14deg);
+		opacity: 0;
+	}
+	60% {
+		transform: scale(0.92) rotate(-4deg);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1) rotate(-4deg);
+	}
+}
+@keyframes m-bob {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-6px);
+	}
+}
+@keyframes m-drive {
+	from {
+		transform: translateX(-120%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
 
 .anim-marquee {
 	animation: cd-marquee 34s linear infinite;
@@ -244,13 +740,28 @@ body {
 	animation: cd-bounce 1.2s ease-in-out infinite;
 }
 .anim-rise {
-	animation: cd-rise 0.7s ease both;
+	animation: cd-rise 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 .anim-float {
 	animation: cd-float 7s ease-in-out infinite;
 }
 .anim-float2 {
 	animation: cd-float2 6s ease-in-out infinite;
+}
+.anim-deal {
+	animation: m-deal 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.anim-pop {
+	animation: m-pop 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.anim-stamp {
+	animation: m-stamp 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.anim-bob {
+	animation: m-bob 3s ease-in-out infinite;
+}
+.anim-drive {
+	animation: m-drive 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 /* Me → Settings → Reduce motion: the same, chosen in the app. */
@@ -267,7 +778,12 @@ body {
 	.anim-pulse,
 	.anim-bounce,
 	.anim-float,
-	.anim-float2 {
+	.anim-float2,
+	.anim-bob,
+	.anim-deal,
+	.anim-pop,
+	.anim-stamp,
+	.anim-drive {
 		animation: none !important;
 	}
 }

@@ -16,55 +16,61 @@
 	// Why the last sign-in failed, when the server told us. Without this a
 	// database outage looked identical to a rejected signature.
 	let signErrorMessage = $state('');
-	let openNavGroup = $state<string | null>(null);
-	let mobileMenuOpen = $state(false);
 	// `user` comes from +layout.server.ts, loaded once per navigation — it goes
 	// stale the moment XP changes from an in-place action (answering the
 	// Gauntlet, a contest resolving, a wager settling) with no navigation
 	// after it, since nothing calls invalidateAll() for those. Nav stays
 	// mounted for the whole session, so it polls its own live figure instead
 	// of trusting that snapshot.
-	let liveXp = $state<number | null>(null);
+	let liveGears = $state<number | null>(null);
 	// A persistent way back into whatever match/lobby you're already part of,
 	// visible on every page — not just the dashboard, and not requiring a
 	// detour through matchmaking's picker screen hoping it silently redirects
 	// you. Nav stays mounted the whole session, so this polls too.
 	let activeMatch = $state<{ href: string; label: string } | null>(null);
 
-	const NAV_GROUPS: { label: string; items: { href: string; label: string }[] }[] = [
-		// Every entry here must be somewhere a user can act from a cold click.
-		// `/contest/result` was removed for failing that test: a result belongs to
-		// a specific contest, so browsing to it with no id rendered a fabricated
-		// one. Results are reached from the contest list on the dashboard.
+	// One flat list: every entry is somewhere you can act from a cold click.
+	// "Race" is the mode picker (/play), so the modes don't each need a nav slot.
+	type Link = { href: string; label: string; icon?: string; also?: string[] };
+	const RACE_PATHS = [
+		'/scrimmage',
+		'/matchmaking',
+		'/binary',
+		'/car-race',
+		'/draft',
+		'/game',
+		'/race',
+		'/contest'
+	];
+	const LINKS: Link[] = [
+		{ href: '/dashboard', label: 'Home' },
+		{ href: '/play', label: 'Race', also: RACE_PATHS },
+		{ href: '/garage', label: 'Garage' },
+		{ href: '/car-market', label: 'Car Market' },
+		{ href: '/tournament', label: 'Tournaments' },
+		{ href: '/leagues', label: 'Leagues' },
+		{ href: '/leaderboard', label: 'Leaderboard' }
+	];
+	const GUEST_LINKS: Link[] = [
+		{ href: '/guide', label: 'How to play' },
+		{ href: '/sponsor', label: 'For sponsors' }
+	];
+	const TABS: Link[] = [
+		{ href: '/dashboard', label: 'Home', icon: '🏠' },
 		{
-			label: 'play',
-			items: [
-				{ href: '/scrimmage', label: 'scrimmage' },
-				{ href: '/matchmaking', label: 'versus' },
-				{ href: '/tournament', label: 'tournament' },
-				{ href: '/binary', label: 'binary' }
-			]
+			href: '/play',
+			label: 'Race',
+			icon: '🏁',
+			also: [...RACE_PATHS, '/tournament', '/leagues', '/leaderboard']
 		},
-		{
-			label: 'garage',
-			items: [
-				{ href: '/garage', label: 'my garage' },
-				{ href: '/car-market', label: 'car market' },
-				{ href: '/car-race', label: 'car race' }
-			]
-		},
-		{
-			label: 'compete',
-			items: [{ href: '/leaderboard', label: 'leaderboard' }]
-		},
-		{
-			label: 'help',
-			items: [{ href: '/guide', label: 'how to use' }]
-		}
+		{ href: '/garage', label: 'Garage', icon: '🚗', also: ['/car-race'] },
+		{ href: '/car-market', label: 'Market', icon: '💱' },
+		{ href: '/profile', label: 'Me', icon: '🙂', also: ['/players'] }
 	];
 
-	function groupIsActive(group: (typeof NAV_GROUPS)[number]): boolean {
-		return group.items.some((i) => page.url.pathname.startsWith(i.href));
+	function isActive(link: Link): boolean {
+		const path = page.url.pathname;
+		return [link.href, ...(link.also ?? [])].some((p) => path === p || path.startsWith(p + '/'));
 	}
 
 	onMount(() => {
@@ -72,7 +78,7 @@
 		async function refreshXp() {
 			try {
 				const res = await fetch('/api/me');
-				if (res.ok) liveXp = (await res.json())?.xpTotal ?? null;
+				if (res.ok) liveGears = (await res.json())?.gears ?? null;
 			} catch {
 				/* keep whatever figure we last had rather than blank it */
 			}
@@ -114,7 +120,7 @@
 					if (mine) {
 						activeMatch = mine.myLineupLocked
 							? {
-									href: `/lobby/${mine.id}/result`,
+									href: `/race/${mine.id}`,
 									label: mine.status === 'live' ? 'Watch' : 'Active match'
 								}
 							: { href: `/draft?lobbyId=${mine.id}`, label: 'Continue draft' };
@@ -129,19 +135,6 @@
 		refreshActiveMatch();
 		const t = setInterval(refreshActiveMatch, 20_000);
 		return () => clearInterval(t);
-	});
-
-	onMount(() => {
-		function handleClickOutside(e: MouseEvent) {
-			if (!(e.target as HTMLElement).closest('[data-nav-dropdown]')) {
-				openNavGroup = null;
-			}
-			if (!(e.target as HTMLElement).closest('[data-mobile-nav]')) {
-				mobileMenuOpen = false;
-			}
-		}
-		document.addEventListener('click', handleClickOutside);
-		return () => document.removeEventListener('click', handleClickOutside);
 	});
 
 	type MaybeEthereum = {
@@ -362,200 +355,120 @@
 	});
 </script>
 
-<nav
-	class="sticky top-0 z-50 flex items-center justify-between gap-6 border-b border-border bg-surface px-7 py-3.5"
->
-	<a href="/" class="flex shrink-0 items-center gap-2.5 no-underline">
-		<svg
-			class="h-6 w-6 shrink-0 drop-shadow-[0_0_14px_rgba(247,142,121,0.45)]"
-			viewBox="0 0 24 24"
-			fill="none"
-			aria-hidden="true"
-		>
-			<circle cx="12" cy="12" r="11" class="fill-text" />
-			<polyline
-				points="6,14.5 9.5,10.5 12,12.5 17.5,6.5"
-				stroke="var(--color-surface)"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			/>
-			<circle cx="17.5" cy="6.5" r="1.8" class="fill-primary" />
-		</svg>
-		<span class="text-[19px] font-black tracking-[-0.03em] text-text">CoinDraft</span>
-	</a>
-
-	<button
-		type="button"
-		onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-		data-mobile-nav
-		aria-label="Toggle menu"
-		class="hidden shrink-0 items-center justify-center rounded-full border border-border bg-surface-alt p-2 text-text-muted max-md:flex"
-	>
-		<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-			{#if mobileMenuOpen}
-				<path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
-			{:else}
-				<path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
-			{/if}
-		</svg>
-	</button>
-
-	<div
-		class="frost-panel flex min-w-0 flex-wrap items-center justify-center gap-0.5 rounded-full p-1 max-md:hidden"
+<!-- Top bar. Desktop: the whole nav. Phone: logo, the race you're in, Gears, you. -->
+<header class="sticky top-0 z-50 px-[clamp(0.75rem,3vw,2rem)] pt-3">
+	<nav
+		aria-label="Main"
+		class="mx-auto flex max-w-[76rem] items-center gap-2 rounded-[20px] border-2 border-border bg-surface py-2 ps-3 pe-2 shadow-[0_5px_0_var(--color-ink)]"
 	>
 		<a
-			href="/"
-			class="shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-text-muted no-underline transition"
-			class:bg-surface-alt={page.url.pathname === '/'}
-			class:font-bold={page.url.pathname === '/'}
-			class:text-text={page.url.pathname === '/'}>Home</a
+			href={user ? '/dashboard' : '/'}
+			class="flex shrink-0 items-center gap-2.5 text-text no-underline"
 		>
-		<a
-			href="/dashboard"
-			class="shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-text-muted no-underline transition"
-			class:bg-surface-alt={page.url.pathname.startsWith('/dashboard')}
-			class:font-bold={page.url.pathname.startsWith('/dashboard')}
-			class:text-text={page.url.pathname.startsWith('/dashboard')}>Dashboard</a
-		>
-		{#each NAV_GROUPS as group (group.label)}
-			<div class="relative shrink-0" data-nav-dropdown>
-				<button
-					type="button"
-					onclick={() => (openNavGroup = openNavGroup === group.label ? null : group.label)}
-					class="flex cursor-pointer items-center gap-1 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-text-muted transition"
-					class:bg-surface-alt={groupIsActive(group)}
-					class:font-bold={groupIsActive(group)}
-					class:text-text={groupIsActive(group)}
+			<span
+				class="grid h-10 w-10 place-items-center rounded-xl border-2 border-border bg-primary"
+				aria-hidden="true"
+			>
+				<svg width="20" height="20" viewBox="0 0 24 24"
+					><path
+						d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"
+						fill="var(--color-ink)"
+					/></svg
 				>
-					{group.label.charAt(0).toUpperCase() + group.label.slice(1)}
-					<svg
-						class="h-3 w-3 transition-transform {openNavGroup === group.label ? 'rotate-180' : ''}"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2.5"
+			</span>
+			<span class="font-display text-[22px] font-extrabold tracking-[-0.04em] max-[380px]:hidden"
+				>coindraft</span
+			>
+		</a>
+
+		<!-- Desktop links -->
+		<div class="ms-3 flex min-w-0 items-center gap-0.5 max-nav:hidden">
+			{#each user ? LINKS : GUEST_LINKS as link (link.href)}
+				<a
+					href={link.href}
+					aria-current={isActive(link) ? 'page' : undefined}
+					class="flex h-10 items-center rounded-xl border-2 px-3 text-sm whitespace-nowrap text-text no-underline transition {isActive(
+						link
+					)
+						? 'border-border bg-surface-alt font-bold shadow-[2px_2px_0_var(--color-ink)]'
+						: 'border-transparent font-semibold hover:bg-hover'}">{link.label}</a
+				>
+			{/each}
+		</div>
+
+		<div class="ms-auto flex min-w-0 shrink-0 items-center gap-2">
+			{#if user && activeMatch}
+				<a
+					href={activeMatch.href}
+					class="flex h-10 items-center gap-2 rounded-xl border-2 border-border bg-pink px-3 text-xs font-bold whitespace-nowrap text-text no-underline shadow-[var(--shadow-hard-sm)]"
+				>
+					<span class="anim-blink h-2 w-2 rounded-full border border-border bg-primary"></span>
+					{activeMatch.label}
+				</a>
+			{/if}
+			{#if user}
+				<a
+					href="/garage"
+					title="Your Gears"
+					class="flex h-10 items-center gap-1.5 rounded-xl border-2 border-border bg-surface-alt px-3 font-mono text-sm font-bold whitespace-nowrap text-text no-underline shadow-[var(--shadow-brand)] max-[420px]:hidden"
+				>
+					<span aria-hidden="true">⚙️</span>{(liveGears ?? 0).toLocaleString()}
+					<span class="sr-only">Gears</span>
+				</a>
+				<a
+					href="/profile"
+					aria-label="Me: {user.username ?? 'profile'}"
+					class="grid h-10 w-10 place-items-center rounded-full border-2 border-border bg-butter font-display text-base font-extrabold text-text no-underline max-nav:hidden"
+				>
+					{user.username?.[0]?.toUpperCase() ?? '?'}
+				</a>
+				<button onclick={logout} class="m-btn ghost sm max-nav:hidden">Log out</button>
+			{:else if walletConnected}
+				{#if authInFlight}
+					<span class="px-2 text-xs whitespace-nowrap text-text-muted">Signing you in…</span>
+				{:else if signError}
+					<span
+						class="max-w-[30ch] truncate text-xs text-negative-ink max-sm:hidden"
+						title={signErrorMessage || 'Sign-in failed.'}
 					>
-						<polyline points="6 9 12 15 18 9" />
-					</svg>
-				</button>
-				{#if openNavGroup === group.label}
-					<div
-						class="absolute top-full left-0 z-50 mt-2 min-w-36 rounded-xl border border-border bg-surface p-1 shadow-[0_12px_34px_rgba(26,36,33,0.14)]"
-					>
-						{#each group.items as item (item.href)}
-							<a
-								href={item.href}
-								onclick={() => (openNavGroup = null)}
-								class="block rounded-lg px-3 py-1.5 text-[13px] font-medium text-text-muted no-underline transition hover:bg-hover hover:text-text"
-								class:bg-primary-muted={page.url.pathname.startsWith(item.href)}
-								class:text-primary-ink={page.url.pathname.startsWith(item.href)}
-								>{item.label.charAt(0).toUpperCase() + item.label.slice(1)}</a
-							>
-						{/each}
-					</div>
+						{signErrorMessage || 'Sign-in failed.'}
+					</span>
+					<button onclick={retrySign} class="m-btn primary sm">Try again</button>
+				{:else}
+					<button onclick={retrySign} class="m-btn primary sm">Confirm sign-in</button>
 				{/if}
-			</div>
-		{/each}
-	</div>
-
-	<div class="flex shrink-0 items-center gap-2.5">
-		{#if user && activeMatch}
-			<a
-				href={activeMatch.href}
-				class="flex items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-xs font-extrabold whitespace-nowrap text-text no-underline transition hover:bg-primary-hover"
-			>
-				<span class="anim-blink h-1.5 w-1.5 rounded-full bg-text"></span>
-				{activeMatch.label}
-			</a>
-		{/if}
-		{#if user}
-			<span class="font-mono text-xs whitespace-nowrap text-text-muted"
-				>{liveXp ?? user.xpTotal ?? 0} XP</span
-			>
-			<a
-				href="/profile"
-				class="grid h-8 w-8 place-items-center rounded-full border border-border bg-surface-alt no-underline transition hover:border-primary"
-			>
-				{user.username?.[0]?.toUpperCase() ?? '?'}
-			</a>
-			<button
-				onclick={logout}
-				class="cursor-pointer rounded-full border border-border bg-transparent px-3 py-1.5 text-xs font-bold whitespace-nowrap text-text-muted transition hover:bg-hover hover:text-text"
-				>Log out</button
-			>
-		{:else if walletConnected}
-			{#if authInFlight}
-				<span class="text-xs whitespace-nowrap text-text-muted">Signing...</span>
-			{:else if signError}
-				<span
-					class="max-w-[34ch] truncate text-xs text-negative-ink"
-					title={signErrorMessage || 'Signature failed.'}
-				>
-					{signErrorMessage || 'Signature failed.'}
-				</span>
-				<button
-					onclick={retrySign}
-					class="cursor-pointer rounded-full border-none bg-primary px-3.5 py-1.5 text-xs font-bold whitespace-nowrap text-text transition hover:bg-primary-hover"
-					>Try again</button
-				>
+			{:else if appkitReady}
+				<appkit-button label="Sign in"></appkit-button>
 			{:else}
-				<span class="text-xs whitespace-nowrap text-text-muted">Almost in —</span>
-				<button
-					onclick={retrySign}
-					class="cursor-pointer rounded-full border-none bg-primary px-3.5 py-1.5 text-xs font-bold whitespace-nowrap text-text transition hover:bg-primary-hover"
-					>Confirm sign-in</button
-				>
+				<button class="m-btn sm" disabled>Loading…</button>
 			{/if}
-		{:else if appkitReady}
-			<appkit-button label="Sign in"></appkit-button>
-		{:else}
-			<button
-				class="cursor-not-allowed rounded-full border border-border bg-transparent px-3.5 py-1.5 text-xs whitespace-nowrap text-text-muted"
-				disabled>Loading…</button
-			>
-		{/if}
-	</div>
-</nav>
+		</div>
+	</nav>
+</header>
 
-{#if mobileMenuOpen}
-	<div
-		data-mobile-nav
-		class="hidden flex-col gap-0.5 border-b border-border bg-surface px-4 py-3 max-md:flex"
+<!-- Phone tab bar: five real destinations, thumb-reachable, clear of the home indicator. -->
+{#if user}
+	<nav
+		aria-label="Tabs"
+		class="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] nav:hidden"
 	>
-		<a
-			href="/"
-			onclick={() => (mobileMenuOpen = false)}
-			class="rounded-lg px-3 py-2 text-sm font-medium text-text-muted no-underline"
-			class:bg-surface-alt={page.url.pathname === '/'}
-			class:font-bold={page.url.pathname === '/'}
-			class:text-text={page.url.pathname === '/'}>Home</a
+		<div
+			class="mx-auto flex max-w-md items-stretch justify-between gap-1 rounded-[20px] border-2 border-border bg-surface p-1.5 shadow-[0_5px_0_var(--color-ink)]"
 		>
-		<a
-			href="/dashboard"
-			onclick={() => (mobileMenuOpen = false)}
-			class="rounded-lg px-3 py-2 text-sm font-medium text-text-muted no-underline"
-			class:bg-surface-alt={page.url.pathname.startsWith('/dashboard')}
-			class:font-bold={page.url.pathname.startsWith('/dashboard')}
-			class:text-text={page.url.pathname.startsWith('/dashboard')}>Dashboard</a
-		>
-		{#each NAV_GROUPS as group (group.label)}
-			<div class="mt-1.5 border-t border-border pt-1.5">
-				<div class="px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-text-muted uppercase">
-					{group.label}
-				</div>
-				{#each group.items as item (item.href)}
-					<a
-						href={item.href}
-						onclick={() => (mobileMenuOpen = false)}
-						class="block rounded-lg px-3 py-2 text-sm font-medium text-text-muted no-underline"
-						class:bg-primary-muted={page.url.pathname.startsWith(item.href)}
-						class:font-bold={page.url.pathname.startsWith(item.href)}
-						class:text-primary-ink={page.url.pathname.startsWith(item.href)}
-						>{item.label.charAt(0).toUpperCase() + item.label.slice(1)}</a
-					>
-				{/each}
-			</div>
-		{/each}
-	</div>
+			{#each TABS as tab (tab.href)}
+				<a
+					href={tab.href}
+					aria-current={isActive(tab) ? 'page' : undefined}
+					class="flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[14px] border-2 text-[11px] font-bold text-text no-underline {isActive(
+						tab
+					)
+						? 'border-border bg-primary'
+						: 'border-transparent'}"
+				>
+					<span class="text-lg leading-none" aria-hidden="true">{tab.icon}</span>
+					<span class="truncate">{tab.label}</span>
+				</a>
+			{/each}
+		</div>
+	</nav>
 {/if}

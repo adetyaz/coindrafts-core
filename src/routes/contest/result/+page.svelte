@@ -195,7 +195,7 @@
 	const won = $derived(result.status === 'YOU WON');
 </script>
 
-<div class="mx-auto max-w-[1360px] px-7 pt-7 pb-18">
+<div class="m-page">
 	{#if loading}
 		<p class="mb-4 text-sm text-text-muted">Resolving contest and computing scores…</p>
 	{:else if error}
