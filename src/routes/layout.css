@@ -98,6 +98,7 @@
 	--color-race-sun: #fff7e6;
 	--race-sky: linear-gradient(180deg, #6fc1ec 0%, #d6eef4 46%, #9ed86a 46.2%, #62c258 100%);
 	--race-light: 1;
+	--color-race-sky: #bfe3f0;
 }
 
 /* ─── Track worlds: a different place for each kind of race ───────────────── */
@@ -115,6 +116,8 @@
 	--color-race-sun: #fff7e6;
 	--race-sky: linear-gradient(180deg, #6fc1ec 0%, #d6eef4 46%, #9ed86a 46.2%, #62c258 100%);
 	--race-light: 1;
+	/* Horizon colour: fog and the clear colour behind bloom. */
+	--color-race-sky: #bfe3f0;
 }
 /* Versus: golden hour over the wheat fields. */
 .track-golden {
@@ -129,6 +132,8 @@
 	--color-race-sun: #ffd7a0;
 	--race-sky: linear-gradient(180deg, #86a9da 0%, #ffddb4 46%, #f2de7c 46.2%, #e8cf5a 100%);
 	--race-light: 0.95;
+	/* Horizon colour: fog and the clear colour behind bloom. */
+	--color-race-sky: #ffd9b0;
 }
 /* Car race: the night forest. Headlights, and something red in the trees. */
 .track-night {
@@ -143,6 +148,8 @@
 	--color-race-sun: #ffb65e;
 	--race-sky: linear-gradient(180deg, #0c1512 0%, #182a20 55%, #14271c 100%);
 	--race-light: 0.55;
+	/* Horizon colour: fog and the clear colour behind bloom. */
+	--color-race-sky: #0c1512;
 }
 /* Binary: neon town at night. Every call lights a gate. */
 .track-neon {
@@ -157,6 +164,8 @@
 	--color-race-sun: #b6ffd0;
 	--race-sky: linear-gradient(180deg, #101a14 0%, #1d3324 60%, #17301f 100%);
 	--race-light: 0.62;
+	/* Horizon colour: fog and the clear colour behind bloom. */
+	--color-race-sky: #101a14;
 }
 /* Tournaments and league nights: the village on race day. */
 .track-village {
@@ -171,6 +180,8 @@
 	--color-race-sun: #fff1c9;
 	--race-sky: linear-gradient(180deg, #4f9be0 0%, #cfe9f2 46%, #a7dc74 46.2%, #7cc35a 100%);
 	--race-light: 1.05;
+	/* Horizon colour: fog and the clear colour behind bloom. */
+	--color-race-sky: #cfe9f2;
 }
 
 @theme {

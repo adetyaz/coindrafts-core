@@ -9,29 +9,32 @@ Owner's brief (2026-11-14): the tracks don't look good, the car models are ugly.
 the Truckful screenshots and trailers (painterly, low-poly, warm lighting, cobbles and
 hedges, a chunky pickup).
 
-- [ ] **Car models.** `RaceTrack3D.svelte` builds box cars (`buildCar`). Replace them with a
-      proper low-poly model. Keep: paint from `car.color` (CSS colour, resolved with
-      `cssColor`), the flame (shown when `accel > NITRO_THRESHOLD`), the "you" marker, and
-      the headlight `PointLight` in night worlds.
-- [ ] **Track worlds.** Five worlds are token sets in `src/routes/layout.css` (`.track-*`),
-      chosen by `src/lib/race/trackTheme.ts`: `meadow` (Scrimmage), `golden` (Versus),
-      `neon` (Binary), `night` (Car race), `village` (tournaments and league nights). The
-      scene reads colours and `--race-light` from the track's own element. Ground, scenery,
-      sky and lighting need real art direction. The road follows real circuit data
-      (`src/lib/race/circuits.ts` + `trackPath.ts`): don't change the geometry or the race
-      maths (`frame()`: gaps, accelerator, overtakes).
-- [ ] **WebGPU + TSL.** Moving to `WebGPURenderer` and TSL materials: keep the WebGL fallback
-      path and the `onUnsupported` callback (the race screen falls back to a chart view).
+- [ ] **Car models.** **Built, check in app:** a low-poly pickup with ink outlines, a crate
+      in the bed, lamps, turning wheels (`src/lib/race/scene/car.ts`). About 6 units long,
+      2.5× the old box car. Paint still comes from `car.color`; flame, "you" marker and night
+      headlights kept.
+- [ ] **Track worlds.** **Built, check in app:** `src/lib/race/scene/worlds.ts` dresses each
+      world, all instanced and seeded by the circuit. Meadow: round trees, bushes, flowers,
+      hedges, sheep. Golden: swaying wheat (TSL), hay bales, poplars. Night: pines, lamp posts
+      (6 real lights), fireflies (TSL). Neon: tower blocks with lit windows (TSL), neon posts.
+      Village: cottages with roofs, cobbled road (TSL Worley), hedges, flags. Road geometry and
+      race maths are unchanged; the road is drawn 12 wide instead of 7.
+- [ ] **WebGPU + TSL.** **Built, check in app:** `RaceTrack3D.svelte` runs on
+      `WebGPURenderer` (falls back to WebGL2 by itself; `onUnsupported` still fires if neither
+      starts). TSL materials in `src/lib/race/scene/materials.ts` (grass patches, asphalt
+      grain, painted lines, cobbles, windows). Bloom on night and neon worlds.
+- [ ] **"I see no cars at all."** **Likely fixed, check in app:** the old camera framed the
+      whole circuit, so a car was ~6px on a phone. The default view is now **Follow** (close
+      on your car, about 62 units across); **Track** is the old whole-circuit view; **Chase**
+      kept. Check the landing demo race, the race screens and the car previews.
 - [ ] **Postcards** (`src/lib/components/race/WorldThumb.svelte`) are flat SVG drawings of
       each world and look poor. Replace them with rendered stills of the real worlds once
       those look right (one per theme, same 16:9).
-- [ ] **"I see no cars at all."** Reported by the owner; screen not identified. Check the
-      landing demo race, the race screens and the car previews.
 - [ ] **Car preview drawing** (`src/lib/components/garage/CarPreview.svelte`) is a flat SVG
       used in the garage, car step, onboarding, player cards and Car Market. It should match
       the new 3D car (a rendered sprite per paint, or an SVG redrawn from the model).
-- [ ] **Sponsor ads on track** (billboard, banner, start/finish arch) are planes in
-      `RaceTrack3D.svelte`; give them frames and lighting that match the worlds.
+- [ ] **Sponsor ads on track** (billboard, banner, start/finish arch). **Built, check in
+      app:** the art now sits on cream boards with ink posts, readable from both sides.
 
 ## Detail pass (UI)
 
