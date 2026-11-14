@@ -193,45 +193,50 @@
 	{:else if phase === 'error' || !p}
 		<p class="text-sm text-negative-ink">Couldn't load your profile. Refresh to try again.</p>
 	{:else}
-		<div class="flex flex-wrap items-start justify-between gap-6">
-			<div class="min-w-0 flex-1">
-				<div class="m-eyebrow">Me</div>
-				<div class="mt-2 flex flex-wrap items-center gap-2">
-					<input
-						bind:value={name}
-						maxlength="20"
-						aria-label="Racing name"
-						class="h-12 min-w-0 rounded-2xl border border-border bg-surface px-4 text-2xl font-black"
-					/>
-					{#if name.trim() !== p.card.username}
-						<button
-							type="button"
-							disabled={busy}
-							onclick={async () => {
-								if (await save({ username: name.trim() }, 'Name saved')) await load();
-							}}
-							class="m-btn primary">Save</button
-						>
-					{/if}
+		<!-- Your driver card: the car in its garage, your name, your XP. -->
+		<section class="m-card overflow-hidden !p-0" aria-label="Your driver card">
+			<div class="m-sky flex justify-center px-4 pt-6 [&>svg]:h-auto [&>svg]:w-[min(100%,18rem)]">
+				<CarPreview look={p.card.car?.look ?? {}} />
+			</div>
+			<div class="m-ground h-4"></div>
+			<div class="flex flex-wrap items-end justify-between gap-4 p-5">
+				<div class="min-w-0 flex-1">
+					<label for="me-name" class="m-eyebrow">Racing name</label>
+					<div class="mt-1 flex flex-wrap items-center gap-2">
+						<input
+							id="me-name"
+							bind:value={name}
+							maxlength="20"
+							class="h-12 min-w-0 flex-1 rounded-[14px] border-2 border-border bg-surface-alt px-4 font-display text-2xl font-extrabold"
+						/>
+						{#if name.trim() !== p.card.username}
+							<button
+								type="button"
+								disabled={busy}
+								onclick={async () => {
+									if (await save({ username: name.trim() }, 'Name saved')) await load();
+								}}
+								class="m-btn primary">Save</button
+							>
+						{/if}
+					</div>
 				</div>
-				<p class="mt-2 font-mono text-xs text-text-muted">{p.card.xp.toLocaleString()} XP</p>
-				<a
-					href={resolve('/players/[id]', { id: p.card.id })}
-					class="mt-1 inline-block text-xs font-bold text-text">See your card as others do &rarr;</a
+				<div class="text-end">
+					<div class="m-num text-2xl font-bold">{p.card.xp.toLocaleString()} XP</div>
+					{#if p.card.car}<div class="text-sm font-bold">{p.card.car.model}</div>{/if}
+				</div>
+			</div>
+			<div class="border-t-2 border-border bg-butter px-5 py-2.5">
+				<a href={resolve('/players/[id]', { id: p.card.id })} class="text-sm font-bold text-text"
+					>See your card as others do →</a
 				>
 			</div>
-			{#if p.card.car}
-				<div class="text-end">
-					<CarPreview look={p.card.car.look ?? {}} size={200} />
-					<div class="text-sm font-bold">{p.card.car.model}</div>
-				</div>
-			{/if}
-		</div>
+		</section>
 
 		<div class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))] gap-3">
 			{#each [['Races', p.card.stats.races], ['Wins', p.card.stats.wins], ['Podiums', p.card.stats.podiums]] as [label, n] (label)}
 				<div class="flat m-card !p-4">
-					<div class="font-mono text-3xl font-bold">{n}</div>
+					<div class="m-num text-3xl font-bold">{n}</div>
 					<div class="m-eyebrow !text-[10px] text-text-muted">
 						{label}
 					</div>

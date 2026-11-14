@@ -99,111 +99,121 @@
 				class="h-64 animate-pulse rounded-[24px] bg-surface-alt"
 			></div>{/if}
 	{:else}
-		<div class="m-card">
-			<div class="flex flex-wrap items-start justify-between gap-4">
-				<div>
-					<div class="flex items-center gap-2">
+		<div class="m-card overflow-hidden !p-0">
+			<div
+				class="flex justify-center px-4 pt-6 [&>svg]:h-auto [&>svg]:w-[min(100%,16rem)] {card.isBot
+					? 'bg-lavender'
+					: 'm-sky'}"
+			>
+				<CarPreview look={card.car?.look ?? {}} />
+			</div>
+			<div class="m-ground h-4"></div>
+			<div class="flex flex-wrap items-end justify-between gap-3 px-5 pt-4">
+				<div class="min-w-0">
+					<div class="flex flex-wrap items-center gap-2">
 						<h1 class="m-title">{card.username}</h1>
 						{#if card.isBot}<span
 								class="rounded-md border-2 border-border bg-lavender px-2 py-0.5 text-[10px] font-extrabold text-text"
 								>BOT</span
 							>{/if}
 					</div>
-					{#if card.bot}<p class="mt-1 text-sm text-text-muted">{card.bot.tagline}</p>{/if}
-					<p class="mt-1 font-mono text-xs text-text-muted">{card.xp.toLocaleString()} XP</p>
+					{#if card.bot}<p class="mt-1 text-sm font-semibold">“{card.bot.tagline}”</p>{/if}
 				</div>
-				{#if card.car}
-					<div class="text-end">
-						<CarPreview look={card.car.look ?? {}} size={180} />
+				<div class="text-end">
+					<div class="m-num text-xl font-bold">{card.xp.toLocaleString()} XP</div>
+					{#if card.car}
 						<div class="text-sm font-bold">
 							{card.car.model}
 							<span
-								class="ms-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase"
+								class="ms-1 rounded-lg border-2 border-border px-2 py-0.5 text-[10px] font-extrabold uppercase"
 								style="background:{rarityColor(card.car.rarity)}">{card.car.rarity}</span
 							>
 						</div>
-					</div>
-				{/if}
-			</div>
-
-			<div class="mt-5 grid [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))] gap-3">
-				{#each [['Races', card.stats.races], ['Wins', card.stats.wins], ['Podiums', card.stats.podiums]] as [label, n] (label)}
-					<div class="rounded-2xl bg-bg p-3">
-						<div class="font-mono text-2xl font-bold">{n}</div>
-						<div class="m-eyebrow !text-[10px] text-text-muted">
-							{label}
-						</div>
-					</div>
-				{/each}
-				<div class="rounded-2xl bg-bg p-3">
-					<div class="text-lg font-black">
-						{card.stats.bestSector ? sectorTheme(card.stats.bestSector.sector).label : '—'}
-					</div>
-					<div class="m-eyebrow !text-[10px] text-text-muted">Best sector</div>
-				</div>
-			</div>
-
-			{#if card.badges.length}
-				<div class="mt-4 flex flex-wrap gap-2">
-					{#each card.badges as b (b.code)}
-						<span class="rounded-full bg-bg px-3 py-1 text-sm font-bold" title={b.description}
-							>{b.emoji} {b.name}</span
-						>
-					{/each}
-				</div>
-			{/if}
-
-			{#if card.headToHead}
-				<div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bg p-4">
-					<div>
-						<div class="m-eyebrow text-text-muted">
-							You vs {card.username}
-						</div>
-						<div class="font-mono text-2xl font-bold">
-							{card.headToHead.wins}–{card.headToHead.losses}
-						</div>
-						{#if card.bot?.mood}
-							<div class="text-sm text-text-muted">{MOOD_LABEL[card.bot.mood]}</div>
-						{/if}
-					</div>
-					{#if !card.isBot && !card.isMe}
-						<button type="button" onclick={() => (challenging = !challenging)} class="m-btn primary"
-							>Challenge</button
-						>
-					{:else if card.isBot}
-						<a href={resolve('/dashboard')} class="m-btn primary">Race a bot</a>
 					{/if}
 				</div>
-			{/if}
+			</div>
+			<div class="px-5 pb-5">
+				<div class="mt-5 grid [grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))] gap-3">
+					{#each [['Races', card.stats.races], ['Wins', card.stats.wins], ['Podiums', card.stats.podiums]] as [label, n] (label)}
+						<div class="rounded-2xl bg-bg p-3">
+							<div class="font-mono text-2xl font-bold">{n}</div>
+							<div class="m-eyebrow !text-[10px] text-text-muted">
+								{label}
+							</div>
+						</div>
+					{/each}
+					<div class="rounded-2xl bg-bg p-3">
+						<div class="text-lg font-black">
+							{card.stats.bestSector ? sectorTheme(card.stats.bestSector.sector).label : '—'}
+						</div>
+						<div class="m-eyebrow !text-[10px] text-text-muted">Best sector</div>
+					</div>
+				</div>
 
-			{#if challenging}
-				<div class="mt-3 rounded-2xl border border-border p-4">
-					<div class="text-sm font-black">Versus {card.username}</div>
-					<div class="mt-2 flex flex-wrap gap-1.5">
-						{#each LENGTHS as m (m)}
-							<button
-								type="button"
-								aria-pressed={minutes === m}
-								onclick={() => (minutes = m)}
-								class="m-chip text-xs">{lengthLabel(m)}</button
+				{#if card.badges.length}
+					<div class="mt-4 flex flex-wrap gap-2">
+						{#each card.badges as b (b.code)}
+							<span class="rounded-full bg-bg px-3 py-1 text-sm font-bold" title={b.description}
+								>{b.emoji} {b.name}</span
 							>
 						{/each}
 					</div>
-					<input
-						bind:value={message}
-						maxlength="140"
-						placeholder="Add a line (optional)"
-						class="mt-2 h-10 w-full rounded-xl border border-border bg-bg px-3 text-sm"
-					/>
-					<button
-						type="button"
-						disabled={busy}
-						onclick={challenge}
-						class="m-btn dark sm mt-2 disabled:opacity-50">Send challenge</button
-					>
-					<p class="mt-1 text-xs text-text-muted">They have 24 hours to accept.</p>
-				</div>
-			{/if}
+				{/if}
+
+				{#if card.headToHead}
+					<div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bg p-4">
+						<div>
+							<div class="m-eyebrow text-text-muted">
+								You vs {card.username}
+							</div>
+							<div class="font-mono text-2xl font-bold">
+								{card.headToHead.wins}–{card.headToHead.losses}
+							</div>
+							{#if card.bot?.mood}
+								<div class="text-sm text-text-muted">{MOOD_LABEL[card.bot.mood]}</div>
+							{/if}
+						</div>
+						{#if !card.isBot && !card.isMe}
+							<button
+								type="button"
+								onclick={() => (challenging = !challenging)}
+								class="m-btn primary">Challenge</button
+							>
+						{:else if card.isBot}
+							<a href={resolve('/dashboard')} class="m-btn primary">Race a bot</a>
+						{/if}
+					</div>
+				{/if}
+
+				{#if challenging}
+					<div class="mt-3 rounded-2xl border border-border p-4">
+						<div class="text-sm font-black">Versus {card.username}</div>
+						<div class="mt-2 flex flex-wrap gap-1.5">
+							{#each LENGTHS as m (m)}
+								<button
+									type="button"
+									aria-pressed={minutes === m}
+									onclick={() => (minutes = m)}
+									class="m-chip text-xs">{lengthLabel(m)}</button
+								>
+							{/each}
+						</div>
+						<input
+							bind:value={message}
+							maxlength="140"
+							placeholder="Add a line (optional)"
+							class="mt-2 h-10 w-full rounded-xl border border-border bg-bg px-3 text-sm"
+						/>
+						<button
+							type="button"
+							disabled={busy}
+							onclick={challenge}
+							class="m-btn dark sm mt-2 disabled:opacity-50">Send challenge</button
+						>
+						<p class="mt-1 text-xs text-text-muted">They have 24 hours to accept.</p>
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		{#if card.bot}

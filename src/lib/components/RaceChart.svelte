@@ -355,7 +355,7 @@
 				<span class="who">{r.mine ? 'you' : 'opp'}</span>
 				<span
 					class="val"
-					style="color:{(v ?? 0) >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
+					style="color:{(v ?? 0) >= 0 ? 'var(--color-positive-ink)' : 'var(--color-red-ink)'}"
 				>
 					{fmtPct(v)}
 				</span>

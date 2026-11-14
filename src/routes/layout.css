@@ -727,6 +727,21 @@ h2,
 		transform: translateY(-6px);
 	}
 }
+@keyframes m-shake {
+	0%,
+	100% {
+		transform: none;
+	}
+	25% {
+		transform: translateX(-6px);
+	}
+	75% {
+		transform: translateX(6px);
+	}
+}
+.m-shake {
+	animation: m-shake 0.3s ease-in-out;
+}
 @keyframes m-drive {
 	from {
 		transform: translateX(-120%);
@@ -792,7 +807,8 @@ h2,
 	.anim-deal,
 	.anim-pop,
 	.anim-stamp,
-	.anim-drive {
+	.anim-drive,
+	.m-shake {
 		animation: none !important;
 	}
 }

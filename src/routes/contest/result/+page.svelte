@@ -223,13 +223,9 @@
 			<div class="flex flex-wrap items-start justify-between gap-6">
 				<div>
 					<div class="mb-3.5 flex items-center gap-2.5">
-						<span class="font-mono text-[11px] font-bold tracking-[0.14em] uppercase opacity-70"
-							>Contest &middot; final</span
-						>
+						<span class="m-plate"><span>Race · final</span></span>
 						{#if result.isPaper}
-							<span class="rounded-full bg-black/10 px-2.5 py-1 text-[10px] font-bold uppercase"
-								>Scrimmage</span
-							>
+							<span class="m-tag bg-sky-tint">Scrimmage</span>
 						{/if}
 					</div>
 					<h1
@@ -243,44 +239,28 @@
 							: 'Close the gap next time. You still earned Gears for racing.'}
 					</p>
 					<div class="mt-3 flex flex-wrap items-center gap-2.5">
-						<div
-							class="w-fit rounded-full px-3.5 py-1.5 text-sm font-bold"
-							style="background:rgba(26,36,33,0.1)"
-						>
+						<div class="m-tag bg-surface">
 							+{result.xp}
 							{result.isPaper ? 'Scrimmage XP (not counted)' : 'XP earned'}
 						</div>
 						{#if stakeInfo && stakeInfo.status === 'settled'}
 							<!-- Stated outright rather than left to be inferred from a balance
 						     change — the wager is the reason they're here. -->
-							<div
-								class="w-fit rounded-full px-3.5 py-1.5 font-mono text-sm font-bold"
-								style="background:{stakeInfo.net >= 0
-									? 'rgba(104,194,168,0.22)'
-									: 'rgba(232,112,112,0.18)'}"
-							>
+							<div class="m-tag m-num {stakeInfo.net >= 0 ? 'bg-brand-tint' : 'bg-pink'}">
 								{stakeInfo.net >= 0 ? '+' : ''}{stakeInfo.net} XP wager
 							</div>
 						{:else if stakeInfo && stakeInfo.status === 'refunded'}
-							<div
-								class="w-fit rounded-full px-3.5 py-1.5 text-sm font-bold"
-								style="background:rgba(26,36,33,0.08)"
-							>
-								Wager refunded
-							</div>
+							<div class="m-tag bg-surface">Wager refunded</div>
 						{/if}
 						{#if record}
 							<!-- The record is what makes an opponent a nemesis rather than
 						     just the last person you played. -->
-							<div
-								class="w-fit rounded-full px-3.5 py-1.5 font-mono text-sm font-bold"
-								style="background:rgba(26,36,33,0.08)"
-							>
+							<div class="m-tag m-num bg-lavender">
 								{record.wins}–{record.losses} vs {opponentName ?? 'them'}
 							</div>
 						{/if}
 						{#if item}
-							<p class="w-fit rounded-full bg-black/10 px-3.5 py-1.5 text-sm font-bold">
+							<p class="m-tag bg-butter">
 								{ITEMS[item.kind].icon}
 								{ITEMS[item.kind].label}{item.sector
 									? ` on ${item.sector.toUpperCase()}`
@@ -290,14 +270,15 @@
 							</p>
 						{/if}
 						{#if carRace}
-							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-black">
+							<p class="m-tag anim-pop max-w-[44ch] bg-butter !py-2 !text-sm !whitespace-normal">
 								{carRace.won
 									? `🏁 You won their ${carRace.car.rarity} ${carRace.car.model}. It's in your garage.`
 									: `Your ${carRace.car.rarity} ${carRace.car.model} leaves your garage.`}
 							</p>
 						{/if}
 						{#if botReaction}
-							<p class="max-w-[44ch] rounded-2xl bg-black/10 px-4 py-2.5 text-sm font-bold">
+							<p class="m-tag max-w-[44ch] -rotate-1 bg-surface !py-2 !text-sm !whitespace-normal">
+								💬
 								{botReaction.name}: “{botReaction.line}”
 							</p>
 						{/if}
@@ -381,7 +362,7 @@
 							<span class="text-sm font-bold">{row.pick}</span>
 							<span
 								class="text-end font-mono text-[13px] font-bold"
-								style="color:{row.pct >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
+								style="color:{row.pct >= 0 ? 'var(--color-positive-ink)' : 'var(--color-red-ink)'}"
 								>{row.pct >= 0 ? '+' : ''}{row.pct}%</span
 							>
 							{#if row.opponentPick}
@@ -391,7 +372,7 @@
 										<span
 											class="font-mono text-[12px]"
 											style="color:{row.opponentPct >= 0
-												? 'var(--color-mint-ink)'
+												? 'var(--color-positive-ink)'
 												: 'var(--color-red-ink)'}"
 											>{row.opponentPct >= 0 ? '+' : ''}{row.opponentPct}%</span
 										>
@@ -405,7 +386,7 @@
 					{/each}
 				</div>
 
-				<div class="frost-panel mt-3.5 flex gap-3.5 rounded-[18px] p-[22px]">
+				<div class="m-card mt-4 flex gap-3.5">
 					<div class="h-9 w-9 shrink-0 rounded-[9px] bg-surface-alt"></div>
 					<div>
 						<div
@@ -431,9 +412,7 @@
 
 			<div class="flex min-w-0 flex-[1_1_280px] flex-col gap-3.5">
 				{#each newBadges as badge (badge.code)}
-					<div
-						class="rounded-[20px] border border-primary bg-surface p-[22px] shadow-[0_0_46px_rgba(247,142,121,0.2)]"
-					>
+					<div class="m-card !bg-brand-tint">
 						<div
 							class="mb-3.5 text-[11px] font-extrabold tracking-[0.12em] text-primary-ink uppercase"
 						>
@@ -450,7 +429,7 @@
 					</div>
 				{/each}
 
-				<div class="frost-panel rounded-[20px] p-[22px]">
+				<div class="m-card">
 					<div class="mb-3 text-[11px] font-extrabold tracking-[0.12em] text-text-muted uppercase">
 						XP gained
 					</div>

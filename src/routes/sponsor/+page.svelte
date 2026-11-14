@@ -77,9 +77,9 @@
 {/snippet}
 
 <div class="m-page mid">
-	<div class="m-eyebrow">Sponsors</div>
-	<h1 class="m-title mt-1">Put your brand on the grid</h1>
-	<p class="mt-3 max-w-[60ch] text-sm text-text-muted">
+	<span class="m-eyebrow">Sponsors</span>
+	<h1 class="m-title mt-1">Put your brand on the grid.</h1>
+	<p class="m-lead mt-2">
 		Sponsor a tournament, with your livery on every car, or book trackside ads on a real circuit.
 		Every booking is reviewed before it goes live.
 	</p>

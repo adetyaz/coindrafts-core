@@ -275,7 +275,7 @@
 <div class="m-page">
 	<!-- 1 · Your next move. One obvious action, sized to be the first thing you see. -->
 	<section
-		class="m-card grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-center gap-x-8 gap-y-5"
+		class="m-card grid items-center gap-x-6 gap-y-4 nav:grid-cols-[minmax(0,1fr)_15rem]"
 		aria-labelledby="next-move"
 	>
 		<div class="flex flex-col gap-3">
@@ -305,23 +305,23 @@
 				<p class="m-tag w-fit bg-pink" role="alert">{actionError}</p>
 			{/if}
 		</div>
-		<div class="max-w-sm justify-self-end max-sm:hidden">
+		<div class="w-full max-nav:hidden">
 			<WorldThumb theme={nextRace?.theme ?? 'meadow'} />
 		</div>
 	</section>
 
 	<!-- 2 · Where you stand -->
-	<section class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))] gap-4">
+	<section class="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(8rem,1fr))] gap-3">
 		{#each [{ label: 'XP', value: (user?.xpTotal ?? 0).toLocaleString(), tone: 'bg-brand-tint' }, { label: 'Win streak', value: `${user?.streak ?? 0}`, tone: 'bg-butter' }, { label: 'Win rate', value: realResolvedContests.length ? `${winRate}%` : '—', tone: 'bg-lavender' }, { label: 'Races run', value: `${resolvedContests.length}`, tone: 'bg-sky-tint' }] as s (s.label)}
-			<div class="flat m-card !p-4 {s.tone}">
-				<div class="m-num text-3xl font-bold">{s.value}</div>
+			<div class="flat m-card !px-4 !py-3 {s.tone}">
+				<div class="m-num text-2xl font-bold">{s.value}</div>
 				<div class="m-eyebrow mt-1">{s.label}</div>
 			</div>
 		{/each}
 	</section>
 
 	<div
-		class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))] items-start gap-6"
+		class="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))] items-start gap-4"
 	>
 		<!-- 3 · Daily trivia -->
 		<Trivia />
@@ -361,9 +361,9 @@
 	</div>
 
 	<!-- 5 · The market today: what might be worth drafting -->
-	<h2 class="m-eyebrow mt-10 mb-3">The market today</h2>
+	<h2 class="m-eyebrow mt-8 mb-3">The market today</h2>
 	<div
-		class="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6"
+		class="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-4"
 	>
 		<section class="m-card" aria-labelledby="sectors">
 			<h3 id="sectors" class="font-display text-lg font-extrabold">Sector form</h3>
@@ -460,7 +460,7 @@
 
 	<!-- 6 · Badges -->
 	{#if badges.length}
-		<h2 class="m-eyebrow mt-10 mb-3">
+		<h2 class="m-eyebrow mt-8 mb-3">
 			Badges · {badges.filter((b) => b.earned).length} of {badges.length}
 		</h2>
 		<div class="m-rail">

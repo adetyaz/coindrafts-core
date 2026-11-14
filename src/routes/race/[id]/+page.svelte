@@ -154,29 +154,45 @@
 			<div class="h-64 animate-pulse rounded-[24px] bg-surface-alt"></div>
 		{/if}
 	{:else}
-		<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-			<div>
-				<div class="m-eyebrow">
-					{race.leagueId ? 'League night' : race.isFinal ? 'Final' : 'Group race'} · {circuit.name}
+		{@const myPos = standings.findIndex((d) => d.isMe)}
+		<!-- Status: where the race is, and where you are in it. -->
+		<section class="m-card mb-4 !p-4" aria-label="Race status">
+			<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+				<div class="min-w-0">
+					<span class="m-plate"
+						><span
+							>{race.leagueId ? 'League night' : race.isFinal ? 'Final' : 'Group race'} · {circuit.name}</span
+						></span
+					>
+					<h1
+						class="mt-2 font-display text-[clamp(1.5rem,4.5vw,2.25rem)] leading-none font-extrabold"
+					>
+						{#if race.status === 'drafting'}
+							On the way to the grid
+						{:else if race.status === 'resolved'}
+							{myPos >= 0 ? `You finished P${myPos + 1}` : 'Chequered flag'}
+						{:else if holding}
+							On the grid
+						{:else if myPos >= 0}
+							You're P{myPos + 1} of {standings.length}
+						{:else}
+							Racing
+						{/if}
+					</h1>
 				</div>
-				<h1 class="m-title mt-1">
-					{race.status === 'drafting'
-						? 'On the way to the grid'
-						: race.status === 'resolved'
-							? 'Chequered flag'
-							: holding
-								? 'On the grid'
-								: 'Racing'}
-				</h1>
+				<div class="text-end">
+					{#if race.status === 'drafting' && race.draftClosesAt}
+						<div class="m-num text-2xl font-bold" role="timer">
+							{clock(new Date(race.draftClosesAt).getTime() - now)}
+						</div>
+						<div class="m-eyebrow mt-1">to auto-draft</div>
+					{:else if race.status === 'live' && !holding}
+						<div class="m-num text-2xl font-bold" role="timer">{clock(endMs - now)}</div>
+						<div class="m-eyebrow mt-1">left</div>
+					{/if}
+				</div>
 			</div>
-			<div class="text-end font-mono text-sm">
-				{#if race.status === 'drafting' && race.draftClosesAt}
-					Auto-draft in {clock(new Date(race.draftClosesAt).getTime() - now)}
-				{:else if race.status === 'live' && !holding}
-					{clock(endMs - now)} left
-				{/if}
-			</div>
-		</div>
+		</section>
 
 		{#if race.status === 'drafting'}
 			<div class="m-card">

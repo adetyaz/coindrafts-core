@@ -70,20 +70,20 @@ export async function GET({ params, url }) {
 	// can't load app.css or the Google Fonts <link> from app.html and has to
 	// duplicate both. Keep in sync if either changes.
 	const SECTOR_COLOR: Record<string, string> = {
-		l1: '#68C2A8',
-		l2: '#5FA8D8',
-		defi: '#F7C978',
-		meme: '#F78E79',
-		wildcard: '#81BBE3'
+		l1: '#D9F7E2',
+		l2: '#CFCCF7',
+		defi: '#EEF29A',
+		meme: '#FFD3D3',
+		wildcard: '#BFE6F2'
 	};
 
 	const pickChips = picks
 		.map((p) => {
 			const pct = Number(p.pctChange ?? 0);
 			const pctStr = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
-			const color = SECTOR_COLOR[p.sector.toLowerCase()] ?? '#5C6B66';
-			const pctColor = pct >= 0 ? '#1F7A63' : '#B04A32';
-			return `<span style="display:inline-flex;align-items:baseline;gap:6px;background:#EDF3F2;border:1px solid ${color}66;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;margin:3px"><span>${esc(p.tokenSymbol)}</span><span style="font-family:'JetBrains Mono',ui-monospace,monospace;color:${pctColor}">${esc(pctStr)}</span></span>`;
+			const color = SECTOR_COLOR[p.sector.toLowerCase()] ?? '#FFFFFF';
+			const pctColor = pct >= 0 ? '#127A37' : '#A82A2E';
+			return `<span style="display:inline-flex;align-items:baseline;gap:6px;background:${color};border:2px solid #111111;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;margin:3px"><span>${esc(p.tokenSymbol)}</span><span style="font-family:'JetBrains Mono',ui-monospace,monospace;color:${pctColor}">${esc(pctStr)}</span></span>`;
 		})
 		.join('');
 
@@ -110,19 +110,19 @@ export async function GET({ params, url }) {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link
 		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
 	/>
 
 	<style>
 		* { box-sizing: border-box; }
-		body { font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif; background: #F5FAFA; margin: 0; padding: 56px 16px; color: #1A2421; }
+		body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; background: #D4EEE6; margin: 0; padding: 56px 16px; color: #111111; }
 		.card { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; align-items: center; }
 		.brand { display: flex; align-items: center; gap: 10px; }
-		.brand .mark { width: 18px; height: 18px; border-radius: 5px; background: #F78E79; transform: rotate(45deg); }
-		.brand span { font-size: 16px; font-weight: 900; letter-spacing: -0.02em; }
-		img.og { width: 100%; border-radius: 20px; box-shadow: 0 16px 40px rgba(26,36,33,0.16); display: block; }
-		.result { width: 100%; border: 1px solid #E1E8E6; border-radius: 20px; background: #FFFFFF; padding: 24px; box-shadow: 0 2px 10px rgba(26,36,33,0.04); }
-		.result h1 { margin: 0 0 12px; font-size: 17px; font-weight: 800; }
+		.brand .mark { width: 30px; height: 30px; border-radius: 9px; background: #2AD15F; border: 2px solid #111111; }
+		.brand span { font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.04em; }
+		img.og { width: 100%; border-radius: 20px; border: 2px solid #111111; box-shadow: 5px 5px 0 #111111; display: block; }
+		.result { width: 100%; border: 2px solid #111111; border-radius: 22px; background: #FFFDF2; padding: 24px; box-shadow: 5px 5px 0 #111111; }
+		.result h1 { margin: 0 0 12px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.03em; }
 		.status {
 			display: inline-block;
 			font-weight: 900;
@@ -131,21 +131,22 @@ export async function GET({ params, url }) {
 			padding: 7px 14px;
 			border-radius: 999px;
 			margin-bottom: 14px;
-			background: ${didWin ? '#F78E79' : '#EDF3F2'};
-			color: ${didWin ? '#1A2421' : '#5C6B66'};
+			background: ${didWin ? '#2AD15F' : '#EEF29A'};
+			color: #111111;
+			border: 2px solid #111111;
 		}
 		.status .pts { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 		.chips { display: flex; flex-wrap: wrap; gap: 0; }
 		.actions { display: flex; gap: 10px; width: 100%; }
-		.actions a { flex: 1; box-sizing: border-box; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 999px; font-weight: 800; font-size: 14px; text-decoration: none; transition: transform 0.15s ease; }
-		.actions a:hover { transform: translateY(-1px); }
-		.share-x { background: #F78E79; color: #1A2421; }
-		.play { background: #FFFFFF; color: #5C6B66; border: 1px solid #E1E8E6; }
+		.actions a { flex: 1; box-sizing: border-box; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 14px; border: 2px solid #111111; box-shadow: 0 4px 0 #111111; font-weight: 800; font-size: 15px; text-decoration: none; color: #111111; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+		.actions a:active { transform: translateY(4px); box-shadow: none; }
+		.share-x { background: #2AD15F; }
+		.play { background: #FFFFFF; }
 	</style>
 </head>
 <body>
 	<div class="card">
-		<div class="brand"><div class="mark"></div><span>CoinDraft</span></div>
+		<div class="brand"><div class="mark"></div><span>coindraft</span></div>
 		<img class="og" src="${esc(cardUrl)}" alt="${esc(title)}" />
 		<div class="result">
 			<h1>${esc(username)}'s ${esc(contestType)} contest</h1>

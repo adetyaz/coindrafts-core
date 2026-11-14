@@ -111,57 +111,77 @@ Daily trivia ──► XP, streak, items (Nitro, Turbo, Spare Tyre, Shield)
 
 ---
 
-## 3. Design system
+## 3. Design system: Meadow (built)
 
-The owner is bringing a **new visual direction**; the current look (light, coral
-brand, Archivo + JetBrains Mono, rounded pills, large-radius cards) is a scaffold.
-Replace it, but keep the **token architecture** below, because non-component code
-reads these tokens.
+The UI is built in **Meadow**, the direction in `Design System/meadow/`: a
+sticker-sheet arcade look. Ink outlines (2px `#111`), hard offset shadows (never
+blurred), a mint page, cream cards, loud display type. The race worlds borrow
+Truckful's painterly places. Keep the **token architecture** below: code reads
+these tokens.
 
 ### 3.1 Where it lives
 
 - `src/routes/layout.css`: raw palette (`:root`) → semantic tokens (`@theme`),
-  fonts, font sizes, textures (`dot-grid`, `hero-coral`, `frost-panel`), motion
-  classes (`anim-blink`, `anim-float`, …), reduced-motion rules.
-- Fonts today: `--font-sans` Archivo, `--font-mono` JetBrains Mono, `--font-rps`
-  Barlow Semi Condensed (RPS screen only).
+  fonts, the Meadow component classes (§3.6), track worlds (§3.3), motion and
+  reduced-motion rules, and a **bridge** block that gives any leftover utility-styled
+  markup the sticker look. Delete a bridge rule once nothing matches it.
+- Fonts: `--font-display` Bricolage Grotesque (headings), `--font-sans` Plus Jakarta
+  Sans (UI), `--font-mono` JetBrains Mono (every number, price, timer), `--font-rps`
+  Barlow Semi Condensed (RPS only). Loaded in `src/app.html`.
+- `--breakpoint-nav` (60rem): below it the app uses the phone layout (bottom tab bar,
+  sticky lock bars); above it the desktop top nav. Use `nav:` / `max-nav:` variants.
 
-### 3.2 Semantic tokens in use (keep the names; change the values)
+### 3.2 Semantic tokens (keep the names)
 
-| Group      | Tokens                                                                                                                        |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Surfaces   | `bg`, `page`, `surface`, `surface-alt`, `surface-raised`, `hover`, `border`, `border-strong`                                  |
-| Text       | `text`, `text-body`, `text-secondary`, `text-muted`                                                                           |
-| Brand      | `primary`, `primary-hover`, `primary-ink`, `primary-muted`                                                                    |
-| Status     | `positive`, `positive-ink`, `negative`, `negative-ink`, `warning`, `warning-ink`                                              |
-| Sectors    | `sector-l1`, `sector-l2`, `sector-defi`, `sector-meme`, `sector-wildcard` (+ `-ink` each), mapped in `src/lib/sectorTheme.ts` |
-| Raw colors | `ink`, `coral`, `mint`, `blue`, `amber`, `sky`, `red` (+ some `-ink`)                                                         |
+| Group      | Tokens                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Surfaces   | `bg` (mint page), `surface` (cream), `surface-alt` (white), `border` (ink), `border-soft`, `hover`, `table-head`                      |
+| Text       | `text` (ink), `text-body`, `text-muted`                                                                                               |
+| Brand      | `primary` (green `#2AD15F`), `primary-ink`, `primary-hover`, `primary-muted`                                                          |
+| Tints      | `butter`, `pink`, `lavender`, `sky-tint`, `peach`, `brand-tint`, `grass`                                                              |
+| Status     | `positive`, `positive-ink`, `negative`, `negative-ink`, `warning`, `warning-ink`                                                      |
+| Sectors    | `sector-l1`…`sector-wildcard` are pale fills that carry ink text; `-ink` is the saturated sector colour (`src/lib/sectorTheme.ts`)    |
+| Raw colors | `ink`, `coral`, `mint`, `blue`, `amber`, `sky`, `red`: saturated, used for **car paints** and anything that must read on the 3D track |
 
 ### 3.3 Tokens read by code (renaming breaks things)
 
-- **3D track** (`RaceTrack3D.svelte` reads them at runtime with `getComputedStyle`):
-  `--color-race-road`, `-grass`, `-grass-dark`, `-kerb`, `-line`, `-tree`,
-  `-trunk`, `-wheel`, `-flame`, plus `--color-positive` / `--color-negative`
-  (binary checkpoint gates). Restyle the track by changing these values.
-- **Car paints** (`PAINTS` in `src/lib/economy/rules.ts`): coral, mint, blue, amber,
-  sky, red, ink, as `var(--color-…)`. Paint shows on the 3D car and in
-  `CarPreview.svelte`.
-- **Rarity badges** (`src/lib/economy/rarity.ts`): Common `border-strong`, Rare
-  `blue`, Epic `rps-lizard`, Legendary `amber`.
-- **RPS screen** (`/design/rps`, dark exception): all `--color-rps-*`.
+- **3D track** (`RaceTrack3D.svelte`): `--color-race-road`, `-grass`, `-grass-dark`,
+  `-kerb`, `-line`, `-tree`, `-trunk`, `-wheel`, `-flame`, `-flower`, `-sun`, plus
+  `--race-sky` (CSS background) and `--race-light` (light level; below 0.8 = night,
+  cars get headlights), plus `--color-positive`/`--color-negative` (binary gates).
+  The track reads them **from its own element**, so a world class re-themes one race.
+- **Track worlds** (`.track-*` in layout.css, mapping in `src/lib/race/trackTheme.ts`):
+  `meadow` Scrimmage · `golden` Versus · `neon` Binary · `night` Car race ·
+  `village` tournaments and league nights. `WorldThumb.svelte` draws a postcard of
+  each world from the same tokens.
+- **Car paints** (`PAINTS` in `src/lib/economy/rules.ts`) and **rarity badges**
+  (`src/lib/economy/rarity.ts`) reference raw colour tokens.
+- **RPS screen** (`/design/rps`): all `--color-rps-*`.
 
 ### 3.4 Allowed hardcoded colours
 
-- `src/lib/server/resultCard.ts` renders a standalone SVG (the share image) and
-  duplicates hex values. Keep it in sync with the new palette.
-- Sponsor uploads: sponsor artwork/logos and a sponsor's chosen **livery** colour
-  are user content, shown as-is.
+- `src/lib/server/resultCard.ts` (share image SVG) and `src/routes/share/[id]/+server.ts`
+  (share page HTML) duplicate the Meadow hex values. Keep them in sync.
+- Sponsor artwork, logos and livery colours are user content.
 
-### 3.5 Current shape language (replace freely)
+### 3.5 Shape language
 
-Cards ~20px radius with a 1px border; pill buttons (primary fill / outline
-secondary); mono font for numbers, prices and timers; uppercase micro-labels with
-wide tracking; slightly tilted draft cards.
+Cards 22px radius, 2px ink border, 5px hard shadow. Buttons 14px radius with a 4px
+ink "press" shadow that disappears on press. Chips are pills that turn green when
+selected (`aria-pressed`/`aria-selected`). The **plate** (`m-plate`, a skewed butter
+label) names the mode or world. **Tags** (`m-tag`) are small outlined pills, tilted
+when pinned. Mono for numbers; uppercase micro-labels (`m-eyebrow`). Sector slots
+in the draft are tilted like cards on a table.
+
+### 3.6 Component classes (use these, not one-off utilities)
+
+`m-page` (+ `mid`, `narrow`) page container with responsive margins · `m-card`
+(+ `flat`, `ink`, `dashed`) · `m-btn` (+ `primary`, `dark`, `danger`, `ghost`, `sm`,
+`lg`, `block`) · `m-chip` · `m-tag` · `m-plate` · `m-eyebrow` · `m-title` ·
+`m-display` · `m-lead` · `m-num` · `m-chg` (+ `up`, `down`) · `m-rail` (horizontal
+scroller with peek) · `m-sky` / `m-ground` (the world behind heroes) · `halftone`.
+Motion: `anim-deal`, `anim-pop`, `anim-stamp`, `anim-drive`, `anim-bob`,
+`m-shake`, plus the older `anim-*` set.
 
 ---
 
@@ -175,7 +195,8 @@ wide tracking; slightly tilted draft cards.
 |           | `/share/[id]`                            | Public result page (server-rendered for link previews) | 7.27    |
 | Onboard   | `/welcome` (`?first=1` on first sign-in) | First car, racing name, email → first race             | 7.2     |
 | Home      | `/dashboard`                             | Dashboard                                              | 7.3     |
-| Race      | `/scrimmage`                             | Practice vs a bot                                      | 7.4     |
+| Race      | `/play`                                  | Race hub: every mode, explained, with its world        | 4.2     |
+|           | `/scrimmage`                             | Practice vs a bot                                      | 7.4     |
 |           | `/matchmaking`                           | Versus queue                                           | 7.5     |
 |           | `/draft`                                 | Race setup (car → track) + draft + item tray           | 7.6     |
 |           | `/binary`                                | Binary: mode → car/track → calls                       | 7.7     |
@@ -199,17 +220,13 @@ wide tracking; slightly tilted draft cards.
 | Prototype | `/design/rps`, `/design/pickers`         | RPS screen, design sandbox                             | 7.25    |
 | Legacy    | `/lobby/[id]/result`                     | Old lobby result (superseded by `/race/[id]`)          | 7.26    |
 
-### 4.2 Navigation today (`src/lib/components/Nav.svelte`)
+### 4.2 Navigation (`src/lib/components/Nav.svelte`, built)
 
-Logo · groups **play** (scrimmage, versus, tournament, binary), **garage** (my
-garage, car market, car race), **compete** (leaderboard), **help** (how to use) ·
-an "active match" pill (continue draft / watch) · Gears · sign-in button / profile.
-Leagues, Me and Sponsors are reachable but not in the nav groups yet; fold them in.
-
-### 4.3 Proposed phone navigation (yours to decide)
-
-Bottom tabs: **Home · Race · Garage · Compete · Me**. Race opens the mode picker
-(Scrimmage, Versus, Binary, Car race). The active-race pill floats above the tabs.
+Desktop: a floating top bar (logo · Home, Race, Garage, Car Market, Tournaments,
+Leagues, Leaderboard · active-race pill · Gears · Me). Phones: a slim top bar (logo,
+active-race pill, Gears) plus a **bottom tab bar** (Home · Race · Garage · Market ·
+Me) clear of the home indicator. **Race** is the hub `/play`, which explains every
+mode with its world.
 
 ---
 

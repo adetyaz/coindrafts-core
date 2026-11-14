@@ -108,51 +108,51 @@
 	}
 </script>
 
-<div class="m-card">
-	<div class="flex items-center justify-between gap-3">
+<section class="m-card" aria-labelledby="trivia-title">
+	<div class="flex items-start justify-between gap-3">
 		<div>
-			<div class="m-eyebrow">Daily trivia</div>
-			<div class="mt-1 text-lg font-black">
-				{s ? `${s.total} questions · about a minute` : 'Today’s questions'}
-			</div>
+			<span class="m-plate"><span>Daily trivia</span></span>
+			<h2 id="trivia-title" class="mt-2 font-display text-xl font-extrabold">
+				{s ? `${s.total} questions, about a minute` : 'Today’s questions'}
+			</h2>
 		</div>
 		{#if s}
-			<div class="text-end">
-				<div class="font-mono text-2xl font-bold">🔥 {s.streak}</div>
-				<div class="m-eyebrow !text-[10px] text-text-muted">day streak</div>
+			<div class="m-tag !min-h-11 bg-butter !px-3" title="Days in a row you've passed">
+				<span aria-hidden="true">🔥</span><span class="m-num text-base">{s.streak}</span>
+				<span class="sr-only">day streak</span>
 			</div>
 		{/if}
 	</div>
 
 	{#if loading}
-		<div class="mt-4 h-24 animate-pulse rounded-2xl bg-surface-alt"></div>
+		<div class="mt-4 h-24 animate-pulse rounded-[14px] bg-surface-alt"></div>
 	{:else if !s}
 		<p class="mt-4 text-sm text-text-muted">{error || 'Sign in to play today’s trivia.'}</p>
 	{:else if !run}
-		<p class="mt-4 text-sm text-text-muted">
-			Pass with {s.passMark}/{s.total} to keep your streak. A perfect {s.total}/{s.total} wins a
-			{ITEMS.nitro.icon} Nitro; every 7 days in a row wins a pit-stop item.
-		</p>
-		<button
-			type="button"
-			disabled={busy}
-			onclick={start}
-			class="m-btn primary mt-4 disabled:opacity-50">{busy ? 'Loading…' : 'Start'}</button
+		<ul class="mt-4 flex flex-col gap-1.5 text-sm">
+			<li>✅ Get <strong>{s.passMark} of {s.total}</strong> right to keep your streak going.</li>
+			<li>{ITEMS.nitro.icon} A perfect {s.total}/{s.total} wins a <strong>Nitro</strong>.</li>
+			<li>🛞 Every 7 days in a row wins a pit-stop item.</li>
+		</ul>
+		<button type="button" disabled={busy} onclick={start} class="m-btn primary mt-4 block"
+			>{busy ? 'Loading…' : 'Start trivia →'}</button
 		>
 	{:else if !run.finished && question}
-		<div class="mt-4 flex items-center justify-between font-mono text-xs text-text-muted">
-			<span>Question {index + 1} of {s.total}</span>
-			<span class={msLeft < 10_000 ? 'font-bold text-negative-ink' : ''}
+		<div class="mt-4 flex items-center justify-between gap-2">
+			<span class="m-num text-xs font-bold">Q{index + 1} / {s.total}</span>
+			<span class="m-num m-tag !min-h-7 {msLeft < 10_000 ? 'bg-pink' : 'bg-surface'}" role="timer"
 				>{Math.ceil(msLeft / 1000)}s</span
 			>
 		</div>
-		<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-alt">
+		<div class="mt-2 h-3.5 overflow-hidden rounded-full border-2 border-border bg-surface-alt">
 			<div
-				class="h-full bg-primary transition-[width] duration-200"
+				class="h-full transition-[width] duration-200 {msLeft < 10_000
+					? 'bg-negative'
+					: 'bg-primary'}"
 				style="width:{(msLeft / s.timeLimitMs) * 100}%"
 			></div>
 		</div>
-		<p class="mt-4 font-bold">{question.question}</p>
+		<p class="mt-4 font-display text-lg leading-snug font-extrabold">{question.question}</p>
 		<div class="mt-3 grid gap-2 {question.options.length > 2 ? 'sm:grid-cols-2' : 'grid-cols-2'}">
 			{#each question.options as o (o.value)}
 				{@const isPicked = feedback?.picked === o.value}
@@ -161,32 +161,43 @@
 					type="button"
 					disabled={busy}
 					onclick={() => answer(o.value)}
-					class="min-h-11 cursor-pointer rounded-2xl border px-4 py-2 text-start text-sm font-bold disabled:cursor-default {isAnswer
-						? 'border-positive bg-positive text-text'
+					class="m-btn !min-h-12 !justify-start !text-start !text-sm disabled:!cursor-default disabled:!border-solid disabled:!text-text {isAnswer
+						? 'anim-pop !bg-primary'
 						: isPicked
-							? 'border-negative bg-negative text-text'
-							: 'border-border bg-bg'}">{o.label}</button
+							? 'm-shake !bg-pink'
+							: ''}"
+					>{#if isAnswer}✓
+					{:else if isPicked}✗
+					{/if}{o.label}</button
 				>
 			{/each}
 		</div>
 	{:else}
-		<div class="mt-4">
-			<div class="text-3xl font-black">{run.score ?? 0}/{s.total}</div>
-			{#if run.passed}
-				<p class="mt-1 text-sm font-bold text-positive-ink">
-					Passed. +{run.rewards?.xp ?? 0} XP · streak {run.rewards?.streak ?? s.streak}
-				</p>
-				{#each run.rewards?.items ?? [] as k (k)}
-					<p class="mt-1 text-sm font-bold">{ITEMS[k].icon} You won a {ITEMS[k].label}!</p>
-				{/each}
-			{:else}
-				<p class="mt-1 text-sm text-text-muted">
-					{s.passMark} to pass. Your streak only grows on a pass, so come back tomorrow.
-				</p>
-			{/if}
-			<p class="mt-3 font-mono text-xs text-text-muted">
-				Next set in {countdown(s.nextSetAt)}
-			</p>
+		<div class="mt-4 flex flex-wrap items-center gap-4">
+			<div
+				class="anim-stamp grid h-20 w-20 place-items-center rounded-full border-2 border-border font-display text-2xl font-extrabold {run.passed
+					? 'bg-primary'
+					: 'bg-surface-alt'}"
+			>
+				{run.score ?? 0}/{s.total}
+			</div>
+			<div class="min-w-0 flex-1">
+				{#if run.passed}
+					<p class="font-display text-xl font-extrabold">Passed!</p>
+					<p class="text-sm font-semibold">
+						+{run.rewards?.xp ?? 0} XP · streak {run.rewards?.streak ?? s.streak} 🔥
+					</p>
+					{#each run.rewards?.items ?? [] as k (k)}
+						<p class="m-tag mt-2 w-fit bg-butter">{ITEMS[k].icon} You won a {ITEMS[k].label}!</p>
+					{/each}
+				{:else}
+					<p class="font-display text-xl font-extrabold">Not this time.</p>
+					<p class="text-sm text-text-body">
+						{s.passMark} to pass. Your streak only grows on a pass, so come back tomorrow.
+					</p>
+				{/if}
+			</div>
 		</div>
+		<p class="m-num mt-3 text-xs font-bold">Next set in {countdown(s.nextSetAt)}</p>
 	{/if}
-</div>
+</section>

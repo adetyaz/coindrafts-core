@@ -25,7 +25,11 @@
 			<circle cx="134" cy="16" r="7" fill="var(--color-race-sun)" opacity="0.9" />
 		{:else}
 			<circle cx="132" cy="16" r="9" fill="var(--color-race-sun)" />
-			<path d="M22 20h18a6 6 0 0 0 0-12 8 8 0 0 0-15-2 7 7 0 0 0-3 14Z" fill="var(--color-surface-alt)" opacity="0.9" />
+			<path
+				d="M22 20h18a6 6 0 0 0 0-12 8 8 0 0 0-15-2 7 7 0 0 0-3 14Z"
+				fill="var(--color-surface-alt)"
+				opacity="0.9"
+			/>
 		{/if}
 		<!-- hills -->
 		<path d="M0 52 Q40 34 80 50 T160 44 V90 H0Z" fill="var(--color-race-grass-dark)" />

@@ -7,72 +7,77 @@ export type ResultCardData = {
 	picks: Array<{ sector: string; pick: string; pct: number }>;
 };
 
-// Mirrors src/lib/sectorTheme.ts — this file can't import CSS custom
-// properties (it renders a standalone SVG document), so the hex values are
-// duplicated here. Keep both in sync if the palette changes.
+// Mirrors the Meadow palette in src/routes/layout.css. This file can't read CSS
+// custom properties (it renders a standalone SVG document), so the hex values
+// are duplicated here. Keep both in sync if the palette changes.
 const SECTOR_COLOR: Record<string, string> = {
-	l1: '#68C2A8',
-	l2: '#5FA8D8',
-	defi: '#F7C978',
-	meme: '#F78E79',
-	wildcard: '#81BBE3'
+	l1: '#D9F7E2',
+	l2: '#CFCCF7',
+	defi: '#EEF29A',
+	meme: '#FFD3D3',
+	wildcard: '#BFE6F2'
 };
 
-const INK = '#1A2421';
-const PAGE = '#F5FAFA';
-const CORAL = '#F78E79';
-const MUTED = '#5C6B66';
-const BORDER = '#E1E8E6';
-const MINT = '#68C2A8';
+const INK = '#111111';
+const PAGE = '#D4EEE6';
+const CREAM = '#FFFDF2';
+const BRAND = '#2AD15F';
+const BUTTER = '#EEF29A';
+const GRASS = '#9ED86A';
+const MUTED = '#5E625C';
+const UP = '#127A37';
+const DOWN = '#A82A2E';
 
 function esc(s: string): string {
 	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Renders a 1200x630 OG-sized result card as an SVG string. */
+/** Renders a 1200x630 OG-sized result card as an SVG string (Meadow sticker style). */
 export function renderResultCardSvg(data: ResultCardData): string {
 	const win = data.didWin;
-	const bg = win ? INK : PAGE;
-	const fg = win ? PAGE : INK;
-	const sub = win ? 'rgba(245,250,250,0.6)' : MUTED;
 	const status = win ? 'WON' : 'LOST';
-
 	const n = Math.min(5, data.picks.length) || 1;
-	const chipW = Math.floor((1112 - (n - 1) * 16) / n);
-	const chipY = 460;
+	const chipW = Math.floor((1048 - (n - 1) * 16) / n);
+	const chipY = 404;
 
 	const pickChips = data.picks
 		.slice(0, 5)
 		.map((p, i) => {
-			const x = 44 + i * (chipW + 16);
-			const color = SECTOR_COLOR[p.sector.toLowerCase()] ?? MUTED;
+			const x = 76 + i * (chipW + 16);
+			const fill = SECTOR_COLOR[p.sector.toLowerCase()] ?? '#FFFFFF';
 			const pctStr = p.pct >= 0 ? `+${p.pct.toFixed(1)}%` : `${p.pct.toFixed(1)}%`;
-			const pctColor = p.pct >= 0 ? MINT : CORAL;
 			return `
-				<rect x="${x}" y="${chipY}" width="${chipW}" height="120" rx="14" fill="${win ? 'rgba(245,250,250,0.06)' : '#FFFFFF'}" stroke="${color}" stroke-width="1.5" />
-				<text x="${x + 18}" y="${chipY + 32}" font-family="monospace" font-size="12" font-weight="700" letter-spacing="1.5" fill="${sub}">${esc(p.sector.toUpperCase())}</text>
-				<text x="${x + 18}" y="${chipY + 70}" font-family="sans-serif" font-size="26" font-weight="900" fill="${fg}">${esc(p.pick)}</text>
-				<text x="${x + 18}" y="${chipY + 98}" font-family="monospace" font-size="16" font-weight="700" fill="${pctColor}">${esc(pctStr)}</text>
-			`;
+				<rect x="${x + 4}" y="${chipY + 4}" width="${chipW}" height="112" rx="16" fill="${INK}" />
+				<rect x="${x}" y="${chipY}" width="${chipW}" height="112" rx="16" fill="${fill}" stroke="${INK}" stroke-width="3" />
+				<text x="${x + 16}" y="${chipY + 30}" font-family="sans-serif" font-size="13" font-weight="800" letter-spacing="1.5" fill="${INK}">${esc(p.sector.toUpperCase())}</text>
+				<text x="${x + 16}" y="${chipY + 66}" font-family="sans-serif" font-size="26" font-weight="900" fill="${INK}">${esc(p.pick)}</text>
+				<text x="${x + 16}" y="${chipY + 94}" font-family="monospace" font-size="17" font-weight="700" fill="${p.pct >= 0 ? UP : DOWN}">${esc(pctStr)}</text>`;
 		})
 		.join('');
 
-	const pillW = status === 'WON' ? 130 : 150;
-
 	return `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-		<rect width="1200" height="630" fill="${bg}" />
+		<rect width="1200" height="630" fill="${PAGE}" />
+		<rect y="560" width="1200" height="70" fill="${GRASS}" />
+		<rect y="558" width="1200" height="3" fill="${INK}" />
 
-		<g transform="translate(44,44)">
-			<rect x="0" y="0" width="26" height="26" rx="7" fill="${CORAL}" transform="rotate(45 13 13)" />
-			<text x="38" y="20" font-family="sans-serif" font-size="22" font-weight="900" letter-spacing="-0.5" fill="${fg}">CoinDraft</text>
+		<rect x="50" y="46" width="1100" height="500" rx="28" fill="${INK}" />
+		<rect x="44" y="40" width="1100" height="500" rx="28" fill="${CREAM}" stroke="${INK}" stroke-width="3" />
+
+		<g transform="translate(76,72)">
+			<rect width="40" height="40" rx="11" fill="${BRAND}" stroke="${INK}" stroke-width="3" />
+			<path d="M20 6C21 14 23 17 32 20 23 21 21 24 20 34 19 24 17 21 8 20 17 17 19 14 20 6Z" fill="${INK}" />
+			<text x="54" y="29" font-family="sans-serif" font-size="26" font-weight="900" letter-spacing="-1" fill="${INK}">coindraft</text>
 		</g>
-		<text x="1156" y="60" text-anchor="end" font-family="monospace" font-size="14" font-weight="700" letter-spacing="1.5" fill="${sub}">${esc(data.contestType.toUpperCase())} CONTEST &middot; SEASON 01</text>
+		<text x="1112" y="100" text-anchor="end" font-family="sans-serif" font-size="15" font-weight="800" letter-spacing="1.5" fill="${MUTED}">${esc(data.contestType.toUpperCase())} RACE</text>
 
-		<rect x="44" y="222" width="${pillW}" height="40" rx="20" fill="${win ? CORAL : '#FFFFFF'}" stroke="${win ? 'none' : BORDER}" />
-		<text x="${44 + pillW / 2}" y="248" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="900" letter-spacing="1.5" fill="${win ? INK : MUTED}">${esc(status)}</text>
+		<g transform="translate(76,160) rotate(-4)">
+			<rect x="4" y="4" width="${win ? 170 : 190}" height="64" rx="14" fill="${INK}" />
+			<rect width="${win ? 170 : 190}" height="64" rx="14" fill="${win ? BRAND : BUTTER}" stroke="${INK}" stroke-width="3" />
+			<text x="${(win ? 170 : 190) / 2}" y="44" text-anchor="middle" font-family="sans-serif" font-size="32" font-weight="900" letter-spacing="1" fill="${INK}">${esc(status)}</text>
+		</g>
 
-		<text x="44" y="360" font-family="monospace" font-size="74" font-weight="700" letter-spacing="-2" fill="${fg}">${data.yourScore}<tspan fill="${sub}" font-size="44"> / </tspan><tspan fill="${sub}" font-size="44">${data.opponentScore}</tspan></text>
-		<text x="44" y="400" font-family="sans-serif" font-size="19" fill="${sub}">${esc(data.username)}'s ${esc(data.contestType)} contest</text>
+		<text x="300" y="214" font-family="monospace" font-size="72" font-weight="700" letter-spacing="-2" fill="${INK}">${data.yourScore}<tspan fill="${MUTED}" font-size="42"> / ${data.opponentScore}</tspan></text>
+		<text x="300" y="262" font-family="sans-serif" font-size="22" font-weight="600" fill="${MUTED}">${esc(data.username)}'s engine</text>
 
 		${pickChips}
 	</svg>`;

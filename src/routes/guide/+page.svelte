@@ -1,205 +1,217 @@
 <script lang="ts">
-	interface StepItem {
-		num: number;
-		title: string;
-		body: string;
-		callout?: { type: 'accent' | 'positive'; text: string };
-		paths?: { label: string; title: string; body: string }[];
-	}
+	// How to play: the racing game in plain words, in the order you meet it.
+	import { resolve } from '$app/paths';
+	import WorldThumb from '$lib/components/race/WorldThumb.svelte';
+	import { ITEMS, ITEM_KINDS, WEEKLY_ITEM_CAP } from '$lib/race/items';
+	import type { TrackTheme } from '$lib/race/trackTheme';
 
-	const STEPS: { group: string; groupSub: string; items: StepItem[] }[] = [
+	const STEPS = [
 		{
-			group: 'Getting in',
-			groupSub: 'No email, no password — your wallet is your account.',
-			items: [
-				{
-					num: 1,
-					title: 'Connect your wallet',
-					body: "Open the app and connect Phantom, MetaMask, or any supported EVM/Solana wallet. You'll be asked to sign a message — this proves you own the wallet, it doesn't cost gas or move funds.",
-					callout: { type: 'accent', text: 'You land on the Dashboard, signed in' }
-				},
-				{
-					num: 2,
-					title: 'Read the room before you draft',
-					body: 'The Dashboard shows Sector Wars (24h performance by sector), Whale Watch (institutional ETF flow alerts), and Hot Tokens — check these before locking a lineup, not after.'
-				},
-				{
-					num: 3,
-					title: "Answer today's Gauntlet question",
-					body: 'One multiple-choice question a day, generated from live market data. Answer correctly for XP and a 24-hour boost on that sector — it shows as a badge on the matching draft slot.',
-					callout: { type: 'positive', text: '+XP and a sector boost, once per day' }
-				}
-			]
+			t: 'Sign in with email or Google',
+			d: "No wallet, no seed phrase, no gas. Your first car and 500 Gears are waiting, and they're yours: the game records them on NEAR for you."
 		},
 		{
-			group: 'Playing',
-			groupSub: 'Every contest starts the same way — five picks, one per slot.',
-			items: [
-				{
-					num: 4,
-					title: 'Pick your five',
-					body: 'Fill each slot with one token: L1, L2, DeFi, Meme, Wildcard. Prices lock the moment you submit — that’s your entry price for scoring.'
-				},
-				{
-					num: 5,
-					title: 'Choose how you’re competing',
-					body: 'From the Dashboard, pick a format before you draft.',
-					paths: [
-						{
-							label: 'Head-to-head',
-							title: 'Versus',
-							body: 'Queues you against another live player — real opponents only, no bots. No one around? A "Try Scrimmage instead" option appears while the search keeps running in the background.'
-						},
-						{
-							label: 'Group play',
-							title: 'Tournament',
-							body: 'Join by invite (private) or browse public tournaments and join before the registration window closes. Brackets run qualifier rounds into a final; free-to-play or real stakes.'
-						},
-						{
-							label: 'Contest length',
-							title: 'Daily vs. Weekly',
-							body: 'Daily resolves in 24 hours. Weekly runs a full 7 days and pays 2× XP — same draft screen, longer clock.'
-						},
-						{
-							label: 'Zero risk',
-							title: 'Scrimmage',
-							body: 'Same UI, same scoring, a bot opponent — draft against bots and earn XP, without touching your real rank. Built for learning the scoring system first.'
-						}
-					]
-				}
-			]
+			t: 'Pick a car and a track',
+			d: 'Cars and circuits are for show. Monza, Suzuka, Spa and Interlagos are traced from real track data.'
 		},
 		{
-			group: 'After the draft',
-			groupSub: "Contest resolves on its own — you don't have to do anything to close it out.",
-			items: [
-				{
-					num: 6,
-					title: 'Let the clock run',
-					body: 'Contests resolve automatically once their window ends — daily at 24 hours, weekly at 7 days, lobbies once full or timed out. No need to check back at an exact moment.'
-				},
-				{
-					num: 7,
-					title: 'Read the result',
-					body: 'The Result page shows your score against the field, a per-pick breakdown, and a short AI-generated explanation of what actually moved the outcome. Real contests unlock Share Result — a shareable card for X/Twitter.',
-					callout: { type: 'positive', text: 'New badge? You’ll see the unlock toast right here' }
-				},
-				{
-					num: 8,
-					title: 'Check your standing',
-					body: "The Leaderboard ranks everyone globally by XP. If you're in a League — create one and share the invite code with friends — standings there update the same way."
-				}
-			]
+			t: 'Draft five coins',
+			d: 'One per sector: L1, L2, DeFi, Meme and Wildcard. Those five coins are your engine.'
+		},
+		{
+			t: 'Race on the market',
+			d: 'Every second, your coins move your car. When they go up you speed up and overtake; when they dip you fall back.'
+		},
+		{
+			t: 'Win Gears',
+			d: 'Win and you earn Gears. Spend them on new cars, paint, number plates and power-ups.'
 		}
 	];
 
-	const FAQ = [
+	const MODES: {
+		name: string;
+		theme: TrackTheme;
+		href: '/scrimmage' | '/matchmaking' | '/binary' | '/car-race' | '/tournament' | '/leagues';
+		d: string;
+	}[] = [
 		{
-			q: 'What happens if my opponent never drafts?',
-			a: 'The contest stays open until both sides submit a lineup — nothing resolves against half a matchup.'
+			name: 'Scrimmage',
+			theme: 'meadow',
+			href: '/scrimmage',
+			d: 'Practice against a bot. Nothing to lose.'
 		},
 		{
-			q: 'Is there a dark mode?',
-			a: 'Not currently — CoinDraft ships with a single light theme.'
+			name: 'Versus',
+			theme: 'golden',
+			href: '/matchmaking',
+			d: 'One real rival. Most market move wins.'
 		},
 		{
-			q: 'Does Scrimmage XP count toward my rank?',
-			a: 'No — it earns its own separate Scrimmage XP, never your real rank. Clearly labeled throughout — draft header, contest list, and result page — specifically so it never gets confused with a real result.'
+			name: 'Binary',
+			theme: 'neon',
+			href: '/binary',
+			d: 'Call five coins up or down. Three right beats the market.'
 		},
 		{
-			q: 'How many badges are there right now?',
-			a: 'Six: First Blood (first win), On Fire and Unstoppable (3- and 5-win streaks), Veteran and Champion (10 and 25 total wins), and League Founder.'
+			name: 'Car race',
+			theme: 'night',
+			href: '/car-race',
+			d: 'Stake a car. Winner drives home in both.'
+		},
+		{
+			name: 'Tournaments',
+			theme: 'village',
+			href: '/tournament',
+			d: 'Groups of five, then a final, with Gears prizes.'
+		},
+		{
+			name: 'League night',
+			theme: 'village',
+			href: '/leagues',
+			d: 'Your league races every week; a champion every month.'
 		}
+	];
+
+	const GEARS = [
+		['Win a race', '+150'],
+		['Finish a race', '+40'],
+		['Practice win / finish', '+50 / +10'],
+		['Weekly races', '×2'],
+		['A new car (Showroom)', '300 – 7,000'],
+		['Paint · decal · plate', '120 · 180 · 250'],
+		['Sell now (to a bot)', '80% of the going rate']
+	];
+
+	const TERMS = [
+		['Gears ⚙️', 'The in-game currency. Earned by racing, never bought with money.'],
+		[
+			'Sector',
+			'A group of coins: L1 (base chains), L2 (scaling), DeFi, Meme, Wildcard (everything else).'
+		],
+		[
+			'Going rate',
+			"What a car of each rarity sells for right now. It moves with how many are for sale and how fast they're selling."
+		],
+		[
+			'Rarity',
+			'Common, Rare, Epic, Legendary. Rarer cars are scarcer in the Showroom; racing speed is the same.'
+		],
+		[
+			'Bot mood',
+			'Every bot remembers your head-to-head: stranger, cocky, afraid, a grudge, or respect.'
+		],
+		[
+			'XP',
+			'Experience from racing and trivia. It ranks you on the leaderboard and seeds tournament draws.'
+		],
+		[
+			'On NEAR',
+			'Your cars and Gears are recorded on the NEAR blockchain. The game signs and pays for you.'
+		]
 	];
 </script>
 
-<div class="mx-auto flex max-w-2xl flex-col gap-3">
-	<section class="m-card">
-		<span
-			class="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest text-primary uppercase"
-		>
-			<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>Guide
-		</span>
-		<h1 class="mt-3 text-[32px] leading-tight font-black tracking-tight text-text">
-			How to play CoinDraft
-		</h1>
-		<p class="mt-2 max-w-md text-[15px] text-text-secondary">
-			Draft a 5-token lineup, compete against real price movement, and climb the leaderboard. This
-			walks through every screen in the order you'll actually hit them.
-		</p>
-		<div class="mt-5 flex flex-wrap gap-2">
-			<a href="/dashboard" class="m-btn primary sm">Open the app →</a>
-		</div>
+<div class="m-page mid">
+	<header>
+		<span class="m-eyebrow">How to play</span>
+		<h1 class="m-title mt-1">The market drives. You pick the engine.</h1>
+		<p class="m-lead mt-2">Everything you need, in the order you'll meet it.</p>
+	</header>
+
+	<section class="mt-8" aria-labelledby="steps">
+		<h2 id="steps" class="m-eyebrow mb-3">Your first race</h2>
+		<ol class="flex flex-col gap-3">
+			{#each STEPS as s, i (s.t)}
+				<li class="flat m-card flex gap-4 !p-4">
+					<span
+						class="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-border bg-butter font-display text-lg font-extrabold"
+						>{i + 1}</span
+					>
+					<span>
+						<span class="block font-display text-lg font-extrabold">{s.t}</span>
+						<span class="block text-[15px] text-text-body">{s.d}</span>
+					</span>
+				</li>
+			{/each}
+		</ol>
 	</section>
 
-	{#each STEPS as group (group.group)}
-		<section class="m-card">
-			<div class="mb-1">
-				<span class="text-[11px] font-bold tracking-widest text-primary uppercase"
-					>{group.group}</span
+	<section class="mt-10" aria-labelledby="modes">
+		<h2 id="modes" class="m-eyebrow mb-3">Ways to race</h2>
+		<p class="mb-4 text-sm text-text-body">
+			Each kind of race runs in its own world, so you always know what you're in.
+		</p>
+		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4">
+			{#each MODES as m (m.name)}
+				<a
+					href={resolve(m.href)}
+					class="m-card flex flex-col gap-2 text-text no-underline transition-transform hover:-translate-y-1"
 				>
-				<p class="mt-1 text-xs text-text-muted">{group.groupSub}</p>
-			</div>
-			<div class="mt-3 flex flex-col divide-y divide-border">
-				{#each group.items as item (item.title)}
-					<div class="grid grid-cols-[36px_1fr] gap-3 py-4 first:pt-0 last:pb-0">
-						<div class="font-mono text-lg font-black text-primary">
-							{String(item.num).padStart(2, '0')}
-						</div>
-						<div>
-							<h3 class="text-[15px] font-bold text-text">{item.title}</h3>
-							<p class="mt-1.5 text-sm text-text-secondary">{item.body}</p>
-							{#if item.callout}
-								<span
-									class="mt-2.5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold {item
-										.callout.type === 'positive'
-										? 'bg-positive/15 text-positive'
-										: 'bg-primary-muted text-primary'}"
-								>
-									<span
-										class="h-1.5 w-1.5 shrink-0 rounded-full {item.callout.type === 'positive'
-											? 'bg-positive'
-											: 'bg-primary'}"
-									></span>
-									{item.callout.text}
-								</span>
-							{/if}
-							{#if item.paths}
-								<div class="mt-3 grid grid-cols-2 gap-2.5 max-sm:grid-cols-1">
-									{#each item.paths as p (p.title)}
-										<div class="rounded-lg border border-border bg-surface-raised p-3.5">
-											<span class="text-[10px] font-bold tracking-widest text-primary uppercase"
-												>{p.label}</span
-											>
-											<h4 class="mt-1 text-sm font-bold text-text">{p.title}</h4>
-											<p class="mt-1 text-[13px] text-text-secondary">{p.body}</p>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/each}
-
-	<section class="m-card">
-		<span class="text-[11px] font-bold tracking-widest text-primary uppercase">Reference</span>
-		<h2 class="mt-1 mb-2 text-lg font-black text-text">Common questions</h2>
-		<div class="flex flex-col divide-y divide-border">
-			{#each FAQ as item (item.q)}
-				<div class="py-3.5 first:pt-0 last:pb-0">
-					<h4 class="text-[14.5px] font-bold text-text">{item.q}</h4>
-					<p class="mt-1 text-sm text-text-secondary">{item.a}</p>
-				</div>
+					<WorldThumb theme={m.theme} label={false} />
+					<span class="font-display text-lg font-extrabold">{m.name}</span>
+					<span class="text-sm text-text-body">{m.d}</span>
+				</a>
 			{/each}
 		</div>
 	</section>
 
-	<footer
-		class="flex flex-wrap items-center justify-between gap-2 px-1 py-4 text-xs text-text-muted"
+	<section
+		class="mt-10 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6"
 	>
-		<span>CoinDraft · How to Use Guide</span>
-	</footer>
+		<div class="m-card" aria-labelledby="items">
+			<h2 id="items" class="font-display text-xl font-extrabold">Power-ups</h2>
+			<p class="text-sm text-text-muted">
+				One per race, up to {WEEKLY_ITEM_CAP} races a week. Chosen just before you lock.
+			</p>
+			<ul class="mt-3 flex flex-col gap-2">
+				{#each ITEM_KINDS as k (k)}
+					<li class="flex gap-3 rounded-[14px] border-2 border-border bg-surface-alt p-2.5">
+						<span class="text-2xl" aria-hidden="true">{ITEMS[k].icon}</span>
+						<span>
+							<span class="block font-bold">{ITEMS[k].label}</span>
+							<span class="block text-sm text-text-body">{ITEMS[k].does}</span>
+						</span>
+					</li>
+				{/each}
+			</ul>
+			<p class="mt-3 text-xs text-text-muted">
+				Won from daily trivia, or bought in the Garage for Gears.
+			</p>
+		</div>
+
+		<div class="m-card" aria-labelledby="gears">
+			<h2 id="gears" class="font-display text-xl font-extrabold">Gears ⚙️</h2>
+			<p class="text-sm text-text-muted">What you earn, and what things cost.</p>
+			<dl class="mt-3 flex flex-col gap-2">
+				{#each GEARS as [what, n] (what)}
+					<div class="flex items-center justify-between gap-3 border-b-2 border-border-soft pb-2">
+						<dt class="text-sm font-semibold">{what}</dt>
+						<dd class="m-num text-sm font-bold">{n}</dd>
+					</div>
+				{/each}
+			</dl>
+			<p class="mt-3 text-xs text-text-muted">
+				Gears spent in the Showroom and on paint are gone for good.
+			</p>
+		</div>
+	</section>
+
+	<section class="m-card mt-10" aria-labelledby="terms">
+		<h2 id="terms" class="font-display text-xl font-extrabold">Words you'll see</h2>
+		<dl
+			class="mt-3 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-x-6 gap-y-3"
+		>
+			{#each TERMS as [term, def] (term)}
+				<div>
+					<dt class="font-bold">{term}</dt>
+					<dd class="text-sm text-text-body">{def}</dd>
+				</div>
+			{/each}
+		</dl>
+	</section>
+
+	<div class="mt-8 flex flex-wrap gap-3">
+		<a href={resolve('/play')} class="m-btn primary lg">Start racing →</a>
+		<a href={resolve('/scrimmage')} class="m-btn lg">Practice first</a>
+	</div>
 </div>

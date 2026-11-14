@@ -105,9 +105,7 @@
 			</button>
 
 			{#if open}
-				<div
-					class="flat absolute top-13 left-0 m-card w-72 !p-4 shadow-[0_16px_40px_rgba(26,36,33,0.2)]"
-				>
+				<div class="flat absolute top-13 left-0 m-card w-72 !p-4">
 					{#if !confirming}
 						<p class="mb-3 text-[13px] font-bold text-text">Need a hand?</p>
 						<div class="flex flex-col gap-2">

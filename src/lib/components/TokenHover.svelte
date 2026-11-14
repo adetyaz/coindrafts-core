@@ -161,7 +161,7 @@
 				easing: backOut
 			}}
 			out:fade={{ duration: prefersReducedMotion.current ? 0 : 120, easing: cubicOut }}
-			class="m-card overflow-hidden shadow-[0_18px_50px_rgba(26,36,33,0.22)]"
+			class="m-card overflow-hidden"
 			style="transform-origin:{flipped ? 'right' : 'left'} top"
 		>
 			<div class="flex items-center gap-2.5 border-b border-border px-4 py-3">
@@ -176,9 +176,9 @@
 					<span
 						class="rounded-full px-2 py-1 font-mono text-[11px] font-bold"
 						style="background:{detail.change24h >= 0
-							? 'rgba(104,194,168,0.14)'
+							? 'var(--color-brand-tint)'
 							: 'rgba(232,112,112,0.14)'};color:{detail.change24h >= 0
-							? 'var(--color-mint-ink)'
+							? 'var(--color-positive-ink)'
 							: 'var(--color-red-ink)'}"
 					>
 						{detail.change24h >= 0 ? '+' : ''}{detail.change24h.toFixed(2)}%
