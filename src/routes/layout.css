@@ -506,8 +506,10 @@ h2,
 	display: flex;
 	gap: 0.75rem;
 	overflow-x: auto;
+	/* Only sideways: the hard shadows must not create a vertical scrollbar. */
+	overflow-y: hidden;
 	scroll-snap-type: x proximity;
-	padding: 0.25rem 0.5rem 0.75rem 0.25rem;
+	padding: 0.25rem 0.5rem 1rem 0.25rem;
 	margin-inline: -0.25rem;
 	scrollbar-width: thin;
 }

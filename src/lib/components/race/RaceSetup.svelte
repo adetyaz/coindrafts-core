@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import { CIRCUITS, type Circuit } from '$lib/race/circuits';
 	import { rarityColor } from '$lib/economy/rarity';
+	import CarPreview from '$lib/components/garage/CarPreview.svelte';
+	import type { CarLook } from '$lib/economy/rules';
 
 	type Car = {
 		id: string;
@@ -12,6 +14,7 @@
 		races: number;
 		wins: number;
 		stakedInRace: string | null;
+		look?: CarLook | null;
 		listing: { id: string; price: number } | null;
 	};
 
@@ -83,109 +86,123 @@
 	}
 </script>
 
-<div class="mx-auto max-w-[1100px]">
-	<div class="mb-1 font-mono text-[11px] font-bold tracking-[0.14em] text-text-muted uppercase">
-		Step {step === 'car' ? 1 : 2} of {chooseTrack ? 3 : 2}
-	</div>
+<div>
+	<!-- Steps: where you are on the way to the grid. -->
+	<ol class="flex flex-wrap items-center gap-2 text-xs font-bold" aria-label="Race setup steps">
+		{#each [...(chooseCar ? ['Car'] : []), ...(chooseTrack ? ['Track'] : []), 'Draft'] as label, i (label)}
+			{@const current =
+				(step === 'car' && label === 'Car') || (step === 'track' && label === 'Track')}
+			<li
+				class="m-tag !shadow-none {current ? 'bg-butter' : 'bg-surface'}"
+				aria-current={current ? 'step' : undefined}
+			>
+				<span class="m-num">{i + 1}</span>
+				{label}
+			</li>
+		{/each}
+	</ol>
 
 	{#if step === 'car'}
-		<h1 class="text-[36px] leading-none font-black tracking-[-0.04em]">Choose your car</h1>
-		<p class="mt-2 text-sm text-text-muted">
-			Cars are cosmetic: your coins decide the pace, never the car.
-		</p>
+		<h1 class="m-title mt-4">Choose your car.</h1>
+		<p class="m-lead mt-1">Cars are for show: your coins set the pace, never the car.</p>
 
 		{#if loading}
-			<div class="mt-6 h-40 animate-pulse rounded-[20px] bg-surface-alt"></div>
+			<div class="mt-6 h-40 animate-pulse rounded-[22px] bg-surface-alt"></div>
 		{:else if cars.length === 0}
-			<p class="mt-6 text-sm text-text-muted">
+			<p class="dashed m-card mt-6 text-sm font-semibold">
 				No car in your garage yet, so you'll race a standard car this time.
 			</p>
 		{:else}
-			<div class="mt-6 grid grid-cols-3 gap-3 max-md:grid-cols-2 max-sm:grid-cols-1">
+			<div
+				class="mt-6 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4"
+			>
 				{#each cars as car (car.id)}
 					{@const why = blocked(car)}
+					{@const chosen = carId === car.id}
 					<button
 						type="button"
 						disabled={why !== null}
 						onclick={() => (carId = car.id)}
-						aria-pressed={carId === car.id}
-						class="cursor-pointer rounded-[20px] border-2 bg-surface p-5 text-left transition disabled:cursor-not-allowed disabled:opacity-50 {carId ===
-						car.id
-							? 'border-text'
-							: 'border-border'}"
+						aria-pressed={chosen}
+						class="m-card flex cursor-pointer flex-col gap-2 text-start transition-transform disabled:cursor-not-allowed disabled:opacity-50 {chosen
+							? '-translate-y-1 bg-butter'
+							: ''}"
 					>
-						<div class="text-lg font-black">{car.model}</div>
-						<span
-							class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
-							style="background:{rarityColor(car.rarity)}">{car.rarity}</span
-						>
-						<div class="mt-2 font-mono text-xs text-text-muted">
-							{car.races} races · {car.wins} wins
+						<div class="w-full [&>svg]:h-auto [&>svg]:w-full">
+							<CarPreview look={car.look ?? {}} />
 						</div>
-						{#if why}<div class="mt-1 text-xs font-bold">{why}</div>{/if}
+						<div class="flex items-center justify-between gap-2">
+							<span class="font-display text-xl font-extrabold">{car.model}</span>
+							<span
+								class="rounded-lg border-2 border-border px-2 py-0.5 text-[10px] font-extrabold tracking-[0.08em] uppercase"
+								style="background:{rarityColor(car.rarity)}">{car.rarity}</span
+							>
+						</div>
+						<div class="m-num text-xs text-text-muted">{car.races} races · {car.wins} wins</div>
+						{#if why}<div class="text-xs font-bold">{why}</div>{/if}
+						{#if chosen}<span class="m-tag anim-pop absolute -end-2 -top-3 rotate-3 bg-primary"
+								>Racing this</span
+							>{/if}
 					</button>
 				{/each}
 			</div>
 		{/if}
 
-		<button
-			type="button"
-			onclick={next}
-			disabled={loading}
-			class="mt-6 h-12 cursor-pointer rounded-full border-none bg-text px-8 text-sm font-extrabold text-surface disabled:opacity-50"
-		>
-			{chooseTrack ? 'Next: choose the track →' : 'Next: draft your coins →'}
+		<button type="button" onclick={next} disabled={loading} class="m-btn primary lg mt-6">
+			{chooseTrack ? 'Next: the track →' : 'Next: draft your coins →'}
 		</button>
 	{:else}
-		<h1 class="text-[36px] leading-none font-black tracking-[-0.04em]">Choose the track</h1>
-		<p class="mt-2 text-sm text-text-muted">
-			Real circuit layouts. Cosmetic only: the track never changes the result.
+		<h1 class="m-title mt-4">Choose the track.</h1>
+		<p class="m-lead mt-1">
+			Real circuits, traced from track data. For show: it never changes the result.
 		</p>
 
-		<div class="mt-6 grid grid-cols-4 gap-3 max-md:grid-cols-2">
+		<div
+			class="mt-6 grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))] gap-4"
+		>
 			{#each CIRCUITS as c (c.id)}
+				{@const chosen = circuit === c.id}
 				<button
 					type="button"
 					onclick={() => (circuit = c.id)}
-					aria-pressed={circuit === c.id}
-					class="cursor-pointer rounded-[20px] border-2 bg-surface p-4 text-left transition {circuit ===
-					c.id
-						? 'border-text'
-						: 'border-border'}"
+					aria-pressed={chosen}
+					class="m-card flex cursor-pointer flex-col text-start transition-transform {chosen
+						? '-translate-y-1 bg-butter'
+						: ''}"
 				>
 					<svg
 						viewBox="0 0 100 100"
-						class="aspect-square w-full"
+						class="aspect-[4/3] w-full rounded-[14px] border-2 border-border bg-grass"
 						role="img"
 						aria-label="{c.name} layout"
 					>
 						<path
 							d={outline(c)}
 							fill="none"
-							stroke="currentColor"
-							stroke-width="3"
+							stroke="var(--color-ink)"
+							stroke-width="6.5"
+							stroke-linejoin="round"
+						/>
+						<path
+							d={outline(c)}
+							fill="none"
+							stroke="var(--color-race-road)"
+							stroke-width="4"
 							stroke-linejoin="round"
 						/>
 					</svg>
-					<div class="mt-2 text-lg font-black">{c.name}</div>
-					<div class="text-xs text-text-muted">{c.place} · {c.lengthKm} km</div>
-					<div class="mt-1 text-xs">{c.character}</div>
+					<span class="mt-3 font-display text-xl font-extrabold">{c.name}</span>
+					<span class="m-num text-xs text-text-muted">{c.place} · {c.lengthKm} km</span>
+					<span class="mt-1 text-sm">{c.character}</span>
 				</button>
 			{/each}
 		</div>
 
-		<div class="mt-6 flex gap-3">
-			<button
-				type="button"
-				onclick={() => (step = 'car')}
-				class="h-12 cursor-pointer rounded-full border border-border bg-transparent px-6 text-sm font-bold text-text-muted"
-				>← Car</button
-			>
-			<button
-				type="button"
-				onclick={() => onDone({ carId, circuit })}
-				class="h-12 cursor-pointer rounded-full border-none bg-text px-8 text-sm font-extrabold text-surface"
-			>
+		<div class="mt-6 flex flex-wrap gap-3">
+			{#if chooseCar}
+				<button type="button" onclick={() => (step = 'car')} class="m-btn lg">← Car</button>
+			{/if}
+			<button type="button" onclick={() => onDone({ carId, circuit })} class="m-btn primary lg">
 				Next: draft your coins →
 			</button>
 		</div>

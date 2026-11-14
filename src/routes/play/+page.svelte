@@ -125,14 +125,14 @@
 
 	<section class="mt-8" aria-labelledby="race-now">
 		<h2 id="race-now" class="m-eyebrow mb-3">Race now</h2>
-		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,16.5rem),1fr))] gap-5">
+		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,21rem),1fr))] gap-5">
 			{#each RACE_NOW as m (m.href)}{@render modeCard(m)}{/each}
 		</div>
 	</section>
 
 	<section class="mt-12" aria-labelledby="compete">
 		<h2 id="compete" class="m-eyebrow mb-3">Compete</h2>
-		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,16.5rem),1fr))] gap-5">
+		<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,21rem),1fr))] gap-5">
 			{#each COMPETE as m (m.href)}{@render modeCard(m)}{/each}
 			<a
 				href={resolve('/leaderboard')}

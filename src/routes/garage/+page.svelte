@@ -172,24 +172,29 @@
 </script>
 
 <div class="m-page">
-	<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+	<header class="flex flex-wrap items-end justify-between gap-4">
 		<div>
-			<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-				Garage
-			</div>
-			<h1 class="mt-2 text-[40px] leading-none font-black tracking-[-0.04em] max-sm:text-[30px]">
-				Your cars
-			</h1>
+			<span class="m-eyebrow">Garage</span>
+			<h1 class="m-title mt-1">Your cars.</h1>
 		</div>
 		{#if garage}
-			<div class="text-right">
-				<div class="font-mono text-[34px] leading-none font-bold">⚙️ {garage.gears}</div>
-				<div class="mt-1.5 text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
-					Gears
-				</div>
+			<div class="flat m-card bg-butter !px-4 !py-2 text-end">
+				<div class="m-num text-2xl leading-none font-bold">⚙️ {garage.gears.toLocaleString()}</div>
+				<div class="m-eyebrow mt-1">Gears to spend</div>
 			</div>
 		{/if}
-	</div>
+	</header>
+
+	<!-- Jump bar: the page is long, so its sections are one tap away. -->
+	{#if phase === 'ready'}
+		<nav class="m-rail sticky top-[4.75rem] z-30 mt-4 !pb-2" aria-label="Garage sections">
+			{#each [['#my-cars', '🚗 My cars'], ['#showroom', '🆕 Showroom'], ['#items', '🔥 Items'], ['#on-near', '⛓ On NEAR']] as [href, label] (href)}
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-page anchor -->
+				<a {href} class="m-chip no-underline">{label}</a>
+			{/each}
+		</nav>
+	{/if}
+	<div id="my-cars" class="scroll-mt-36 pt-4"></div>
 
 	{#if phase === 'loading'}
 		<div class="h-48 animate-pulse rounded-[24px] bg-surface-alt"></div>
@@ -218,7 +223,7 @@
 				</p>
 			</div>
 		{:else}
-			<div class="grid grid-cols-3 gap-4 max-md:grid-cols-2 max-sm:grid-cols-1">
+			<div class="grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-5">
 				{#each sortedCars as car (car.id)}
 					{@const fair = fairFor(car.rarity)}
 					{@const isOpen = open?.carId === car.id}
@@ -455,7 +460,7 @@
 		{/if}
 
 		<!-- Showroom -->
-		<section class="mt-12">
+		<section id="showroom" class="mt-12 scroll-mt-36">
 			<div class="flex flex-wrap items-end justify-between gap-3">
 				<div>
 					<h2 class="text-2xl font-black tracking-[-0.03em]">Showroom</h2>
@@ -504,10 +509,11 @@
 			</div>
 		</section>
 
-		<ItemShop gears={garage.gears} onBought={load} />
+		<div id="items" class="scroll-mt-36"><ItemShop gears={garage.gears} onBought={load} /></div>
 
 		{#if garage.near}
 			<div
+				id="on-near"
 				class="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-border bg-surface-alt p-5 text-xs"
 			>
 				<div>

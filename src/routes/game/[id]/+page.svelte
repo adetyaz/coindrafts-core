@@ -524,71 +524,98 @@
 
 		<!-- ── RACE SCREEN ──────────────────────────────────────────────── -->
 	{:else if phase === 'racing'}
-		<div class="mb-4.5 flex flex-wrap items-end justify-between gap-5">
-			<div>
-				<div class="font-mono text-[11px] font-bold tracking-[0.14em] text-primary-ink uppercase">
-					Live · {live?.me?.name ?? 'You'} vs {live?.opponent?.name ?? 'Opponent'}
+		{@const mine = liveTotal(live?.me ?? null)}
+		{@const theirs = liveTotal(live?.opponent ?? null)}
+		{@const gap = mine - theirs}
+		{@const rivalName = live?.opponent?.name ?? (binary ? 'The market' : 'Opponent')}
+		{@const endMs = live?.endAt ? new Date(live.endAt).getTime() : 0}
+		{@const progress =
+			startMs && endMs > startMs
+				? Math.min(1, Math.max(0, (now - startMs) / (endMs - startMs)))
+				: 0}
+		<!-- The scoreboard: who's ahead, by how much, and how long is left. -->
+		<section class="m-card mb-4 !p-4" aria-label="Race status">
+			<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+				<div class="min-w-0">
+					<h1 class="font-display text-[clamp(1.5rem,4.5vw,2.25rem)] leading-none font-extrabold">
+						{#if holding}
+							On the grid
+						{:else if msRemaining <= 0}
+							Chequered flag
+						{:else if !live?.opponent}
+							{binary ? `${Math.floor(mine)} of 5 calls right` : 'Racing'}
+						{:else if Math.abs(gap) < 0.005}
+							Neck and neck
+						{:else if gap > 0}
+							You lead
+						{:else}
+							{rivalName} leads
+						{/if}
+					</h1>
+					{#if live?.opponent && !holding}
+						<p class="mt-1 text-sm font-semibold text-text-body">
+							{binary
+								? `${Math.floor(mine)} right for you, ${Math.floor(theirs)} for ${rivalName}`
+								: `by ${Math.abs(gap).toFixed(2)} points of market move`}
+						</p>
+					{/if}
 				</div>
-				<h1 class="mt-2 text-[40px] leading-none font-black tracking-[-0.04em] max-sm:text-[28px]">
-					{clock} left
-				</h1>
+				<div class="text-end">
+					<div class="m-num text-[clamp(1.5rem,4.5vw,2.25rem)] leading-none font-bold" role="timer">
+						{clock}
+					</div>
+					<div class="m-eyebrow mt-1">left</div>
+				</div>
 			</div>
-			<div class="flex gap-7">
-				<div>
-					<div
-						class="font-mono text-[28px] leading-none font-bold"
-						style="color:{(live?.me?.totalPct ?? 0) >= 0
-							? 'var(--color-mint-ink)'
-							: 'var(--color-red-ink)'}"
-					>
-						{(live?.me?.totalPct ?? 0) >= 0 ? '+' : ''}{(live?.me?.totalPct ?? 0).toFixed(2)}%
-					</div>
-					<div class="mt-1.5 text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
-						You
-					</div>
-				</div>
-				<div>
-					<div
-						class="font-mono text-[28px] leading-none font-bold opacity-70"
-						style="color:{(live?.opponent?.totalPct ?? 0) >= 0
-							? 'var(--color-mint-ink)'
-							: 'var(--color-red-ink)'}"
-					>
-						{(live?.opponent?.totalPct ?? 0) >= 0 ? '+' : ''}{(
-							live?.opponent?.totalPct ?? 0
-						).toFixed(2)}%
-					</div>
-					<div class="mt-1.5 text-[10px] font-extrabold tracking-[0.1em] text-text-muted uppercase">
-						{live?.opponent?.name ?? 'Opponent'}
-					</div>
-				</div>
-			</div>
-		</div>
 
-		<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-			<div class="flex w-fit gap-1 rounded-full border border-border bg-surface p-1">
-				{#each [['race', 'Race'], ['chart', 'Chart']] as [mode, label] (mode)}
+			<div
+				class="mt-3 h-3.5 overflow-hidden rounded-full border-2 border-border bg-surface-alt"
+				role="progressbar"
+				aria-label="Race progress"
+				aria-valuemin="0"
+				aria-valuemax="100"
+				aria-valuenow={Math.round(progress * 100)}
+			>
+				<div class="h-full bg-primary" style="width:{progress * 100}%"></div>
+			</div>
+
+			<div class="mt-3 grid grid-cols-2 gap-3">
+				{#each [{ who: 'You', v: mine, me: true }, { who: rivalName, v: theirs, me: false }] as d (d.who)}
+					<div
+						class="flex items-center justify-between gap-2 rounded-[14px] border-2 border-border px-3 py-2 {d.me
+							? 'bg-brand-tint'
+							: 'bg-surface-alt'}"
+					>
+						<span class="truncate text-sm font-extrabold">{d.who}</span>
+						<span
+							class="m-num text-lg font-bold {d.v >= 0 ? 'text-positive-ink' : 'text-negative-ink'}"
+							>{binary ? `${Math.floor(d.v)}/5` : `${d.v >= 0 ? '+' : ''}${d.v.toFixed(2)}%`}</span
+						>
+					</div>
+				{/each}
+			</div>
+		</section>
+
+		<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+			<div class="flex gap-1.5" role="group" aria-label="View">
+				{#each [['race', '🏁 Race'], ['chart', '📈 Chart']] as [mode, label] (mode)}
 					<button
 						type="button"
 						onclick={() => (view = mode as 'race' | 'chart')}
-						class="cursor-pointer rounded-full border-none px-4 py-1.5 text-xs font-extrabold transition {view ===
-						mode
-							? 'bg-text text-surface'
-							: 'bg-transparent text-text-muted'}">{label}</button
+						aria-pressed={view === mode}
+						class="m-chip">{label}</button
 					>
 				{/each}
 			</div>
 			{#if live?.rival}
-				<div class="flex items-center gap-1 text-[11px] font-bold text-text-muted">
-					Bot chat
+				<div class="flex items-center gap-1.5 text-xs font-bold" role="group" aria-label="Bot chat">
+					<span class="text-text-muted max-sm:hidden">Bot chat</span>
 					{#each [['on', 'On'], ['quiet', 'Quiet'], ['off', 'Off']] as [mode, label] (mode)}
 						<button
 							type="button"
 							onclick={() => setBotChat(mode as 'on' | 'quiet' | 'off')}
-							class="cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-extrabold {botChat ===
-							mode
-								? 'border-text bg-text text-surface'
-								: 'border-border bg-transparent text-text-muted'}">{label}</button
+							aria-pressed={botChat === mode}
+							class="m-chip !min-h-8 !px-3 !text-xs">{label}</button
 						>
 					{/each}
 				</div>
@@ -803,11 +830,18 @@
 				{/if}
 			</div>
 			{#if commentary.length > 0}
-				<div class="mt-3 flex flex-col gap-1 px-1">
-					{#each commentary as line, i (line + i)}
-						<p class="text-sm font-extrabold" style="opacity:{1 - i * 0.3}">📣 {line}</p>
+				<ul class="mt-3 flex flex-col items-start gap-1.5" aria-live="polite">
+					{#each commentary.slice(0, 3) as line, i (line + i)}
+						<li
+							class="m-tag !min-h-9 !py-1.5 !whitespace-normal {i === 0
+								? 'anim-pop bg-butter'
+								: ''}"
+							style="opacity:{1 - i * 0.3}"
+						>
+							{line}
+						</li>
 					{/each}
-				</div>
+				</ul>
 			{/if}
 		{:else if series.length < 2}
 			<div
@@ -824,59 +858,54 @@
 			<RaceChart racers={chartRacers} timestamps={chartTimestamps} values={chartValues} />
 		{/if}
 
-		<div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[11px] text-text-muted">
-			<span
-				><span
-					class="mr-1.5 inline-block h-0.5 w-5 align-middle"
-					style="background:var(--color-text)"
-				></span>Solid = your picks</span
-			>
-			<span
-				><span
-					class="mr-1.5 inline-block h-0.5 w-5 align-middle opacity-45"
-					style="background:var(--color-text)"
-				></span>Dashed = opponent</span
-			>
-			{#if leader}
-				<span class="font-bold text-text"
-					>Leading: {leader.pick.symbol.toUpperCase()} ({lastVal(leader.key) >= 0
-						? '+'
-						: ''}{lastVal(leader.key).toFixed(2)}%)</span
-				>
-			{/if}
-		</div>
-
-		<div class="mt-4.5 grid grid-cols-2 gap-2.5 max-sm:grid-cols-1">
-			{#each racers as r (r.key)}
-				{@const th = sectorTheme(r.pick.sector)}
-				{@const v = lastVal(r.key)}
-				<div
-					class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3.5"
-					style={r.mine ? '' : 'opacity:0.7'}
-				>
-					<TokenIcon symbol={r.pick.symbol} size={30} bg={th.color} fg="var(--color-ink)" />
-					<div class="min-w-0 flex-1">
-						<div class="truncate text-sm font-extrabold">{r.pick.symbol.toUpperCase()}</div>
-						<div
-							class="text-[10px] font-extrabold tracking-[0.1em] uppercase"
-							style="color:{th.ink}"
-						>
-							{r.mine ? 'You' : (live?.opponent?.name ?? 'Opponent')} · {th.label}
-						</div>
-					</div>
-					<span
-						class="font-mono text-sm font-bold"
-						style="color:{v >= 0 ? 'var(--color-mint-ink)' : 'var(--color-red-ink)'}"
-						>{v >= 0 ? '+' : ''}{v.toFixed(2)}%</span
-					>
-				</div>
+		<!-- The two engines, side by side: what each car is running on. -->
+		<div
+			class="mt-6 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr))] gap-4"
+		>
+			{#each [{ title: binary ? 'Your calls' : 'Your engine', mine: true }, { title: `${live?.opponent?.name ?? 'Opponent'}'s ${binary ? 'calls' : 'engine'}`, mine: false }] as side (side.title)}
+				{@const list = racers.filter((r) => r.mine === side.mine)}
+				{#if list.length}
+					<section class="m-card !p-4">
+						<h2 class="font-display text-lg font-extrabold">{side.title}</h2>
+						<ul class="mt-3 flex flex-col gap-2">
+							{#each list as r (r.key)}
+								{@const th = sectorTheme(r.pick.sector)}
+								{@const v = lastVal(r.key)}
+								<li class="flex items-center gap-3">
+									<TokenIcon symbol={r.pick.symbol} size={30} bg={th.color} fg="var(--color-ink)" />
+									<span class="min-w-0 flex-1">
+										<span class="block truncate text-sm font-extrabold"
+											>{r.pick.symbol.toUpperCase()}{r.pick.call
+												? r.pick.call === 'up'
+													? ' ▲'
+													: ' ▼'
+												: ''}</span
+										>
+										<span class="block text-[11px] font-bold" style="color:{th.ink}"
+											>{th.label}</span
+										>
+									</span>
+									<span class="m-chg {v >= 0 ? 'up' : 'down'}"
+										>{v >= 0 ? '+' : ''}{v.toFixed(2)}%</span
+									>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
 			{/each}
 		</div>
+		{#if leader}
+			<p class="mt-3 text-sm font-bold">
+				Fastest coin on track: {leader.pick.symbol.toUpperCase()} ({lastVal(leader.key) >= 0
+					? '+'
+					: ''}{lastVal(leader.key).toFixed(2)}%)
+			</p>
+		{/if}
 
-		<p class="mt-5 text-center text-[12px] text-text-muted">
+		<p class="mt-4 text-xs text-text-muted">
 			Prices are sampled every {SAMPLE_SECONDS}s and stored, so the race survives a refresh and both
-			players see the same line. Results are always scored from locked entry prices, never from this
-			graph.
+			drivers see the same thing. Results are always scored from the prices locked at the start.
 		</p>
 	{/if}
 </div>

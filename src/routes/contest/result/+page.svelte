@@ -226,12 +226,8 @@
 			</div>
 		</div>
 	{:else if hasResult}
-		<div
-			class="rounded-[24px] p-11 max-sm:p-6"
-			style={won
-				? 'background:var(--color-primary);color:var(--color-ink);box-shadow:0 0 90px rgba(247,142,121,0.3)'
-				: 'background:var(--color-surface);color:var(--color-ink);border:1px solid var(--color-border)'}
-		>
+		<!-- A win is loud (green, stamped). A loss is calm: cream, never red-washed. -->
+		<div class="halftone m-card !p-[clamp(1.25rem,4vw,2.5rem)] {won ? '!bg-primary' : ''}">
 			<div class="flex flex-wrap items-start justify-between gap-6">
 				<div>
 					<div class="mb-3.5 flex items-center gap-2.5">
@@ -244,9 +240,16 @@
 							>
 						{/if}
 					</div>
-					<div class="text-[64px] leading-[0.9] font-black tracking-[-0.05em] max-sm:text-[40px]">
-						{result.status}
-					</div>
+					<h1
+						class="anim-stamp w-fit origin-left font-display text-[clamp(2.75rem,10vw,5rem)] leading-[0.9] font-extrabold tracking-[-0.05em]"
+					>
+						{won ? 'You won!' : 'You lost.'}
+					</h1>
+					<p class="mt-2 text-sm font-semibold">
+						{won
+							? 'First across the line. Your Gears are in the garage.'
+							: 'Close the gap next time. You still earned Gears for racing.'}
+					</p>
 					<div class="mt-3 flex flex-wrap items-center gap-2.5">
 						<div
 							class="w-fit rounded-full px-3.5 py-1.5 text-sm font-bold"
