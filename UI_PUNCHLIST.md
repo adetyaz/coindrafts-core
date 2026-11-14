@@ -9,10 +9,14 @@ Owner's brief (2026-11-14): the tracks don't look good, the car models are ugly.
 the Truckful screenshots and trailers (painterly, low-poly, warm lighting, cobbles and
 hedges, a chunky pickup).
 
-- [ ] **Car models.** **Built, check in app:** a low-poly pickup with ink outlines, a crate
-      in the bed, lamps, turning wheels (`src/lib/race/scene/car.ts`). About 6 units long,
-      2.5× the old box car. Paint still comes from `car.color`; flame, "you" marker and night
-      headlights kept.
+- [ ] **Car models.** **Built, check in app:** 12 vehicles from a CGTrader low-poly pack
+      (SUVs, pickups, tractors, trucks) in `static/models/cars/*.glb`, mapped to Showroom
+      names in `src/lib/race/scene/models.ts` (Commons are cars, Rares tow or plough, Epics and
+      Legendaries are trucks). The body is repainted in the driver's colour; ink outline.
+      While a model loads (or if it fails) the built-in pickup (`car.ts`) races instead.
+      Source pack and converter: `assets-src/` (gitignored; licence: never put the source in
+      `static/`). Re-run: `blender -b --python assets-src/convert_cars.py -- <fbx> <out>
+      <previews> <texture>`.
 - [ ] **Track worlds.** **Built, check in app:** `src/lib/race/scene/worlds.ts` dresses each
       world, all instanced and seeded by the circuit. Meadow: round trees, bushes, flowers,
       hedges, sheep. Golden: swaying wheat (TSL), hay bales, poplars. Night: pines, lamp posts

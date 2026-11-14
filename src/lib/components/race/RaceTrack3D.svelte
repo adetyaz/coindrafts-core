@@ -7,6 +7,8 @@
 		/** The lineup's total % move right now. Decides the order on track. */
 		pct: number;
 		isMe: boolean;
+		/** Showroom model name (e.g. "Falcon"); picks the vehicle. Without one, the built-in pickup. */
+		model?: string;
 	};
 </script>
 
@@ -32,6 +34,7 @@
 		type Palette
 	} from '$lib/race/scene/materials';
 	import { buildCar, carKit } from '$lib/race/scene/car';
+	import { cloneVehicle, loadVehicle, vehicleFor } from '$lib/race/scene/models';
 	import { buildWorld, makeClearance } from '$lib/race/scene/worlds';
 
 	let {
@@ -107,6 +110,8 @@
 		group: THREE.Group;
 		flame: THREE.Mesh;
 		marker: THREE.Mesh | null;
+		/** Where the marker bobs: above the roof of whatever vehicle this is. */
+		markerY: number;
 		wheels: THREE.Mesh[];
 		s: number; // track progress in laps (unbounded)
 		lane: number;
@@ -433,6 +438,8 @@
 
 		// ── Cars ──────────────────────────────────────────────────────────
 		const kit = carKit(p);
+		const carMaterials: THREE.Material[] = [];
+		let disposed = false;
 		// Frame-loop state, updated 60 times a second. Deliberately not reactive:
 		// nothing in the template reads it, and tracking it would re-render per frame.
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -445,16 +452,40 @@
 			});
 			scene.add(built.group);
 			const spread = Math.min(2.6, (ROAD_WIDTH - 3) / Math.max(1, laneCount - 1));
-			return {
+			const st: CarState = {
 				group: built.group,
 				flame: built.flame,
 				marker: built.marker,
+				markerY: 5,
 				wheels: built.wheels,
 				s: 0,
 				lane: (laneIndex - (laneCount - 1) / 2) * spread,
 				accel: 0,
 				lastPct: car.pct
 			};
+			// The car's real vehicle, once it has loaded. Until then (or if it
+			// fails) the built-in pickup races, so a car is never missing.
+			const vehicle = vehicleFor(car.model);
+			if (vehicle) {
+				loadVehicle(vehicle)
+					.then((template) => {
+						if (disposed || state.get(car.id) !== st) return;
+						const { body, materials } = cloneVehicle(template, cssColor(car.color), kit.outline);
+						carMaterials.push(...materials);
+						st.group.remove(built.body);
+						st.group.add(body);
+						st.wheels = [];
+						// Flame, lights and marker move to this vehicle's ends and roof.
+						const box = new THREE.Box3().setFromObject(template);
+						st.flame.position.x = box.min.x - 1.1;
+						st.markerY = box.max.y + 2.4;
+						for (const o of st.group.children) {
+							if ((o as THREE.PointLight).isPointLight) o.position.x = box.max.x + 1.2;
+						}
+					})
+					.catch((err) => console.warn(`Vehicle ${vehicle} did not load`, err));
+			}
+			return st;
 		}
 
 		function syncCars() {
@@ -606,7 +637,8 @@
 				if (st.flame.visible && !reduceMotion) {
 					st.flame.scale.setScalar(0.8 + Math.random() * 0.5);
 				}
-				if (st.marker) st.marker.position.y = 5 + (reduceMotion ? 0 : Math.sin(now / 250) * 0.3);
+				if (st.marker)
+					st.marker.position.y = st.markerY + (reduceMotion ? 0 : Math.sin(now / 250) * 0.3);
 			}
 
 			// Overtakes: the order is always the order of total % move.
@@ -700,7 +732,9 @@
 		return () => {
 			renderer.setAnimationLoop(null);
 			ro.disconnect();
+			disposed = true;
 			kit.dispose();
+			carMaterials.forEach((m) => m.dispose());
 			// Teardown only, never rendered: a plain Set is right here.
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const seenMats = new Set<THREE.Material>();

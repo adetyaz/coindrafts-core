@@ -86,8 +86,8 @@
 	const days = $derived(daysBetween(start, end));
 	const quote = $derived(days > 0 ? adQuoteCents(slot, start, end) : 0);
 	const previewCars: RaceCar[] = [
-		{ id: 'a', name: 'Preview', color: 'var(--color-coral)', pct: 0.4, isMe: false },
-		{ id: 'b', name: 'Preview', color: 'var(--color-blue)', pct: 0.1, isMe: false }
+		{ id: 'a', name: 'Preview', color: 'var(--color-coral)', pct: 0.4, isMe: false, model: 'Bolt' },
+		{ id: 'b', name: 'Preview', color: 'var(--color-blue)', pct: 0.1, isMe: false, model: 'Apex' }
 	];
 
 	async function upload(e: Event) {

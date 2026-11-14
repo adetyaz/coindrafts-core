@@ -101,11 +101,14 @@
 		return open > 0 ? (nowPrice / open - 1) * 100 : 0;
 	}
 
+	// The demo shows off the garage: one of each kind of vehicle.
+	const DEMO_MODELS = ['Viper', 'Falcon', 'Apex', 'Raptor', 'Drift', 'Phantom'];
 	const demoCars = $derived<RaceCar[]>(
-		demoLineups.map((l) => ({
+		demoLineups.map((l, i) => ({
 			id: l.name,
 			name: l.name,
 			color: l.color,
+			model: DEMO_MODELS[i % DEMO_MODELS.length],
 			pct: l.picks.reduce((sum, t) => sum + movePct(t), 0) / l.picks.length,
 			isMe: false
 		}))

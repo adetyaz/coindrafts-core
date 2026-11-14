@@ -326,6 +326,7 @@
 				id: live.me.userId,
 				name: live.me.name ?? 'You',
 				color: paintColor(live.me.car?.look) ?? 'var(--color-primary)',
+				model: live.me.car?.model,
 				pct: liveTotal(live.me),
 				isMe: true
 			},
@@ -333,10 +334,11 @@
 				id: live.opponent.userId,
 				name: live.opponent.name ?? 'Opponent',
 				color: paintColor(live.opponent.car?.look) ?? 'var(--color-blue)',
+				model: live.opponent.car?.model,
 				pct: liveTotal(live.opponent),
 				isMe: false
 			}
-		].filter((c): c is RaceCar => Boolean(c))
+		].filter(Boolean) as RaceCar[]
 	);
 
 	function onOvertake(passer: RaceCar, passed: RaceCar) {

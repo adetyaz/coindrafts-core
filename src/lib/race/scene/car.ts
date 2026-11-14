@@ -7,6 +7,8 @@ import { flat, glow, outline, type Palette } from './materials';
 
 export type CarParts = {
 	group: THREE.Group;
+	/** The bodywork, wheels included: swapped out when a vehicle model loads. */
+	body: THREE.Group;
 	flame: THREE.Mesh;
 	marker: THREE.Mesh | null;
 	wheels: THREE.Mesh[];
@@ -65,6 +67,8 @@ export function buildCar(
 	opts: { headlights: THREE.Color | null; me: boolean }
 ): CarParts & { materials: THREE.Material[] } {
 	const group = new THREE.Group();
+	const shell = new THREE.Group();
+	group.add(shell);
 	const body = flat(paint, { roughness: 0.55 });
 	const trim = flat(paint.clone().multiplyScalar(0.72), { roughness: 0.6 });
 
@@ -79,12 +83,12 @@ export function buildCar(
 		mesh.scale.set(...size);
 		mesh.position.set(...at);
 		mesh.castShadow = true;
-		group.add(mesh);
+		shell.add(mesh);
 		if (ink) {
 			const edge = new THREE.Mesh(kit.box, kit.outline);
 			edge.scale.set(size[0] + 0.16, size[1] + 0.16, size[2] + 0.16);
 			edge.position.set(...at);
-			group.add(edge);
+			shell.add(edge);
 		}
 		return mesh;
 	};
@@ -124,7 +128,7 @@ export function buildCar(
 		wheel.castShadow = true;
 		const hub = new THREE.Mesh(kit.hub, kit.chrome);
 		wheel.add(hub);
-		group.add(wheel);
+		shell.add(wheel);
 		wheels.push(wheel);
 	}
 
@@ -148,5 +152,5 @@ export function buildCar(
 		group.add(marker);
 	}
 
-	return { group, flame, marker, wheels, materials: [body, trim] };
+	return { group, body: shell, flame, marker, wheels, materials: [body, trim] };
 }

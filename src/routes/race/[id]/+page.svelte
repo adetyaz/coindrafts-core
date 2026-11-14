@@ -125,6 +125,7 @@
 			id: d.userId,
 			name: d.isMe ? 'You' : d.name,
 			color: race?.livery ?? paintColor(d.car?.look) ?? PALETTE[i % PALETTE.length],
+			model: d.car?.model,
 			pct: total(d),
 			isMe: d.isMe
 		}))
