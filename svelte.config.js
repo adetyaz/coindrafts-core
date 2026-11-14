@@ -7,7 +7,9 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter(),
+		// Pinned: Vercel's default Node moved to 26, which the adapter rejects
+		// ("Unsupported Node.js version"). Keep in step with package.json engines.
+		adapter: adapter({ runtime: 'nodejs24.x' }),
 
 		typescript: {
 			config: (config) => ({
