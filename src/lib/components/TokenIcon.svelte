@@ -1,3 +1,10 @@
+<script lang="ts" module>
+	// Symbols the icon set doesn't have, learnt this session: skip the request.
+	// A plain cache on purpose: each icon re-renders from its own `failedSlug`.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const MISSING = new Set<string>();
+</script>
+
 <script lang="ts">
 	// Real token logos. SoSoValue is the app's price source but returns no logo
 	// field on either /currencies or /market-snapshot (checked directly), so
@@ -18,13 +25,12 @@
 	const slug = $derived((symbol ?? '').trim().toLowerCase());
 	const letter = $derived((symbol ?? '?').charAt(0).toUpperCase());
 
-	// Reset on symbol change so a previously-failed icon doesn't suppress a
-	// different token's working one when the node is reused.
-	let failed = $state(false);
-	$effect(() => {
-		void slug;
-		failed = false;
-	});
+	// Remember which symbol failed, not just that something did. The old
+	// boolean was reset by an effect after mount, and when the 404 was already
+	// cached (NEAR and ARB in the draft slots) the error fired first, the reset
+	// undid it, and the image never retried: a blank white circle.
+	let failedSlug = $state<string | null>(null);
+	const failed = $derived(failedSlug === slug || MISSING.has(slug));
 </script>
 
 {#if slug && !failed}
@@ -34,7 +40,10 @@
 		width={size}
 		height={size}
 		loading="lazy"
-		onerror={() => (failed = true)}
+		onerror={() => {
+			MISSING.add(slug);
+			failedSlug = slug;
+		}}
 		class="shrink-0 rounded-full object-contain"
 		style="width:{size}px;height:{size}px;background:{bg}"
 	/>
