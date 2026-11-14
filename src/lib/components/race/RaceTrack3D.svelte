@@ -110,6 +110,8 @@
 		group: THREE.Group;
 		flame: THREE.Mesh;
 		marker: THREE.Mesh | null;
+		/** Smoothed heading (radians); null until the first frame. */
+		heading: number | null;
 		/** Where the marker bobs: above the roof of whatever vehicle this is. */
 		markerY: number;
 		wheels: THREE.Mesh[];
@@ -457,6 +459,7 @@
 				flame: built.flame,
 				marker: built.marker,
 				markerY: 5,
+				heading: null,
 				wheels: built.wheels,
 				s: 0,
 				lane: (laneIndex - (laneCount - 1) / 2) * spread,
@@ -629,7 +632,16 @@
 
 				const { pos, dir } = trackAt(st.s, st.lane);
 				st.group.position.copy(pos);
-				st.group.rotation.y = Math.atan2(-dir.z, dir.x);
+				// Ease into the new heading rather than snapping to it, so hairpins
+				// read as a turn. The first frame (and a stopped car) sets it outright.
+				const want = Math.atan2(-dir.z, dir.x);
+				if (st.heading === null) st.heading = want;
+				else {
+					let turn = want - st.heading;
+					turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+					st.heading += turn * Math.min(1, dt * 14);
+				}
+				st.group.rotation.y = st.heading;
 				// Wheels turn with the distance covered (radius 0.62).
 				const spin = ((st.s - before) * path.length) / 0.62;
 				for (const w of st.wheels) w.rotation.y -= spin;

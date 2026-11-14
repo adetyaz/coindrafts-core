@@ -36,8 +36,36 @@ function segmentsCross(
 	return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
 }
 
+/**
+ * Measured centerlines are slightly noisy, point to point. Driven raw, the
+ * heading flips at every point and the outer lanes jump sideways at each kink
+ * (cars visibly twitched through corners), so the loop is smoothed first: a
+ * small Gaussian over neighbouring points. It rounds off noise, not corners.
+ */
+const SMOOTH_RADIUS = 5;
+const SMOOTH_SIGMA = 2.2;
+function smoothLoop(pts: [number, number][]): [number, number][] {
+	const n = pts.length;
+	const w: number[] = [];
+	for (let k = -SMOOTH_RADIUS; k <= SMOOTH_RADIUS; k++) {
+		w.push(Math.exp(-(k * k) / (2 * SMOOTH_SIGMA * SMOOTH_SIGMA)));
+	}
+	const total = w.reduce((a, b) => a + b, 0);
+	return pts.map((_, i) => {
+		let x = 0;
+		let z = 0;
+		for (let k = -SMOOTH_RADIUS; k <= SMOOTH_RADIUS; k++) {
+			const p = pts[(i + k + n) % n];
+			const wk = w[k + SMOOTH_RADIUS] / total;
+			x += p[0] * wk;
+			z += p[1] * wk;
+		}
+		return [x, z];
+	});
+}
+
 export function buildTrackPath(circuit: Circuit): TrackPath {
-	const raw = circuit.points;
+	const raw = smoothLoop(circuit.points);
 	const n = raw.length;
 
 	// ── Bridges where the lap crosses itself ─────────────────────────────────
@@ -71,6 +99,15 @@ export function buildTrackPath(circuit: Circuit): TrackPath {
 	}
 	const length = cumulative[n];
 
+	// Direction at each point: across its two neighbours. `at` blends between
+	// these, so the heading (and the lane offset) turns smoothly through a corner.
+	const tangent = points.map((_, i) => {
+		const p = points[(i - 1 + n) % n];
+		const q = points[(i + 1) % n];
+		const len = Math.hypot(q.x - p.x, q.z - p.z) || 1;
+		return { x: (q.x - p.x) / len, z: (q.z - p.z) / len };
+	});
+
 	// ── Corners ──────────────────────────────────────────────────────────────
 	const heading = points.map((p, i) => {
 		const q = points[(i + 1) % n];
@@ -96,8 +133,13 @@ export function buildTrackPath(circuit: Circuit): TrackPath {
 		const b = points[(lo + 1) % n];
 		const seg = cumulative[lo + 1] - cumulative[lo] || 1;
 		const t = (d - cumulative[lo]) / seg;
-		const dx = (b.x - a.x) / seg;
-		const dz = (b.z - a.z) / seg;
+		const ta = tangent[lo];
+		const tb = tangent[(lo + 1) % n];
+		let dx = ta.x + (tb.x - ta.x) * t;
+		let dz = ta.z + (tb.z - ta.z) * t;
+		const dl = Math.hypot(dx, dz) || 1;
+		dx /= dl;
+		dz /= dl;
 		// Left-hand normal of the heading; lanes spread across the road.
 		return {
 			x: a.x + (b.x - a.x) * t - dz * lane,
