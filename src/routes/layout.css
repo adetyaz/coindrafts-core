@@ -1,4 +1,11 @@
 @import 'tailwindcss';
+/* Only scan the app for class names. contracts/ holds ~2 GB of Rust build
+   output and Design System/ holds the design explorations: scanning them made
+   builds take minutes and ran the dev server out of memory. */
+@source not '../../contracts';
+@source not '../../Design System';
+@source not '../../stitch_exports';
+@source not '../../docs-project';
 
 /* ─── Design tokens — "Meadow" (Design System/meadow, Nov 2026) ─────────────
    Sticker-sheet arcade: ink outlines, hard offset shadows, a mint page, cream
